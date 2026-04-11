@@ -440,7 +440,7 @@ st.markdown("""
 
 
 # ── Logo loader (GCS) ────────────────────────────────────────────────────────
-@st.cache_data(ttl=3600)
+
 LOGO_PUBLIC_URL = "https://storage.googleapis.com/green_excal/carbontrack-logo.png"
 
 def load_logo_b64() -> Optional[str]:
