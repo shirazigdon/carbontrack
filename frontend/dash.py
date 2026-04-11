@@ -33,8 +33,8 @@ except Exception:
 
 # ── Page config ─────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="CarbonTrack",
-    page_icon="🌿",
+    page_title="CarbonTrack360",
+    page_icon="https://storage.googleapis.com/green_excal/carbontrack-logo.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -440,6 +440,7 @@ st.markdown("""
 
 
 # ── Logo loader (GCS) ────────────────────────────────────────────────────────
+@st.cache_data(ttl=3600)
 LOGO_PUBLIC_URL = "https://storage.googleapis.com/green_excal/carbontrack-logo.png"
 
 def load_logo_b64() -> Optional[str]:
