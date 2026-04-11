@@ -426,16 +426,45 @@ input[type="number"], input[dir="ltr"], code, pre { direction: ltr; unicode-bidi
 """
 st.markdown(CSS, unsafe_allow_html=True)
 
-# ── PWA / iOS meta tags ──────────────────────────────────────────────────────
+# ── PWA / iOS meta tags (injected via JS to bypass Streamlit filtering) ────
 st.markdown("""
-<link rel="manifest" href="/manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="C₂Track">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#1a3d2b">
-<link rel="apple-touch-icon" href="https://storage.googleapis.com/green_excal/carbontrack-logo.png">
-<link rel="apple-touch-startup-image" href="https://storage.googleapis.com/green_excal/carbontrack-logo.png">
+<script>
+(function() {
+    var head = window.parent.document.head;
+
+    // apple-touch-icon
+    var icon = window.parent.document.createElement('link');
+    icon.rel = 'apple-touch-icon';
+    icon.href = 'https://storage.googleapis.com/green_excal/carbontrack-logo.png';
+    head.appendChild(icon);
+
+    // apple-touch-icon-precomposed
+    var icon2 = window.parent.document.createElement('link');
+    icon2.rel = 'apple-touch-icon-precomposed';
+    icon2.href = 'https://storage.googleapis.com/green_excal/carbontrack-logo.png';
+    head.appendChild(icon2);
+
+    // apple mobile web app meta tags
+    var metas = [
+        ['apple-mobile-web-app-capable', 'yes'],
+        ['apple-mobile-web-app-status-bar-style', 'black-translucent'],
+        ['apple-mobile-web-app-title', 'C₂Track'],
+        ['theme-color', '#1a3d2b'],
+    ];
+    metas.forEach(function(m) {
+        var meta = window.parent.document.createElement('meta');
+        meta.name = m[0];
+        meta.content = m[1];
+        head.appendChild(meta);
+    });
+
+    // favicon
+    var favicon = window.parent.document.querySelector('link[rel*="icon"]');
+    if (favicon) {
+        favicon.href = 'https://storage.googleapis.com/green_excal/carbontrack-logo.png';
+    }
+})();
+</script>
 """, unsafe_allow_html=True)
 
 
