@@ -429,7 +429,7 @@ st.markdown(CSS, unsafe_allow_html=True)
 
 # ── Logo loader (GCS) ────────────────────────────────────────────────────────
 
-LOGO_PUBLIC_URL = "https://storage.googleapis.com/green_excal/carbontrack-logo.png"
+LOGO_PUBLIC_URL = "https://storage.cloud.google.com/green_excal/carbontrack-logo.png"
 
 def load_logo_b64() -> Optional[str]:
     return None  # Not needed - using public URL directly
