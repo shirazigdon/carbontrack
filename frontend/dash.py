@@ -17,6 +17,20 @@ except Exception:
     bigquery = None
     storage = None
 
+# ── Load GCP credentials from Streamlit Secrets ──────────────────────────────
+try:
+    if "gcp_service_account" in st.secrets:
+        from google.oauth2 import service_account as _sa
+        _GCP_CREDENTIALS = _sa.Credentials.from_service_account_info(
+            dict(st.secrets["gcp_service_account"]),
+            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        )
+        os.environ["GOOGLE_CLOUD_PROJECT"] = st.secrets["gcp_service_account"]["project_id"]
+    else:
+        _GCP_CREDENTIALS = None
+except Exception:
+    _GCP_CREDENTIALS = None
+
 # ── Page config ─────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="CarbonTrack",
@@ -687,6 +701,8 @@ _REVIEW   = f"{_PROJECT}.{_DATASET}.review_queue"
 def _bq_client():
     try:
         from google.cloud import bigquery as _bq
+        if _GCP_CREDENTIALS is not None:
+            return _bq.Client(project=_PROJECT, credentials=_GCP_CREDENTIALS)
         return _bq.Client(project=_PROJECT)
     except Exception:
         return None
