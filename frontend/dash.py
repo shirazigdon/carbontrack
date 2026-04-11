@@ -125,82 +125,9 @@ footer { visibility: hidden !important; }
     text-transform: uppercase;
     letter-spacing: .05em;
 }
-/* ── Collapse button (inside open sidebar) – small circle ── */
-[data-testid="stSidebarCollapseButton"] {
-    color: #fff !important;
-    background: hsl(150,30%,10%) !important;
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 999px !important;
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-}
-[data-testid="stSidebarCollapseButton"]:hover {
-    background: hsl(142,55%,35%) !important;
-}
-[data-testid="stSidebarCollapseButton"] svg {
-    color: #fff !important;
-    stroke: #fff !important;
-    width: 14px !important;
-    height: 14px !important;
-}
-
-/* ── Collapsed state: show ONLY a small dark-green square badge ── */
-[data-testid="stSidebarCollapsedControl"] {
-    /* Reset everything */
-    all: unset !important;
-    /* Square badge */
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 48px !important;
-    height: 48px !important;
-    min-width: 48px !important;
-    background: hsl(150,30%,10%) !important;
-    border-radius: 12px !important;
-    box-shadow: 0 4px 14px rgba(0,0,0,.25) !important;
-    cursor: pointer !important;
-    margin-top: 1rem !important;
-    margin-right: .5rem !important;
-    position: relative !important;
-    transition: background .18s, transform .15s !important;
-}
-[data-testid="stSidebarCollapsedControl"]:hover {
-    background: hsl(142,55%,35%) !important;
-    transform: scale(1.06) !important;
-}
-/* Hide the default arrow icon – we show C₂T text via pseudo-element */
-[data-testid="stSidebarCollapsedControl"] svg {
-    display: none !important;
-}
-[data-testid="stSidebarCollapsedControl"] button {
-    all: unset !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 100% !important;
-    height: 100% !important;
-    cursor: pointer !important;
-    font-family: 'Heebo', sans-serif !important;
-    font-size: .7rem !important;
-    font-weight: 800 !important;
-    color: #fff !important;
-    letter-spacing: -.01em !important;
-}
-/* Fallback: if inner button not present, show via pseudo */
-[data-testid="stSidebarCollapsedControl"]::after {
-    content: 'C₂T' !important;
-    font-family: 'Heebo', sans-serif !important;
-    font-size: .7rem !important;
-    font-weight: 800 !important;
-    color: #fff !important;
-    pointer-events: none !important;
-}
+/* ── Sidebar always open – hide collapse/expand controls ── */
+[data-testid="stSidebarCollapseButton"] { display: none !important; }
+[data-testid="stSidebarCollapsedControl"] { display: none !important; }
 [data-testid="stSidebarNav"],
 [data-testid="stSidebarUserContent"] { border: none !important; }
 [data-testid="stSidebar"] > div:first-child,
@@ -502,31 +429,13 @@ st.markdown(CSS, unsafe_allow_html=True)
 
 # ── Logo loader (GCS) ────────────────────────────────────────────────────────
 @st.cache_data(ttl=3600)
-def load_logo_b64() -> Optional[str]:
-    bucket = os.getenv("LOGO_GCS_BUCKET", "green_excal")
-    blob   = os.getenv("LOGO_GCS_BLOB",   "carbontrack-logo.png")
-    env_path = os.getenv("APP_LOGO_PATH")
-    # 1. local override
-    for p in [env_path, "logo.png", "/app/logo.png"]:
-        if p and os.path.exists(p) and os.path.getsize(p) > 0:
-            return base64.b64encode(open(p, "rb").read()).decode()
-    # 2. GCS
-    if storage:
-        try:
-            client = storage.Client()
-            data   = client.bucket(bucket).blob(blob).download_as_bytes()
-            return base64.b64encode(data).decode()
-        except Exception:
-            pass
-    return None
+LOGO_PUBLIC_URL = "https://storage.googleapis.com/green_excal/carbontrack-logo.png"
 
+def load_logo_b64() -> Optional[str]:
+    return None  # Not needed - using public URL directly
 
 def render_logo(width: int = 48) -> str:
-    b64 = load_logo_b64()
-    if b64:
-        return f'<img src="data:image/png;base64,{b64}" style="width:{width}px;height:auto;object-fit:contain;" alt="CarbonTrack">'
-    # fallback text badge
-    return '<span style="font-size:1.5rem;font-weight:900;color:hsl(142,55%,35%)">C₂T</span>'
+    return f'<img src="{LOGO_PUBLIC_URL}" style="width:{width}px;height:auto;object-fit:contain;" alt="CarbonTrack" onerror="this.style.display=\'none\'">'
 
 
 
