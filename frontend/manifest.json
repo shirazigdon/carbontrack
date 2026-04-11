@@ -1,0 +1,24 @@
+{
+  "name": "CarbonTrack360",
+  "short_name": "C₂Track",
+  "description": "מערכת ניהול פליטות פחמן — נתיבי ישראל",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f9f6",
+  "theme_color": "#1a3d2b",
+  "orientation": "portrait",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "https://storage.googleapis.com/green_excal/carbontrack-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://storage.googleapis.com/green_excal/carbontrack-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
