@@ -426,6 +426,18 @@ input[type="number"], input[dir="ltr"], code, pre { direction: ltr; unicode-bidi
 """
 st.markdown(CSS, unsafe_allow_html=True)
 
+# ── PWA / iOS meta tags ──────────────────────────────────────────────────────
+st.markdown("""
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="C₂Track">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a3d2b">
+<link rel="apple-touch-icon" href="https://storage.googleapis.com/green_excal/carbontrack-logo.png">
+<link rel="apple-touch-startup-image" href="https://storage.googleapis.com/green_excal/carbontrack-logo.png">
+""", unsafe_allow_html=True)
+
 
 # ── Logo loader (GCS) ────────────────────────────────────────────────────────
 LOGO_PUBLIC_URL = "https://storage.cloud.google.com/green_excal/carbontrack-logo.png"
