@@ -428,8 +428,8 @@ st.markdown(CSS, unsafe_allow_html=True)
 
 
 # ── Logo loader (GCS) ────────────────────────────────────────────────────────
-
-LOGO_PUBLIC_URL = "https://storage.cloud.google.com/green_excal/carbontrack-logo.png"
+@st.cache_data(ttl=3600)
+LOGO_PUBLIC_URL = "https://storage.googleapis.com/green_excal/carbontrack-logo.png"
 
 def load_logo_b64() -> Optional[str]:
     return None  # Not needed - using public URL directly
@@ -870,15 +870,22 @@ def render_login():
 # DASHBOARD
 # ════════════════════════════════════════════════════════════════════════════
 def render_dashboard():
-    # ── Load data ──
-    # Try real BigQuery first, fall back to mock
-    try:
-        emissions_df = _load_bq_emissions()
-        review_df    = _load_bq_review()
-        data_source  = f"BigQuery · {_PROJECT}"
-        if emissions_df.empty: raise ValueError("empty")
-    except Exception:
-        emissions_df, review_df, data_source = load_data()
+    # ── Load data – cached in session_state to avoid repeated BQ calls ──
+    if "_emissions_df" not in st.session_state or "_review_df" not in st.session_state:
+        try:
+            emissions_df = _load_bq_emissions()
+            review_df    = _load_bq_review()
+            data_source  = f"BigQuery · {_PROJECT}"
+            if emissions_df.empty: raise ValueError("empty")
+        except Exception:
+            emissions_df, review_df, data_source = load_data()
+        st.session_state["_emissions_df"]  = emissions_df
+        st.session_state["_review_df"]     = review_df
+        st.session_state["_data_source"]   = data_source
+    else:
+        emissions_df = st.session_state["_emissions_df"]
+        review_df    = st.session_state["_review_df"]
+        data_source  = st.session_state.get("_data_source", f"BigQuery · {_PROJECT}")
 
     for c in ["project_name","contractor","region","category"]:
         if c not in emissions_df.columns: emissions_df[c] = "Unknown"
@@ -1237,7 +1244,7 @@ def render_dashboard():
                         if res.status_code == 200:
                             st.sidebar.success("✅ השרת אישר: נמחק בהצלחה!")
                             st.session_state["show_confirm"] = False
-                            _load_bq_emissions.clear() # מרענן את נתוני הדאשבורד
+                            _load_bq_emissions.clear(); st.session_state.pop("_emissions_df", None); st.session_state.pop("_review_df", None) # מרענן
                             st.rerun()
                         else:
                             # אם השרת החזיר שגיאה (כמו 400, 404, 500)
@@ -1436,7 +1443,7 @@ def render_dashboard():
                     st.success(f"✅ עובדו {res.get('total_rows',0):,} שורות · {res.get('needs_review_rows',0)} דורשות review")
                     if res.get("auto_learned_rows"):
                         st.info(f"נכתבו אוטומטית {res['auto_learned_rows']} מיפויים אמינים")
-                    _load_bq_emissions.clear(); _load_bq_review.clear()
+                    _load_bq_emissions.clear(); _load_bq_review.clear(); st.session_state.pop("_emissions_df", None); st.session_state.pop("_review_df", None)
                     st.rerun()
                 except Exception as e:
                     st.error(f"שגיאה: {e}")
