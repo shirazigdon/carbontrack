@@ -11,6 +11,14 @@ import requests
 import streamlit as st
 import streamlit.components.v1 as components
 from textwrap import dedent
+
+try:
+    import vertexai
+    from vertexai.generative_models import GenerativeModel, Content, Part
+
+    _VERTEX_OK = True
+except Exception:
+    _VERTEX_OK = False
 try:
     from google.cloud import bigquery, storage  # type: ignore
 except Exception:
@@ -21,6 +29,7 @@ except Exception:
 try:
     if "gcp_service_account" in st.secrets:
         from google.oauth2 import service_account as _sa
+
         _GCP_CREDENTIALS = _sa.Credentials.from_service_account_info(
             dict(st.secrets["gcp_service_account"]),
             scopes=["https://www.googleapis.com/auth/cloud-platform"],
@@ -467,17 +476,17 @@ st.markdown("""
 </script>
 """, unsafe_allow_html=True)
 
-
 # ── Logo loader (GCS) ────────────────────────────────────────────────────────
 
 LOGO_PUBLIC_URL = "https://storage.googleapis.com/green_excal/carbontrack-logo.png"
 
+
 def load_logo_b64() -> Optional[str]:
     return None  # Not needed - using public URL directly
 
+
 def render_logo(width: int = 48) -> str:
     return f'<img src="{LOGO_PUBLIC_URL}" style="width:{width}px;height:auto;object-fit:contain;" alt="CarbonTrack" onerror="this.style.display=\'none\'">'
-
 
 
 ROLE_DISPLAY = {
@@ -488,28 +497,73 @@ ROLE_DISPLAY = {
     "regulator": "רגולטור",
 }
 
+
 # ── Mock data (same as mockData.ts) ─────────────────────────────────────────
 def build_mock_emissions() -> pd.DataFrame:
     return pd.DataFrame([
-        {"id":"1","project_name":"כביש 6 - מקטע צפון","contractor":"שפיר הנדסה","region":"צפון","category":"Steel Rebar","boq_code":"ST-001","short_text":"פלדת זיון B500","weight_kg":125000,"emission_co2e":231250,"reliability_score":0.92,"matched_by":"exact_match","assumed_uom":"kg","review_required":False,"year":2026},
-        {"id":"2","project_name":"כביש 6 - מקטע צפון","contractor":"שפיר הנדסה","region":"צפון","category":"Structural Concrete","boq_code":"CO-001","short_text":"בטון B30","weight_kg":450000,"emission_co2e":148500,"reliability_score":0.88,"matched_by":"ai_match","assumed_uom":"m3","review_required":False,"year":2026},
-        {"id":"3","project_name":"מחלף גלילות","contractor":"דניה סיבוס","region":"מרכז","category":"Asphalt","boq_code":"AS-001","short_text":"אספלט חם","weight_kg":320000,"emission_co2e":89600,"reliability_score":0.95,"matched_by":"exact_match","assumed_uom":"ton","review_required":False,"year":2026},
-        {"id":"4","project_name":"מחלף גלילות","contractor":"דניה סיבוס","region":"מרכז","category":"Galvanized Steel","boq_code":"ST-002","short_text":"פלדת מבנה S355","weight_kg":85000,"emission_co2e":178500,"reliability_score":0.78,"matched_by":"ai_match","assumed_uom":"kg","review_required":True,"year":2026},
-        {"id":"5","project_name":"כביש 1 - מעלה אדומים","contractor":"סולל בונה","region":"מרכז","category":"Structural Concrete","boq_code":"CO-002","short_text":"בטון B40 מזוין","weight_kg":680000,"emission_co2e":258400,"reliability_score":0.91,"matched_by":"exact_match","assumed_uom":"m3","review_required":False,"year":2025},
-        {"id":"6","project_name":"גשר נחל הבשור","contractor":"אלקטרה בנייה","region":"דרום","category":"Galvanized Steel","boq_code":"ST-003","short_text":"כבלי פלדה","weight_kg":42000,"emission_co2e":92400,"reliability_score":0.85,"matched_by":"ai_match","assumed_uom":"kg","review_required":False,"year":2026},
-        {"id":"7","project_name":"גשר נחל הבשור","contractor":"אלקטרה בנייה","region":"דרום","category":"Wood","boq_code":"WD-001","short_text":"עץ תבניות","weight_kg":18000,"emission_co2e":5400,"reliability_score":0.72,"matched_by":"fuzzy_match","assumed_uom":"m3","review_required":True,"year":2026},
-        {"id":"8","project_name":"כביש 90 - ים המלח","contractor":"מנרב","region":"דרום","category":"Asphalt","boq_code":"AS-002","short_text":"אספלט קר","weight_kg":210000,"emission_co2e":50400,"reliability_score":0.89,"matched_by":"exact_match","assumed_uom":"ton","review_required":False,"year":2026},
-        {"id":"9","project_name":"כביש 90 - ים המלח","contractor":"מנרב","region":"דרום","category":"Structural Concrete","boq_code":"CO-003","short_text":"בטון מובא B25","weight_kg":520000,"emission_co2e":161200,"reliability_score":0.93,"matched_by":"exact_match","assumed_uom":"m3","review_required":False,"year":2025},
-        {"id":"10","project_name":"מנהרות הכרמל","contractor":"שפיר הנדסה","region":"צפון","category":"Steel Rebar","boq_code":"ST-004","short_text":"פלדת אנקרים","weight_kg":65000,"emission_co2e":143000,"reliability_score":0.87,"matched_by":"ai_match","assumed_uom":"kg","review_required":False,"year":2026},
-        {"id":"11","project_name":"מנהרות הכרמל","contractor":"שפיר הנדסה","region":"צפון","category":"Structural Concrete","boq_code":"CO-004","short_text":"בטון מזויין B45","weight_kg":890000,"emission_co2e":356000,"reliability_score":0.96,"matched_by":"exact_match","assumed_uom":"m3","review_required":False,"year":2026},
-        {"id":"12","project_name":"כביש 1 - מעלה אדומים","contractor":"סולל בונה","region":"מרכז","category":"Aluminum","boq_code":"AL-001","short_text":"מעקות אלומיניום","weight_kg":12000,"emission_co2e":108000,"reliability_score":0.81,"matched_by":"ai_match","assumed_uom":"kg","review_required":True,"year":2026},
+        {"id": "1", "project_name": "כביש 6 - מקטע צפון", "contractor": "שפיר הנדסה", "region": "צפון",
+         "category": "Steel Rebar", "boq_code": "ST-001", "short_text": "פלדת זיון B500", "weight_kg": 125000,
+         "emission_co2e": 231250, "reliability_score": 0.92, "matched_by": "exact_match", "assumed_uom": "kg",
+         "review_required": False, "year": 2026},
+        {"id": "2", "project_name": "כביש 6 - מקטע צפון", "contractor": "שפיר הנדסה", "region": "צפון",
+         "category": "Structural Concrete", "boq_code": "CO-001", "short_text": "בטון B30", "weight_kg": 450000,
+         "emission_co2e": 148500, "reliability_score": 0.88, "matched_by": "ai_match", "assumed_uom": "m3",
+         "review_required": False, "year": 2026},
+        {"id": "3", "project_name": "מחלף גלילות", "contractor": "דניה סיבוס", "region": "מרכז", "category": "Asphalt",
+         "boq_code": "AS-001", "short_text": "אספלט חם", "weight_kg": 320000, "emission_co2e": 89600,
+         "reliability_score": 0.95, "matched_by": "exact_match", "assumed_uom": "ton", "review_required": False,
+         "year": 2026},
+        {"id": "4", "project_name": "מחלף גלילות", "contractor": "דניה סיבוס", "region": "מרכז",
+         "category": "Galvanized Steel", "boq_code": "ST-002", "short_text": "פלדת מבנה S355", "weight_kg": 85000,
+         "emission_co2e": 178500, "reliability_score": 0.78, "matched_by": "ai_match", "assumed_uom": "kg",
+         "review_required": True, "year": 2026},
+        {"id": "5", "project_name": "כביש 1 - מעלה אדומים", "contractor": "סולל בונה", "region": "מרכז",
+         "category": "Structural Concrete", "boq_code": "CO-002", "short_text": "בטון B40 מזוין", "weight_kg": 680000,
+         "emission_co2e": 258400, "reliability_score": 0.91, "matched_by": "exact_match", "assumed_uom": "m3",
+         "review_required": False, "year": 2025},
+        {"id": "6", "project_name": "גשר נחל הבשור", "contractor": "אלקטרה בנייה", "region": "דרום",
+         "category": "Galvanized Steel", "boq_code": "ST-003", "short_text": "כבלי פלדה", "weight_kg": 42000,
+         "emission_co2e": 92400, "reliability_score": 0.85, "matched_by": "ai_match", "assumed_uom": "kg",
+         "review_required": False, "year": 2026},
+        {"id": "7", "project_name": "גשר נחל הבשור", "contractor": "אלקטרה בנייה", "region": "דרום", "category": "Wood",
+         "boq_code": "WD-001", "short_text": "עץ תבניות", "weight_kg": 18000, "emission_co2e": 5400,
+         "reliability_score": 0.72, "matched_by": "fuzzy_match", "assumed_uom": "m3", "review_required": True,
+         "year": 2026},
+        {"id": "8", "project_name": "כביש 90 - ים המלח", "contractor": "מנרב", "region": "דרום", "category": "Asphalt",
+         "boq_code": "AS-002", "short_text": "אספלט קר", "weight_kg": 210000, "emission_co2e": 50400,
+         "reliability_score": 0.89, "matched_by": "exact_match", "assumed_uom": "ton", "review_required": False,
+         "year": 2026},
+        {"id": "9", "project_name": "כביש 90 - ים המלח", "contractor": "מנרב", "region": "דרום",
+         "category": "Structural Concrete", "boq_code": "CO-003", "short_text": "בטון מובא B25", "weight_kg": 520000,
+         "emission_co2e": 161200, "reliability_score": 0.93, "matched_by": "exact_match", "assumed_uom": "m3",
+         "review_required": False, "year": 2025},
+        {"id": "10", "project_name": "מנהרות הכרמל", "contractor": "שפיר הנדסה", "region": "צפון",
+         "category": "Steel Rebar", "boq_code": "ST-004", "short_text": "פלדת אנקרים", "weight_kg": 65000,
+         "emission_co2e": 143000, "reliability_score": 0.87, "matched_by": "ai_match", "assumed_uom": "kg",
+         "review_required": False, "year": 2026},
+        {"id": "11", "project_name": "מנהרות הכרמל", "contractor": "שפיר הנדסה", "region": "צפון",
+         "category": "Structural Concrete", "boq_code": "CO-004", "short_text": "בטון מזויין B45", "weight_kg": 890000,
+         "emission_co2e": 356000, "reliability_score": 0.96, "matched_by": "exact_match", "assumed_uom": "m3",
+         "review_required": False, "year": 2026},
+        {"id": "12", "project_name": "כביש 1 - מעלה אדומים", "contractor": "סולל בונה", "region": "מרכז",
+         "category": "Aluminum", "boq_code": "AL-001", "short_text": "מעקות אלומיניום", "weight_kg": 12000,
+         "emission_co2e": 108000, "reliability_score": 0.81, "matched_by": "ai_match", "assumed_uom": "kg",
+         "review_required": True, "year": 2026},
     ])
+
 
 def build_mock_review() -> pd.DataFrame:
     return pd.DataFrame([
-        {"review_id":"r1","short_text":"פלדת מבנה S355","project_name":"מחלף גלילות","boq_code":"ST-002","suggested_category":"Galvanized Steel","suggested_uom":"kg","review_reason":"ציון אמינות נמוך","reliability_score":0.78,"factor_spread_pct":22.5,"climatiq_candidate_count":8},
-        {"review_id":"r2","short_text":"עץ תבניות","project_name":"גשר נחל הבשור","boq_code":"WD-001","suggested_category":"Wood","suggested_uom":"m3","review_reason":"התאמה לא מדויקת","reliability_score":0.72,"factor_spread_pct":35.1,"climatiq_candidate_count":12},
-        {"review_id":"r3","short_text":"מעקות אלומיניום","project_name":"כביש 1 - מעלה אדומים","boq_code":"AL-001","suggested_category":"Aluminum","suggested_uom":"kg","review_reason":"סטיית פקטור גבוהה","reliability_score":0.81,"factor_spread_pct":18.3,"climatiq_candidate_count":6},
+        {"review_id": "r1", "short_text": "פלדת מבנה S355", "project_name": "מחלף גלילות", "boq_code": "ST-002",
+         "suggested_category": "Galvanized Steel", "suggested_uom": "kg", "review_reason": "ציון אמינות נמוך",
+         "reliability_score": 0.78, "factor_spread_pct": 22.5, "climatiq_candidate_count": 8},
+        {"review_id": "r2", "short_text": "עץ תבניות", "project_name": "גשר נחל הבשור", "boq_code": "WD-001",
+         "suggested_category": "Wood", "suggested_uom": "m3", "review_reason": "התאמה לא מדויקת",
+         "reliability_score": 0.72, "factor_spread_pct": 35.1, "climatiq_candidate_count": 12},
+        {"review_id": "r3", "short_text": "מעקות אלומיניום", "project_name": "כביש 1 - מעלה אדומים",
+         "boq_code": "AL-001", "suggested_category": "Aluminum", "suggested_uom": "kg",
+         "review_reason": "סטיית פקטור גבוהה", "reliability_score": 0.81, "factor_spread_pct": 18.3,
+         "climatiq_candidate_count": 6},
     ])
 
 
@@ -572,11 +626,13 @@ def load_data():
 
 
 # ── Chart helpers ─────────────────────────────────────────────────────────────
-COLORS = ["hsl(142,55%,35%)","hsl(152,45%,42%)","hsl(85,50%,45%)","hsl(38,92%,50%)","hsl(170,50%,40%)","hsl(120,40%,50%)"]
+COLORS = ["hsl(142,55%,35%)", "hsl(152,45%,42%)", "hsl(85,50%,45%)", "hsl(38,92%,50%)", "hsl(170,50%,40%)",
+          "hsl(120,40%,50%)"]
+
 
 def _base_layout(fig, height=300):
     fig.update_layout(
-        height=height, margin=dict(l=10,r=10,t=32,b=10),
+        height=height, margin=dict(l=10, r=10, t=32, b=10),
         paper_bgcolor="white", plot_bgcolor="white",
         font=dict(family="Heebo", size=12, color="hsl(150,10%,45%)"),
         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=.5),
@@ -588,7 +644,7 @@ def _base_layout(fig, height=300):
 def kpi(title, value, subtitle="", trend=None, trend_val=None, variant="default"):
     badge = ""
     if trend_val:
-        cls = "badge-down" if trend=="down" else "badge-up" if trend=="up" else "badge-warn"
+        cls = "badge-down" if trend == "down" else "badge-up" if trend == "up" else "badge-warn"
         badge = f'<span class="{cls}">{trend_val}</span>'
     st.markdown(f"""
     <div class="kpi-card kpi-{variant}">
@@ -601,8 +657,8 @@ def kpi(title, value, subtitle="", trend=None, trend_val=None, variant="default"
 # ── API helpers ───────────────────────────────────────────────────────────────
 @st.cache_data(ttl=120)
 def fetch_status() -> Optional[pd.DataFrame]:
-    base = os.getenv("API_BASE_URL","").rstrip("/")
-    ep   = os.getenv("API_STATUS_ENDPOINT","/processing/status")
+    base = os.getenv("API_BASE_URL", "").rstrip("/")
+    ep = os.getenv("API_STATUS_ENDPOINT", "/processing/status")
     if not base: return None
     try:
         r = requests.get(f"{base}{ep}", timeout=15)
@@ -615,22 +671,23 @@ def fetch_status() -> Optional[pd.DataFrame]:
     except Exception:
         return None
 
+
 def upload_to_backend(f) -> Tuple[bool, str]:
-    base = os.getenv("API_BASE_URL","").rstrip("/")
-    ep   = os.getenv("API_UPLOAD_ENDPOINT","/upload")
+    base = os.getenv("API_BASE_URL", "").rstrip("/")
+    ep = os.getenv("API_UPLOAD_ENDPOINT", "/upload")
     if not base: return False, "חסר API_BASE_URL"
     files = {"file": (f.name, f.getvalue(), f.type or "application/octet-stream")}
-    data  = {
-        "project_name": st.session_state.get("up_proj",""),
-        "project_type": st.session_state.get("up_type",""),
-        "contractor":   st.session_state.get("up_cont",""),
-        "region":       st.session_state.get("up_region","מרכז"),
-        "source_mode":  st.session_state.get("up_mode","auto"),
+    data = {
+        "project_name": st.session_state.get("up_proj", ""),
+        "project_type": st.session_state.get("up_type", ""),
+        "contractor": st.session_state.get("up_cont", ""),
+        "region": st.session_state.get("up_region", "מרכז"),
+        "source_mode": st.session_state.get("up_mode", "auto"),
     }
     try:
         resp = requests.post(f"{base}{ep}", files=files, data=data, timeout=120)
         if resp.ok:
-            rid = (resp.json() or {}).get("run_id","uploaded")
+            rid = (resp.json() or {}).get("run_id", "uploaded")
             return True, f"הקובץ נשלח בהצלחה · run_id: {rid}"
         return False, f"שגיאה {resp.status_code}: {resp.text[:200]}"
     except Exception as e:
@@ -640,12 +697,13 @@ def upload_to_backend(f) -> Tuple[bool, str]:
 # ════════════════════════════════════════════════════════════════════════════
 # BIGQUERY HELPERS
 # ════════════════════════════════════════════════════════════════════════════
-_PROJECT  = "argon-ace-483810-n9"
-_DATASET  = "netivei_emissions_db"
-_USERS    = f"{_PROJECT}.{_DATASET}.users"
-_DETAILS_V= f"{_PROJECT}.{_DATASET}.emissions_details_view"
-_DETAILS_T= f"{_PROJECT}.{_DATASET}.emissions_details"
-_REVIEW   = f"{_PROJECT}.{_DATASET}.review_queue"
+_PROJECT = "argon-ace-483810-n9"
+_DATASET = "netivei_emissions_db"
+_USERS = f"{_PROJECT}.{_DATASET}.users"
+_DETAILS_V = f"{_PROJECT}.{_DATASET}.emissions_details_view"
+_DETAILS_T = f"{_PROJECT}.{_DATASET}.emissions_details"
+_REVIEW = f"{_PROJECT}.{_DATASET}.review_queue"
+
 
 @st.cache_resource
 def _bq_client():
@@ -657,6 +715,7 @@ def _bq_client():
     except Exception:
         return None
 
+
 def _run_bq(sql, params=None):
     try:
         from google.cloud import bigquery as _bq
@@ -667,16 +726,18 @@ def _run_bq(sql, params=None):
     except Exception:
         return pd.DataFrame()
 
+
 def _get_user(email):
     try:
         from google.cloud import bigquery as _bq
         df = _run_bq(
             f"SELECT email,name,role,password,is_first_login FROM `{_USERS}` WHERE LOWER(email)=LOWER(@e) LIMIT 1",
-            [_bq.ScalarQueryParameter("e","STRING",email)],
+            [_bq.ScalarQueryParameter("e", "STRING", email)],
         )
         return df.iloc[0].to_dict() if not df.empty else None
     except Exception:
         return None
+
 
 def _update_password(email, new_pass):
     try:
@@ -684,13 +745,14 @@ def _update_password(email, new_pass):
         _bq_client().query(
             f"UPDATE `{_USERS}` SET password=@p,is_first_login=FALSE WHERE email=@e",
             job_config=_bq.QueryJobConfig(query_parameters=[
-                _bq.ScalarQueryParameter("p","STRING",new_pass),
-                _bq.ScalarQueryParameter("e","STRING",email),
+                _bq.ScalarQueryParameter("p", "STRING", new_pass),
+                _bq.ScalarQueryParameter("e", "STRING", email),
             ])
         ).result()
         return True
     except Exception:
         return False
+
 
 @st.cache_data(ttl=60)
 def _load_bq_emissions():
@@ -698,17 +760,18 @@ def _load_bq_emissions():
     if df.empty:
         df = _run_bq(f"SELECT * FROM `{_DETAILS_T}` ORDER BY calculation_date DESC")
     if not df.empty:
-        for c in ["project_name","contractor","region","category","matched_by","assumed_uom"]:
+        for c in ["project_name", "contractor", "region", "category", "matched_by", "assumed_uom"]:
             if c not in df.columns: df[c] = None
         if "short_text" not in df.columns and "material" in df.columns:
             df["short_text"] = df["material"]
         if "review_required" not in df.columns: df["review_required"] = False
-        for c in ["emission_co2e","weight_kg","reliability_score","factor_spread_pct"]:
+        for c in ["emission_co2e", "weight_kg", "reliability_score", "factor_spread_pct"]:
             if c in df.columns: df[c] = pd.to_numeric(df[c], errors="coerce")
         if "calculation_date" in df.columns:
             df["calculation_date"] = pd.to_datetime(df["calculation_date"], errors="coerce")
             df["year"] = df["calculation_date"].dt.year
     return df
+
 
 @st.cache_data(ttl=60)
 def _load_bq_review():
@@ -720,7 +783,8 @@ def _load_bq_review():
 # ════════════════════════════════════════════════════════════════════════════
 _PROCESSING = f"{_PROJECT}.{_DATASET}.processing_runs"
 
-@st.cache_data(ttl=8)   # short TTL so it refreshes automatically while running
+
+@st.cache_data(ttl=8)  # short TTL so it refreshes automatically while running
 def _load_latest_run() -> pd.DataFrame:
     active = _run_bq(f"""
         SELECT * FROM `{_PROCESSING}`
@@ -755,11 +819,11 @@ def render_processing_progress(key_suffix: str = "default") -> None:
     run_id = "run" if pd.isna(run.get("run_id")) else str(run.get("run_id", "run"))
 
     _fname_raw = (
-        run.get("source_file")
-        or run.get("file_name")
-        or run.get("filename")
-        or run.get("input_file")
-        or ""
+            run.get("source_file")
+            or run.get("file_name")
+            or run.get("filename")
+            or run.get("input_file")
+            or ""
     )
     file_name = "" if pd.isna(_fname_raw) else str(_fname_raw).split("/")[-1]
 
@@ -780,13 +844,17 @@ def render_processing_progress(key_suffix: str = "default") -> None:
     is_active = eff_status in ("running", "processing", "in_progress", "started")
 
     if eff_status in ("completed", "done", "success"):
-        label = "הושלם"; icon = "✅"
+        label = "הושלם";
+        icon = "✅"
     elif eff_status in ("failed", "error"):
-        label = "נכשל"; icon = "❌"
+        label = "נכשל";
+        icon = "❌"
     elif eff_status == "stale":
-        label = "לא מתעדכן"; icon = "⚠️"
+        label = "לא מתעדכן";
+        icon = "⚠️"
     else:
-        label = "בריצה"; icon = "⏳"
+        label = "בריצה";
+        icon = "⏳"
 
     rows_text = f"{rows_p:,} / {rows_t:,} שורות" if rows_t > 0 else f"{rows_p:,} שורות"
 
@@ -840,6 +908,7 @@ def render_processing_progress(key_suffix: str = "default") -> None:
             width=0,
         )
 
+
 # ════════════════════════════════════════════════════════════════════════════
 # LOGIN PAGE
 # ════════════════════════════════════════════════════════════════════════════
@@ -852,7 +921,8 @@ def render_login():
     if st.session_state.get("change_password_mode"):
         _, col, _ = st.columns([1, 2, 1])
         with col:
-            st.markdown(f"<div style='text-align:center;margin:2rem 0 1.5rem;'>{render_logo(140)}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align:center;margin:2rem 0 1.5rem;'>{render_logo(140)}</div>",
+                        unsafe_allow_html=True)
             st.markdown("### 🔒 החלפת סיסמה ראשונית")
             new_p = st.text_input("הזן סיסמה חדשה", type="password")
             if st.button("עדכן סיסמה וכנס", type="primary", use_container_width=True):
@@ -874,12 +944,15 @@ def render_login():
     # ── Normal login ──
     _, col, _ = st.columns([1, 2, 1])
     with col:
-        st.markdown(f"<div style='text-align:center;margin:2rem 0 1.5rem;'>{render_logo(140)}</div>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align:center;color:var(--muted-fg);margin-bottom:1.5rem;'>נתיבי ישראל — מעקב פליטות פחמן</p>", unsafe_allow_html=True)
-        
+        st.markdown(f"<div style='text-align:center;margin:2rem 0 1.5rem;'>{render_logo(140)}</div>",
+                    unsafe_allow_html=True)
+        st.markdown(
+            "<p style='text-align:center;color:var(--muted-fg);margin-bottom:1.5rem;'>נתיבי ישראל — מעקב פליטות פחמן</p>",
+            unsafe_allow_html=True)
+
         # === טופס התחברות מסודר שפותר את בעיית הלחיצה הכפולה ===
         with st.form("login_form"):
-            email    = st.text_input("כתובת אימייל", placeholder="your@email.com")
+            email = st.text_input("כתובת אימייל", placeholder="your@email.com")
             password = st.text_input("סיסמה", type="password", placeholder="••••••••")
             submitted = st.form_submit_button("היכנס למערכת", type="primary", use_container_width=True)
 
@@ -897,7 +970,7 @@ def render_login():
                         st.session_state.update({
                             "logged_in": True,
                             "display_name": user.get("name", email.split("@")[0]),
-                            "user_role": user.get("role","management"),
+                            "user_role": user.get("role", "management"),
                             "user_email": email, "change_password_mode": False,
                         })
                         st.rerun()
@@ -906,7 +979,11 @@ def render_login():
             else:
                 st.error("יש להזין אימייל וסיסמה")
 
-        st.markdown('<p style="text-align:center;color:var(--muted-fg);font-size:.75rem;margin-top:1.5rem;">🛣️ מערכת ניהול פליטות פחמן — נתיבי ישראל</p>', unsafe_allow_html=True)
+        st.markdown(
+            '<p style="text-align:center;color:var(--muted-fg);font-size:.75rem;margin-top:1.5rem;">🛣️ מערכת ניהול פליטות פחמן — נתיבי ישראל</p>',
+            unsafe_allow_html=True)
+
+
 # ════════════════════════════════════════════════════════════════════════════
 # DASHBOARD
 # ════════════════════════════════════════════════════════════════════════════
@@ -915,29 +992,29 @@ def render_dashboard():
     if "_emissions_df" not in st.session_state or "_review_df" not in st.session_state:
         try:
             emissions_df = _load_bq_emissions()
-            review_df    = _load_bq_review()
-            data_source  = f"BigQuery · {_PROJECT}"
+            review_df = _load_bq_review()
+            data_source = f"BigQuery · {_PROJECT}"
             if emissions_df.empty: raise ValueError("empty")
         except Exception:
             emissions_df, review_df, data_source = load_data()
-        st.session_state["_emissions_df"]  = emissions_df
-        st.session_state["_review_df"]     = review_df
-        st.session_state["_data_source"]   = data_source
+        st.session_state["_emissions_df"] = emissions_df
+        st.session_state["_review_df"] = review_df
+        st.session_state["_data_source"] = data_source
     else:
         emissions_df = st.session_state["_emissions_df"]
-        review_df    = st.session_state["_review_df"]
-        data_source  = st.session_state.get("_data_source", f"BigQuery · {_PROJECT}")
+        review_df = st.session_state["_review_df"]
+        data_source = st.session_state.get("_data_source", f"BigQuery · {_PROJECT}")
 
-    for c in ["project_name","contractor","region","category"]:
+    for c in ["project_name", "contractor", "region", "category"]:
         if c not in emissions_df.columns: emissions_df[c] = "Unknown"
-    for c in ["weight_kg","emission_co2e","reliability_score","year"]:
+    for c in ["weight_kg", "emission_co2e", "reliability_score", "year"]:
         if c not in emissions_df.columns: emissions_df[c] = 0
     if emissions_df.empty:
         emissions_df, review_df = build_mock_emissions(), build_mock_review()
 
-    emissions_df["year"]         = pd.to_numeric(emissions_df["year"],         errors="coerce").fillna(2026).astype(int)
-    emissions_df["weight_kg"]    = pd.to_numeric(emissions_df["weight_kg"],    errors="coerce").fillna(0)
-    emissions_df["emission_co2e"]= pd.to_numeric(emissions_df["emission_co2e"],errors="coerce").fillna(0)
+    emissions_df["year"] = pd.to_numeric(emissions_df["year"], errors="coerce").fillna(2026).astype(int)
+    emissions_df["weight_kg"] = pd.to_numeric(emissions_df["weight_kg"], errors="coerce").fillna(0)
+    emissions_df["emission_co2e"] = pd.to_numeric(emissions_df["emission_co2e"], errors="coerce").fillna(0)
 
     # ── Sidebar ──
     with st.sidebar:
@@ -945,11 +1022,11 @@ def render_dashboard():
         user_role_key = st.session_state.get("user_role", "management")
         user_role_label = ROLE_DISPLAY.get(user_role_key, user_role_key)
 
-        projects    = sorted(emissions_df["project_name"].dropna().unique())
+        projects = sorted(emissions_df["project_name"].dropna().unique())
         contractors = sorted(emissions_df["contractor"].dropna().unique())
-        regions     = sorted(emissions_df["region"].dropna().unique())
-        categories  = sorted(emissions_df["category"].dropna().unique())
-        years       = sorted(emissions_df["year"].unique().tolist())
+        regions = sorted(emissions_df["region"].dropna().unique())
+        categories = sorted(emissions_df["category"].dropna().unique())
+        years = sorted(emissions_df["year"].unique().tolist())
 
         st.markdown(f"""
         <div class="sidebar-panel">
@@ -1023,13 +1100,13 @@ def render_dashboard():
     if sel_years: df = df[df["year"].isin(sel_years)]
 
     cur_year = datetime.now().year
-    yearly   = df[df["year"]==cur_year]["emission_co2e"].sum()
-    total_e  = df["emission_co2e"].sum()
-    total_w  = df["weight_kg"].sum()
-    rev_n    = len(review_df)
+    yearly = df[df["year"] == cur_year]["emission_co2e"].sum()
+    total_e = df["emission_co2e"].sum()
+    total_w = df["weight_kg"].sum()
+    rev_n = len(review_df)
 
     # ── Hero header ──
-    api_url = os.getenv("API_BASE_URL","")
+    api_url = os.getenv("API_BASE_URL", "")
     st.markdown(f"""
     <div class="hero-header">
       <div class="hero-brand" dir="rtl">
@@ -1043,7 +1120,7 @@ def render_dashboard():
             <span style="color:hsl(152,60%,50%)">↓</span>
             <div>
               <div class="hero-stat-label">סה״כ פליטות</div>
-              <div class="hero-stat-value">{total_e/1000:,.0f}t CO₂e</div>
+              <div class="hero-stat-value">{total_e / 1000:,.0f}t CO₂e</div>
             </div>
           </div>
           <div class="hero-stat">
@@ -1077,23 +1154,28 @@ def render_dashboard():
         }, 100);
         </script>""", unsafe_allow_html=True)
 
-    tab_dash, tab_review, tab_whatif, tab_upload, tab_data, tab_settings = st.tabs([
-        "📊 דאשבורד", f"✅ Review ({rev_n})", "⇄ What-If", "☁️ קליטת קבצים", "📋 נתונים", "⚙️ הגדרות"
+    tab_dash, tab_review, tab_whatif, tab_upload, tab_data, tab_settings, tab_ai = st.tabs([
+        "📊 דאשבורד", f"✅ Review ({rev_n})", "⇄ What-If", "☁️ קליטת קבצים", "📋 נתונים", "⚙️ הגדרות", "🤖 עוזר AI"
     ])
 
     # ════ TAB: DASHBOARD ════
     with tab_dash:
         k1, k2, k3, k4 = st.columns(4)
-        with k1: kpi(f"פליטות {cur_year}", f"{yearly/1000:,.0f}t", "kg CO₂e", variant="primary")
-        with k2: kpi('סה"כ פליטות', f"{total_e/1000:,.0f}t", "מתחילת הפרויקט", trend="down", trend_val="↓ 8.3%")
-        with k3: kpi("משקל חומרים", f"{total_w/1000:,.0f}t", 'ק"ג')
-        with k4: kpi("שורות Review", f"{rev_n:,}", "ממתינות לאישור", variant="accent" if rev_n==0 else "default")
+        with k1:
+            kpi(f"פליטות {cur_year}", f"{yearly / 1000:,.0f}t", "kg CO₂e", variant="primary")
+        with k2:
+            kpi('סה"כ פליטות', f"{total_e / 1000:,.0f}t", "מתחילת הפרויקט", trend="down", trend_val="↓ 8.3%")
+        with k3:
+            kpi("משקל חומרים", f"{total_w / 1000:,.0f}t", 'ק"ג')
+        with k4:
+            kpi("שורות Review", f"{rev_n:,}", "ממתינות לאישור", variant="accent" if rev_n == 0 else "default")
 
         st.markdown("<div style='height:.75rem'></div>", unsafe_allow_html=True)
 
         c1, c2 = st.columns([3, 2])
         with c1:
-            st.markdown('<div class="card-surface"><div class="section-title">📊 פליטות לפי פרויקט</div>', unsafe_allow_html=True)
+            st.markdown('<div class="card-surface"><div class="section-title">📊 פליטות לפי פרויקט</div>',
+                        unsafe_allow_html=True)
 
             proj_agg = df.groupby("project_name", as_index=False).agg(
                 emission_co2e=("emission_co2e", "sum"),
@@ -1113,21 +1195,21 @@ def render_dashboard():
 
             if view_mode.startswith("סה"):
                 plot_df = proj_agg.sort_values("emission_co2e", ascending=True).reset_index(drop=True)
-                x_vals  = (plot_df["emission_co2e"] / 1000).tolist()
-                x_text  = [f"{v:.1f}t" for v in x_vals]
+                x_vals = (plot_df["emission_co2e"] / 1000).tolist()
+                x_text = [f"{v:.1f}t" for v in x_vals]
                 bar_col = "hsl(142,55%,35%)"
-                x_sfx   = "t CO₂e"
+                x_sfx = "t CO₂e"
             else:
                 plot_df = proj_agg.sort_values("emission_per_ton", ascending=True).reset_index(drop=True)
-                x_vals  = plot_df["emission_per_ton"].tolist()
-                x_text  = [f"{v:.0f}" for v in x_vals]
+                x_vals = plot_df["emission_per_ton"].tolist()
+                x_text = [f"{v:.0f}" for v in x_vals]
                 bar_col = "hsl(85,50%,45%)"
-                x_sfx   = "kg CO₂e / t"
+                x_sfx = "kg CO₂e / t"
 
             if not plot_df.empty:
                 y_labels = plot_df["project_name"].tolist()
                 # dynamic height: min 200px, 52px per project
-                chart_h  = max(200, len(y_labels) * 52)
+                chart_h = max(200, len(y_labels) * 52)
                 fig = go.Figure(go.Bar(
                     x=x_vals,
                     y=y_labels,
@@ -1149,7 +1231,8 @@ def render_dashboard():
             st.markdown('</div>', unsafe_allow_html=True)
 
         with c2:
-            st.markdown('<div class="card-surface"><div class="section-title">🧱 פילוח חומרים</div>', unsafe_allow_html=True)
+            st.markdown('<div class="card-surface"><div class="section-title">🧱 פילוח חומרים</div>',
+                        unsafe_allow_html=True)
             cat = df.groupby("category", as_index=False)["emission_co2e"].sum()
             if not cat.empty:
                 fig = go.Figure(go.Pie(
@@ -1246,7 +1329,7 @@ def render_dashboard():
         query = "SELECT DISTINCT project_name FROM `argon-ace-483810-n9.netivei_emissions_db.emissions_details`"
         results = client.query(query).result()
         projects_list = [row.project_name for row in results]
-        
+
         # בדיקה ויזואלית זמנית - תמחקי אחרי שזה עובד
         if not projects_list:
             st.sidebar.warning("השאילתה חזרה ריקה - האם הטבלה emissions_details באמת מכילה שורות?")
@@ -1257,10 +1340,10 @@ def render_dashboard():
         # זה יציג לך את השגיאה המדויקת (למשל: Access Denied או Not Found)
         st.sidebar.error(f"שגיאת BigQuery: {e}")
         projects_list = []
-        
+
     # התיקון: שורה אחת בלבד עם key ייחודי
     selected_project = st.sidebar.selectbox("בחר פרויקט למחיקה:", options=[""] + projects_list, key="unique_del_box")
-# ברגע שנבחר פרויקט (ולא נבחרה השורה הריקה)
+    # ברגע שנבחר פרויקט (ולא נבחרה השורה הריקה)
     if selected_project:
         # מציג את כפתור המחיקה הראשי
         if st.sidebar.button(f"מחק את {selected_project}", type="primary", use_container_width=True):
@@ -1269,29 +1352,31 @@ def render_dashboard():
         # אם לחצו על הכפתור, נפתח אזור אישור קטן
         if st.session_state.get("show_confirm", False):
             st.sidebar.warning(f"⚠️ האם למחוק את כל הנתונים של {selected_project}?")
-            
+
             # כפתורי אישור וביטול
             c1, c2 = st.sidebar.columns(2)
             if c1.button("✅ כן, מחק", type="primary", use_container_width=True):
                 url = "https://calc-carbon-140293665526.me-west1.run.app/manage-db"
                 payload = {"action": "delete_project", "project_name": selected_project}
-                
+
                 with st.spinner("שולח פקודת מחיקה לשרת..."):
                     try:
                         # שליחת הבקשה לשרת
                         res = requests.post(url, json=payload)
-                        
+
                         # עכשיו נבדוק מה השרת ענה באמת
                         if res.status_code == 200:
                             st.sidebar.success("✅ השרת אישר: נמחק בהצלחה!")
                             st.session_state["show_confirm"] = False
-                            _load_bq_emissions.clear(); st.session_state.pop("_emissions_df", None); st.session_state.pop("_review_df", None) # מרענן
+                            _load_bq_emissions.clear();
+                            st.session_state.pop("_emissions_df", None);
+                            st.session_state.pop("_review_df", None)  # מרענן
                             st.rerun()
                         else:
                             # אם השרת החזיר שגיאה (כמו 400, 404, 500)
                             st.sidebar.error(f"❌ שגיאה מהשרת! קוד סטטוס: {res.status_code}")
                             st.sidebar.write(f"תוכן השגיאה: {res.text}")
-                            
+
                     except Exception as e:
                         # אם אין בכלל תקשורת עם השרת (כתובת שגויה, שרת למטה)
                         st.sidebar.error("❌ אין תקשורת עם השרת (Cloud Run)!")
@@ -1311,12 +1396,15 @@ def render_dashboard():
             with rc1:
                 if "review_reason" in review_df.columns:
                     reason_counts = review_df["review_reason"].value_counts().reset_index()
-                    reason_counts.columns = ["reason","count"]
-                    fig = px.bar(reason_counts, x="reason", y="count", text_auto=True, color_discrete_sequence=[COLORS[0]])
+                    reason_counts.columns = ["reason", "count"]
+                    fig = px.bar(reason_counts, x="reason", y="count", text_auto=True,
+                                 color_discrete_sequence=[COLORS[0]])
                     _base_layout(fig, 280)
                     st.plotly_chart(fig, use_container_width=True)
             with rc2:
-                _scores = pd.to_numeric(review_df["reliability_score"], errors="coerce") if "reliability_score" in review_df.columns else pd.Series([0.0]*len(review_df), index=review_df.index)
+                _scores = pd.to_numeric(review_df["reliability_score"],
+                                        errors="coerce") if "reliability_score" in review_df.columns else pd.Series(
+                    [0.0] * len(review_df), index=review_df.index)
                 low = review_df[_scores.fillna(0) < reliability_thr]
                 st.markdown(f"""
                 <div class="card-surface">
@@ -1328,21 +1416,27 @@ def render_dashboard():
             st.markdown("---")
             f1, f2, f3, f4 = st.columns([2, 1, 1, 1])
             with f1:
-                rev_search = st.text_input("🔍 חיפוש חופשי", placeholder="שם חומר, קוד בוק...", key="rev_search", label_visibility="collapsed")
+                rev_search = st.text_input("🔍 חיפוש חופשי", placeholder="שם חומר, קוד בוק...", key="rev_search",
+                                           label_visibility="collapsed")
             with f2:
-                rev_proj_opts = ["הכל"] + sorted(review_df["project_name"].dropna().unique().tolist()) if "project_name" in review_df.columns else ["הכל"]
+                rev_proj_opts = ["הכל"] + sorted(
+                    review_df["project_name"].dropna().unique().tolist()) if "project_name" in review_df.columns else [
+                    "הכל"]
                 rev_proj = st.selectbox("פרויקט", rev_proj_opts, key="rev_proj")
             with f3:
-                rev_cat_opts = ["הכל"] + sorted(review_df["suggested_category"].dropna().unique().tolist()) if "suggested_category" in review_df.columns else ["הכל"]
+                rev_cat_opts = ["הכל"] + sorted(review_df[
+                                                    "suggested_category"].dropna().unique().tolist()) if "suggested_category" in review_df.columns else [
+                    "הכל"]
                 rev_cat = st.selectbox("קטגוריה", rev_cat_opts, key="rev_cat")
             with f4:
-                rev_score_filter = st.selectbox("ציון אמינות", ["הכל", "נמוך (<80%)", "בינוני (80-90%)", "גבוה (>90%)"], key="rev_score_f")
+                rev_score_filter = st.selectbox("ציון אמינות", ["הכל", "נמוך (<80%)", "בינוני (80-90%)", "גבוה (>90%)"],
+                                                key="rev_score_f")
 
             # Apply filters
             filtered_review = review_df.copy()
             if rev_search:
-                _mask = pd.Series([False]*len(filtered_review), index=filtered_review.index)
-                for col in ["material","short_text","boq_code","suggested_category","project_name"]:
+                _mask = pd.Series([False] * len(filtered_review), index=filtered_review.index)
+                for col in ["material", "short_text", "boq_code", "suggested_category", "project_name"]:
                     if col in filtered_review.columns:
                         _mask |= filtered_review[col].astype(str).str.contains(rev_search, case=False, na=False)
                 filtered_review = filtered_review[_mask]
@@ -1359,27 +1453,29 @@ def render_dashboard():
                 else:
                     filtered_review = filtered_review[_sc >= 0.90]
 
-            st.markdown(f"<p style='color:var(--muted-fg);font-size:.875rem;margin:.75rem 0;'>מוצגות {len(filtered_review):,} מתוך {len(review_df):,} שורות</p>", unsafe_allow_html=True)
+            st.markdown(
+                f"<p style='color:var(--muted-fg);font-size:.875rem;margin:.75rem 0;'>מוצגות {len(filtered_review):,} מתוך {len(review_df):,} שורות</p>",
+                unsafe_allow_html=True)
 
             for _, row in filtered_review.iterrows():
                 score = float(row.get("reliability_score", 0))
                 score_cls = "score-low" if score < 0.8 else "score-mid" if score < 0.9 else "score-high"
                 spread = row.get("factor_spread_pct", "—")
-                cands  = row.get("climatiq_candidate_count", "—")
+                cands = row.get("climatiq_candidate_count", "—")
                 st.markdown(f"""
                 <div class="review-card">
                   <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                     <div>
-                      <div style="font-weight:600;font-size:.9375rem;">{row.get('short_text','')}</div>
-                      <div class="review-meta">{row.get('project_name','')} • {row.get('boq_code','')}</div>
+                      <div style="font-weight:600;font-size:.9375rem;">{row.get('short_text', '')}</div>
+                      <div class="review-meta">{row.get('project_name', '')} • {row.get('boq_code', '')}</div>
                     </div>
                     <span class="badge-warn">⚠ דורש בדיקה</span>
                   </div>
                   <div class="review-grid">
-                    <div><div class="review-field-label">קטגוריה מוצעת</div><div class="review-field-value">{row.get('suggested_category','')}</div></div>
-                    <div><div class="review-field-label">יחידה מוצעת</div><div class="review-field-value">{row.get('suggested_uom','')}</div></div>
-                    <div><div class="review-field-label">ציון אמינות</div><div class="review-field-value {score_cls}" dir="ltr">{score*100:.0f}%</div></div>
-                    <div><div class="review-field-label">סיבת Review</div><div class="review-field-value">{row.get('review_reason','')}</div></div>
+                    <div><div class="review-field-label">קטגוריה מוצעת</div><div class="review-field-value">{row.get('suggested_category', '')}</div></div>
+                    <div><div class="review-field-label">יחידה מוצעת</div><div class="review-field-value">{row.get('suggested_uom', '')}</div></div>
+                    <div><div class="review-field-label">ציון אמינות</div><div class="review-field-value {score_cls}" dir="ltr">{score * 100:.0f}%</div></div>
+                    <div><div class="review-field-label">סיבת Review</div><div class="review-field-value">{row.get('review_reason', '')}</div></div>
                   </div>
                   <div style="display:flex;gap:1rem;font-size:.75rem;color:var(--muted-fg);padding-top:.75rem;border-top:1px solid var(--border);">
                     <span>פיזור פקטור: <b dir="ltr">{spread}%</b></span>
@@ -1387,8 +1483,8 @@ def render_dashboard():
                   </div>
                 </div>""", unsafe_allow_html=True)
                 bc1, bc2, _ = st.columns([1, 1, 4])
-                with bc1: st.button("✓ אשר", key=f"ap_{row.get('review_id','')}", type="primary")
-                with bc2: st.button("✗ דחה", key=f"rj_{row.get('review_id','')}")
+                with bc1: st.button("✓ אשר", key=f"ap_{row.get('review_id', '')}", type="primary")
+                with bc2: st.button("✗ דחה", key=f"rj_{row.get('review_id', '')}")
 
     # ════ TAB: WHAT-IF ════
     with tab_whatif:
@@ -1402,21 +1498,22 @@ def render_dashboard():
         with w1:
             st.markdown("**1. מצב נוכחי**")
             src = st.selectbox("חומר קיים", cur_cats, key="wi_src")
-            src_sub  = df[df["category"]==src]
-            curr_e   = src_sub["emission_co2e"].sum()
-            curr_w   = src_sub["weight_kg"].sum()
+            src_sub = df[df["category"] == src]
+            curr_e = src_sub["emission_co2e"].sum()
+            curr_w = src_sub["weight_kg"].sum()
             kpi("פליטה נוכחית", f"{curr_e:,.0f} kg", src, variant="primary")
             st.caption(f"משקל נוכחי: {curr_w:,.0f} ק״ג")
 
         with w2:
             st.markdown("**2. חלופה מוצעת**")
             alt = st.selectbox("חומר חלופי", all_cats, key="wi_alt")
-            alt_sub    = emissions_df[emissions_df["category"]==alt]
-            alt_w_tot  = alt_sub["weight_kg"].sum()
-            alt_e_tot  = alt_sub["emission_co2e"].sum()
+            alt_sub = emissions_df[emissions_df["category"] == alt]
+            alt_w_tot = alt_sub["weight_kg"].sum()
+            alt_e_tot = alt_sub["emission_co2e"].sum()
             alt_factor = alt_e_tot / alt_w_tot if alt_w_tot > 0 else 0
-            eff_qty    = st.number_input("כמות חלופית (ק״ג)", value=float(curr_w), min_value=0.0, step=1000.0, key="wi_qty")
-            proj_e     = eff_qty * alt_factor
+            eff_qty = st.number_input("כמות חלופית (ק״ג)", value=float(curr_w), min_value=0.0, step=1000.0,
+                                      key="wi_qty")
+            proj_e = eff_qty * alt_factor
             kpi("פליטה חלופית צפויה", f"{proj_e:,.0f} kg", f"פקטור: {alt_factor:.4f}")
             st.caption(f"פקטור: {alt_factor:.4f} kg CO₂e / kg")
 
@@ -1425,11 +1522,11 @@ def render_dashboard():
             diff = curr_e - proj_e
             if diff > 0:
                 st.success(f"✅ חיסכון: {diff:,.0f} kg")
-                pct = abs(diff/curr_e*100) if curr_e else 0
+                pct = abs(diff / curr_e * 100) if curr_e else 0
                 st.caption(f"ירידה של {pct:.1f}% מהפליטה הנוכחית")
             elif diff < 0:
                 st.error(f"⚠️ תוספת: {abs(diff):,.0f} kg")
-                pct = abs(diff/curr_e*100) if curr_e else 0
+                pct = abs(diff / curr_e * 100) if curr_e else 0
                 st.caption(f"עלייה של {pct:.1f}% מהפליטה הנוכחית")
             else:
                 st.info("אין שינוי בפליטות")
@@ -1443,17 +1540,18 @@ def render_dashboard():
 
         up1, up2 = st.columns(2)
         with up1:
-            input_project    = st.text_input("שם הפרויקט *", placeholder="לדוגמה: כביש 6 - מקטע צפון", key="up_proj")
+            input_project = st.text_input("שם הפרויקט *", placeholder="לדוגמה: כביש 6 - מקטע צפון", key="up_proj")
             input_contractor = st.text_input("קבלן מבצע", placeholder="שם הקבלן", key="up_cont")
         with up2:
-            input_region = st.selectbox("אזור", ["צפון","מרכז","דרום",'יו"ש'], key="up_region")
+            input_region = st.selectbox("אזור", ["צפון", "מרכז", "דרום", 'יו"ש'], key="up_region")
             source_mode_label = st.selectbox(
                 "סוג קובץ",
-                ["אוטומטי","כתב כמויות","כתב שנתי 2025 / שולם בפועל"],
+                ["אוטומטי", "כתב כמויות", "כתב שנתי 2025 / שולם בפועל"],
                 key="up_mode_label",
             )
-            st.caption('במצב כתב כמויות, אם קיימים מק"ט/תיאור/יחידה תואמים מהאקסל השנתי, המערכת תעדיף אותם כ-reference.')
-            uploaded_file = st.file_uploader("בחר קובץ אקסל/CSV", type=["xlsx","xls","csv"], key="up_file")
+            st.caption(
+                'במצב כתב כמויות, אם קיימים מק"ט/תיאור/יחידה תואמים מהאקסל השנתי, המערכת תעדיף אותם כ-reference.')
+            uploaded_file = st.file_uploader("בחר קובץ אקסל/CSV", type=["xlsx", "xls", "csv"], key="up_file")
 
         if st.button("🚀 חשב פליטות ושמור", type="primary", key="upload_calculate_button"):
             if not input_project:
@@ -1461,30 +1559,37 @@ def render_dashboard():
             elif uploaded_file is None:
                 st.warning("יש לבחור קובץ")
             else:
-                _mode_map = {"אוטומטי":"auto","כתב כמויות":"boq","כתב שנתי 2025 / שולם בפועל":"annual_paid_2025"}
+                _mode_map = {"אוטומטי": "auto", "כתב כמויות": "boq", "כתב שנתי 2025 / שולם בפועל": "annual_paid_2025"}
                 sel_mode = _mode_map.get(source_mode_label, "auto")
                 try:
                     from google.cloud import storage as _gcs
-                    _gcs.Client(project=_PROJECT).bucket("green_excal").blob(uploaded_file.name).upload_from_file(uploaded_file, rewind=True)
+                    _gcs.Client(project=_PROJECT).bucket("green_excal").blob(uploaded_file.name).upload_from_file(
+                        uploaded_file, rewind=True)
                     payload = {
                         "bucket": "green_excal", "file": uploaded_file.name,
-                        "uploader_email": st.session_state.get("user_email",""),
+                        "uploader_email": st.session_state.get("user_email", ""),
                         "project_name": input_project, "contractor": input_contractor,
                         "region": input_region, "source_mode": sel_mode,
-                        "measurement_basis": "paid_2025" if sel_mode=="annual_paid_2025" else "boq",
-                        "reliability_threshold": float(st.session_state.get("reliability_threshold",0.85)),
-                        "max_climatiq_candidates": int(st.session_state.get("max_climatiq_candidates",5)),
-                        "max_factor_spread_pct": float(st.session_state.get("max_factor_spread_pct",15.0)),
-                        "auto_write_ai_approved": bool(st.session_state.get("auto_write_ai_approved",True)),
+                        "measurement_basis": "paid_2025" if sel_mode == "annual_paid_2025" else "boq",
+                        "reliability_threshold": float(st.session_state.get("reliability_threshold", 0.85)),
+                        "max_climatiq_candidates": int(st.session_state.get("max_climatiq_candidates", 5)),
+                        "max_factor_spread_pct": float(st.session_state.get("max_factor_spread_pct", 15.0)),
+                        "auto_write_ai_approved": bool(st.session_state.get("auto_write_ai_approved", True)),
                     }
                     with st.spinner("מנתח קובץ מול מנוע החומרים וה-AI..."):
-                        resp = requests.post("https://calc-carbon-140293665526.me-west1.run.app", json=payload, timeout=900)
-                        res  = resp.json() if resp.headers.get("content-type","").startswith("application/json") else {"error":resp.text}
+                        resp = requests.post("https://calc-carbon-140293665526.me-west1.run.app", json=payload,
+                                             timeout=900)
+                        res = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {
+                            "error": resp.text}
                         if not resp.ok: raise RuntimeError(res.get("error", resp.text or "שגיאה לא ידועה"))
-                    st.success(f"✅ עובדו {res.get('total_rows',0):,} שורות · {res.get('needs_review_rows',0)} דורשות review")
+                    st.success(
+                        f"✅ עובדו {res.get('total_rows', 0):,} שורות · {res.get('needs_review_rows', 0)} דורשות review")
                     if res.get("auto_learned_rows"):
                         st.info(f"נכתבו אוטומטית {res['auto_learned_rows']} מיפויים אמינים")
-                    _load_bq_emissions.clear(); _load_bq_review.clear(); st.session_state.pop("_emissions_df", None); st.session_state.pop("_review_df", None)
+                    _load_bq_emissions.clear();
+                    _load_bq_review.clear();
+                    st.session_state.pop("_emissions_df", None);
+                    st.session_state.pop("_review_df", None)
                     st.rerun()
                 except Exception as e:
                     st.error(f"שגיאה: {e}")
@@ -1492,9 +1597,9 @@ def render_dashboard():
         st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
         ic1, ic2, ic3 = st.columns(3)
         for col, icon, title, desc in [
-            (ic1,"🤖","זיהוי AI","המערכת מזהה חומרים אוטומטית ומתאימה מקדמי פליטה מ-Climatiq"),
-            (ic2,"🔍","Review חכם","שורות עם ציון אמינות נמוך מועברות לבדיקה ידנית"),
-            (ic3,"📊","למידה מתמשכת","כל אישור ידני מעשיר את מאגר הלמידה"),
+            (ic1, "🤖", "זיהוי AI", "המערכת מזהה חומרים אוטומטית ומתאימה מקדמי פליטה מ-Climatiq"),
+            (ic2, "🔍", "Review חכם", "שורות עם ציון אמינות נמוך מועברות לבדיקה ידנית"),
+            (ic3, "📊", "למידה מתמשכת", "כל אישור ידני מעשיר את מאגר הלמידה"),
         ]:
             with col:
                 st.markdown(f"""
@@ -1529,15 +1634,99 @@ def render_dashboard():
             st.markdown('<div class="section-title">📖 קטלוג חברה / רגולטור</div>', unsafe_allow_html=True)
             st.text_input("שם חומר/סעיף", placeholder="לדוגמה: בטון B30", key="cat_mat")
             st.number_input("מקדם פליטה", 0.0, step=0.0001, format="%.4f", key="cat_fac")
-            st.selectbox("מקור מועדף", ["נתון חברה (ידני)","Climatiq (אוטומטי)"], key="cat_src")
+            st.selectbox("מקור מועדף", ["נתון חברה (ידני)", "Climatiq (אוטומטי)"], key="cat_src")
             if st.button("💾 שמור לקטלוג"): st.success("נשמר לקטלוג")
 
-            st.markdown('<div class="section-title" style="margin-top:1.5rem;">👥 הוספת משתמש</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title" style="margin-top:1.5rem;">👥 הוספת משתמש</div>',
+                        unsafe_allow_html=True)
             st.text_input("אימייל", placeholder="user@company.com", key="u_email")
             st.text_input("שם מלא", placeholder="ישראל ישראלי", key="u_name")
-            st.selectbox("תפקיד", ["הנהלה","מנהל פרויקט","קיימות (ESG)","רגולטור"], key="u_role")
+            st.selectbox("תפקיד", ["הנהלה", "מנהל פרויקט", "קיימות (ESG)", "רגולטור"], key="u_role")
             if st.button("💾 שמור משתמש"): st.success("משתמש נשמר")
             st.markdown('</div>', unsafe_allow_html=True)
+
+    # ════ TAB: AI ASSISTANT ════
+    with tab_ai:
+        st.markdown("""
+        <style>
+        div[data-testid="stAlert"] { direction: rtl; text-align: right; }
+        div[data-testid="stAlert"] > div { flex-direction: row-reverse; }
+        div[data-testid="stChatMessage"] { direction: rtl; text-align: right; flex-direction: row-reverse; }
+        div[data-testid="stMarkdownContainer"], div[data-testid="stMarkdownContainer"] > p { direction: rtl; text-align: right; }
+        .stChatFloatingInputContainer { direction: rtl; }
+        textarea { direction: rtl; text-align: right; }
+        </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown('<div class="section-title">🤖 עוזר נתונים אישי (AI)</div>', unsafe_allow_html=True)
+        st.info("מופעל באופן מאובטח על ידי מנוע Vertex AI הארגוני.")
+
+        if not _VERTEX_OK:
+            st.error("חבילת `vertexai` לא מותקנת. הרץ: `pip install google-cloud-aiplatform`")
+        else:
+            def _build_system_prompt(data_df):
+                if data_df is None or data_df.empty:
+                    return "אתה עוזר וירטואלי. כרגע אין נתונים זמינים."
+                proj_summary = data_df.groupby("project_name")[["emission_co2e", "weight_kg"]].sum().reset_index()
+                if "material" in data_df.columns:
+                    cat_summary = data_df.groupby(["project_name", "category", "material"])[
+                        ["emission_co2e", "weight_kg"]].sum().reset_index()
+                else:
+                    cat_summary = data_df.groupby(["project_name", "category"])[
+                        ["emission_co2e", "weight_kg"]].sum().reset_index()
+                return f"""אתה אנליסט בכיר בנתיבי ישראל. ענה תמיד בקצרה ובשפה ניהולית.
+
+לפניך נתוני פרויקטים (משקל ב-kg, פליטות ב-kg CO₂e):
+{proj_summary.to_csv(index=False)}
+
+פירוט לפי קטגוריות:
+{cat_summary.to_csv(index=False)}
+
+הנחיות קריטיות:
+1. המערכת סיכמה עבורך את המשקל (weight_kg) ואת הפליטות (emission_co2e). השתמש בהם.
+2. ענה רק בשורה תחתונה. אל תסביר את החישובים.
+3. הצג מספרים גדולים בטונות (חלק ב-1,000) וציין "טונות"."""
+
+            ai_context = _build_system_prompt(df)
+
+            col_btn, _ = st.columns([1, 4])
+            with col_btn:
+                if st.button("🗑️ נקה שיחה וזיכרון", use_container_width=True, key="ai_clear"):
+                    st.session_state["ai_messages"] = []
+                    st.rerun()
+
+            if "ai_messages" not in st.session_state:
+                st.session_state["ai_messages"] = []
+
+            for message in st.session_state["ai_messages"]:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+            if prompt := st.chat_input("שאל אותי כל שאלה על הנתונים...", key="ai_input"):
+                with st.chat_message("user"):
+                    st.markdown(prompt)
+                st.session_state["ai_messages"].append({"role": "user", "content": prompt})
+
+                with st.chat_message("assistant"):
+                    try:
+                        vertexai.init(project=_PROJECT, location="me-west1")
+                        model = GenerativeModel(
+                            "gemini-1.5-flash-002",
+                            system_instruction=[ai_context],
+                        )
+                        vertex_history = []
+                        for msg in st.session_state["ai_messages"][-5:-1]:
+                            role = "USER" if msg["role"] == "user" else "MODEL"
+                            vertex_history.append(
+                                Content(role=role, parts=[Part.from_text(msg["content"])])
+                            )
+                        chat = model.start_chat(history=vertex_history)
+                        with st.spinner("מנתח..."):
+                            response = chat.send_message(prompt)
+                        st.markdown(response.text)
+                        st.session_state["ai_messages"].append({"role": "assistant", "content": response.text})
+                    except Exception as e:
+                        st.error(f"שגיאת תקשורת מול ענן Vertex AI: {e}")
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -1548,7 +1737,7 @@ for _k, _v in {
     "display_name": "Admin", "user_role": "management", "user_email": "",
     "reliability_threshold": 0.85, "max_climatiq_candidates": 5,
     "max_factor_spread_pct": 15.0, "auto_write_ai_approved": True,
-    "_stay_on_upload": False,
+    "_stay_on_upload": False, "ai_messages": [],
 }.items():
     if _k not in st.session_state: st.session_state[_k] = _v
 
