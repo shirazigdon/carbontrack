@@ -984,17 +984,24 @@ def render_login():
             unsafe_allow_html=True)
 
 
+@st.cache_resource
+def _get_vertex_model(system_prompt: str):
+    """Cache the Vertex AI model — avoid re-initialising on every rerun."""
+    vertexai.init(project=_PROJECT, location="me-west1")
+    return GenerativeModel("gemini-2.0-flash-001", system_instruction=[system_prompt])
+
+
 # ════════════════════════════════════════════════════════════════════════════
 # FLOATING AI CHAT BUBBLE
 # ════════════════════════════════════════════════════════════════════════════
 def _render_ai_bubble(data_df):
     """
-    Floating AI chat bubble injected directly into window.parent.document.body
-    via components.html() — bypasses all Streamlit container CSS transforms
-    so position:fixed and click events work correctly on both local and Cloud.
+    Floating AI chat bubble.
+    - FAB + panel are pure CSS/JS injected via st.markdown (same document, no iframe).
+    - st.chat_input is the REAL input — fully server-side, works on Streamlit Cloud.
+    - Panel auto-opens after every AI response via session_state flag.
+    - Vertex model is cached with @st.cache_resource — no re-init on every rerun.
     """
-    import json as _json
-
     if "ai_messages" not in st.session_state:
         st.session_state["ai_messages"] = []
 
@@ -1015,252 +1022,112 @@ def _render_ai_bubble(data_df):
             "כללים: ענה רק בשורה תחתונה. מספרים גדולים — בטונות CO₂e. אל תסביר חישובים."
         )
 
-    # Pass messages as JSON so JS can render them without HTML-escaping issues
-    messages_json = _json.dumps(
-        [{"role": m["role"], "content": m["content"]}
-         for m in st.session_state["ai_messages"]],
-        ensure_ascii=False,
-    )
+    # Build server-side message HTML
+    msgs_html = ""
+    for m in st.session_state["ai_messages"]:
+        cls = "ai-msg-user" if m["role"] == "user" else "ai-msg-bot"
+        txt = (m["content"]
+               .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+               .replace("\n", "<br>"))
+        msgs_html += f'<div class="{cls}">{txt}</div>'
+    if not msgs_html:
+        msgs_html = '<div class="ai-msg-bot">שלום! שאל אותי על הנתונים 👇</div>'
 
-    # CSS injected into parent document (single-quoted strings only — no template-literal conflicts)
-    CSS = (
-        "#ai-fab{"
-        "position:fixed;bottom:1.5rem;left:1.5rem;"
-        "width:3.25rem;height:3.25rem;border-radius:50%;"
-        "background:linear-gradient(135deg,hsl(142,55%,35%),hsl(152,45%,42%));"
-        "color:#fff;font-size:1.4rem;border:none;cursor:pointer;"
-        "box-shadow:0 4px 18px hsl(142,55%,35%,.55);"
-        "z-index:2147483647;"   # max z-index
-        "display:flex;align-items:center;justify-content:center;"
-        "transition:transform .18s,box-shadow .18s;user-select:none;}"
-        "#ai-fab:hover{transform:scale(1.1);box-shadow:0 6px 26px hsl(142,55%,35%,.7);}"
-        "#ai-badge{position:absolute;top:-.25rem;right:-.25rem;"
-        "background:hsl(0,72%,51%);color:#fff;font-size:.58rem;font-weight:700;"
-        "font-family:Heebo,sans-serif;min-width:1.1rem;height:1.1rem;"
-        "border-radius:999px;display:flex;align-items:center;justify-content:center;"
-        "padding:0 .25rem;pointer-events:none;}"
-        "#ai-panel{position:fixed;bottom:5.5rem;left:1.25rem;"
-        "width:min(370px,calc(100vw - 2rem));max-height:500px;"
-        "background:#fff;border-radius:1rem;"
-        "box-shadow:0 14px 44px rgba(0,0,0,.22);"
-        "z-index:2147483646;display:flex;flex-direction:column;overflow:hidden;"
-        "opacity:0;transform:translateY(18px) scale(.96);pointer-events:none;"
-        "transition:opacity .22s cubic-bezier(.4,0,.2,1),transform .22s cubic-bezier(.4,0,.2,1);}"
-        "#ai-panel.ai-open{opacity:1;transform:translateY(0) scale(1);pointer-events:all;}"
-        "#ai-ph{background:linear-gradient(135deg,hsl(150,30%,10%),hsl(150,22%,18%));"
-        "padding:.7rem 1rem;display:flex;align-items:center;"
-        "justify-content:space-between;flex-shrink:0;}"
-        "#ai-ph-title{font-family:Heebo,sans-serif;font-size:.875rem;font-weight:700;"
-        "color:#fff;line-height:1.3;}"
-        "#ai-ph-sub{font-size:.65rem;color:rgba(255,255,255,.5);font-weight:400;}"
-        "#ai-ph-close{background:rgba(255,255,255,.12);border:none;border-radius:.4rem;"
-        "color:rgba(255,255,255,.85);font-size:.8rem;padding:.25rem .55rem;"
-        "cursor:pointer;font-family:Heebo,sans-serif;}"
-        "#ai-ph-close:hover{background:rgba(255,255,255,.22);color:#fff;}"
-        "#ai-msgs{flex:1;overflow-y:auto;padding:.75rem 1rem;"
-        "display:flex;flex-direction:column;gap:.5rem;"
-        "font-family:Heebo,sans-serif;font-size:.82rem;direction:rtl;}"
-        ".ai-msg-user{align-self:flex-start;background:hsl(142,55%,35%);color:#fff;"
-        "border-radius:.75rem .75rem .1rem .75rem;padding:.45rem .7rem;"
-        "max-width:84%;line-height:1.5;word-break:break-word;}"
-        ".ai-msg-bot{align-self:flex-end;background:hsl(140,12%,93%);"
-        "color:hsl(150,25%,10%);border-radius:.75rem .75rem .75rem .1rem;"
-        "padding:.45rem .7rem;max-width:84%;line-height:1.5;word-break:break-word;}"
-        "#ai-input-row{display:flex;gap:.5rem;padding:.6rem .75rem;"
-        "border-top:1px solid hsl(140,15%,89%);flex-shrink:0;"
-        "background:#fff;direction:rtl;}"
-        "#ai-input-box{flex:1;border:1px solid hsl(140,15%,89%);border-radius:.5rem;"
-        "padding:.45rem .65rem;font-family:Heebo,sans-serif;font-size:.82rem;"
-        "outline:none;direction:rtl;}"
-        "#ai-input-box:focus{border-color:hsl(142,55%,35%);}"
-        "#ai-send-btn{background:hsl(142,55%,35%);color:#fff;border:none;"
-        "border-radius:.5rem;padding:.45rem .8rem;cursor:pointer;"
-        "font-family:Heebo,sans-serif;font-size:.82rem;font-weight:600;}"
-        "#ai-send-btn:hover{background:hsl(142,55%,28%);}"
-        "#ai-clear-link{font-size:.68rem;color:rgba(255,255,255,.5);"
-        "cursor:pointer;margin-left:.5rem;background:none;border:none;}"
-        "#ai-clear-link:hover{color:#fff;}"
-    )
+    n = len(st.session_state["ai_messages"])
+    badge = f'<span id="ai-badge">{n}</span>' if n else ""
+    # Auto-open panel after new response
+    auto_open = "ai-open" if st.session_state.pop("_ai_auto_open", False) else ""
 
-    css_json = _json.dumps(CSS, ensure_ascii=False)
+    st.markdown(f"""
+<style>
+#ai-fab{{position:fixed;bottom:1.5rem;left:1.5rem;width:3.25rem;height:3.25rem;
+  border-radius:50%;background:linear-gradient(135deg,hsl(142,55%,35%),hsl(152,45%,42%));
+  color:#fff;font-size:1.4rem;border:none;cursor:pointer;
+  box-shadow:0 4px 18px hsl(142,55%,35%,.55);z-index:99999;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .18s,box-shadow .18s;user-select:none;}}
+#ai-fab:hover{{transform:scale(1.1);box-shadow:0 6px 26px hsl(142,55%,35%,.7);}}
+#ai-badge{{position:absolute;top:-.25rem;right:-.25rem;background:hsl(0,72%,51%);
+  color:#fff;font-size:.58rem;font-weight:700;font-family:Heebo,sans-serif;
+  min-width:1.1rem;height:1.1rem;border-radius:999px;
+  display:flex;align-items:center;justify-content:center;padding:0 .25rem;pointer-events:none;}}
+#ai-panel{{position:fixed;bottom:5.25rem;left:1.25rem;
+  width:min(370px,calc(100vw - 2rem));max-height:500px;
+  background:#fff;border-radius:1rem;box-shadow:0 14px 44px rgba(0,0,0,.22);
+  z-index:99998;display:flex;flex-direction:column;overflow:hidden;
+  opacity:0;transform:translateY(18px) scale(.96);pointer-events:none;
+  transition:opacity .22s cubic-bezier(.4,0,.2,1),transform .22s cubic-bezier(.4,0,.2,1);}}
+#ai-panel.ai-open{{opacity:1;transform:translateY(0) scale(1);pointer-events:all;}}
+#ai-ph{{background:linear-gradient(135deg,hsl(150,30%,10%),hsl(150,22%,18%));
+  padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}}
+#ai-ph-title{{font-family:Heebo,sans-serif;font-size:.875rem;font-weight:700;color:#fff;line-height:1.3;}}
+#ai-ph-sub{{font-size:.65rem;color:rgba(255,255,255,.5);font-weight:400;}}
+#ai-ph-close{{background:rgba(255,255,255,.12);border:none;border-radius:.4rem;
+  color:rgba(255,255,255,.85);font-size:.8rem;padding:.25rem .55rem;cursor:pointer;}}
+#ai-ph-close:hover{{background:rgba(255,255,255,.22);color:#fff;}}
+#ai-ph-clear{{background:none;border:none;color:rgba(255,255,255,.45);
+  font-size:.75rem;cursor:pointer;padding:.1rem .3rem;margin-left:.25rem;}}
+#ai-ph-clear:hover{{color:#fff;}}
+#ai-msgs{{flex:1;overflow-y:auto;padding:.75rem 1rem;display:flex;flex-direction:column;
+  gap:.5rem;font-family:Heebo,sans-serif;font-size:.82rem;direction:rtl;}}
+.ai-msg-user{{align-self:flex-start;background:hsl(142,55%,35%);color:#fff;
+  border-radius:.75rem .75rem .1rem .75rem;padding:.45rem .7rem;
+  max-width:84%;line-height:1.5;word-break:break-word;}}
+.ai-msg-bot{{align-self:flex-end;background:hsl(140,12%,93%);color:hsl(150,25%,10%);
+  border-radius:.75rem .75rem .75rem .1rem;padding:.45rem .7rem;
+  max-width:84%;line-height:1.5;word-break:break-word;}}
+#ai-hint{{padding:.45rem 1rem;font-family:Heebo,sans-serif;font-size:.7rem;
+  color:hsl(150,10%,55%);border-top:1px solid hsl(140,15%,89%);
+  background:hsl(140,10%,98%);direction:rtl;flex-shrink:0;}}
+/* keep page padding normal */
+.main .block-container{{padding-bottom:1rem !important;}}
+/* style Streamlit chat input nicely */
+.stChatFloatingInputContainer{{
+  position:fixed !important;bottom:.75rem !important;
+  left:5.5rem !important;right:1rem !important;width:auto !important;
+  background:transparent !important;padding:0 !important;
+  box-shadow:none !important;border:none !important;}}
+[data-testid="stChatInput"]{{
+  border-radius:.75rem !important;
+  box-shadow:0 2px 12px rgba(0,0,0,.1) !important;}}
+</style>
 
-    # components.html creates an iframe; window.parent is the Streamlit app (same-origin)
-    # so we inject the FAB directly into the real document.body — no Streamlit container overhead
-    components.html(
-        """<!DOCTYPE html><html><head></head><body>
+<button id="ai-fab" onclick="document.getElementById('ai-panel').classList.toggle('ai-open');document.getElementById('ai-msgs').scrollTop=99999;" title="עוזר AI">🤖{badge}</button>
+
+<div id="ai-panel" class="{auto_open}">
+  <div id="ai-ph">
+    <div>
+      <div id="ai-ph-title">🤖 עוזר נתונים AI</div>
+      <div id="ai-ph-sub">Vertex AI · Gemini 2.0 Flash</div>
+    </div>
+    <div style="display:flex;align-items:center;">
+      <button id="ai-ph-clear" onclick="document.getElementById('ai-msgs').innerHTML='<div class=\\'ai-msg-bot\\'>שיחה נוקתה 🌿</div>'" title="נקה">🗑️</button>
+      <button id="ai-ph-close" onclick="document.getElementById('ai-panel').classList.remove('ai-open')">✕</button>
+    </div>
+  </div>
+  <div id="ai-msgs">{msgs_html}</div>
+  <div id="ai-hint">הקלד בשורת הצ׳אט למטה ← Enter לשליחה</div>
+</div>
+
 <script>
-(function() {
-  var pd = (window.parent !== window) ? window.parent.document : document;
-
-  /* ── Inject CSS once ── */
-  if (!pd.getElementById('ai-bubble-css')) {
-    var s = pd.createElement('style');
-    s.id = 'ai-bubble-css';
-    s.textContent = """ + css_json + """;
-    pd.head.appendChild(s);
-  }
-
-  /* ── Build messages HTML from data ── */
-  var messages = """ + messages_json + """;
-  function buildMsgs(msgs) {
-    if (!msgs.length) return '<div class="ai-msg-bot">שלום! שאל אותי על הנתונים 👇</div>';
-    var tmp = pd.createElement('div');
-    return msgs.map(function(m) {
-      var cls = m.role === 'user' ? 'ai-msg-user' : 'ai-msg-bot';
-      tmp.textContent = m.content;
-      return '<div class="' + cls + '">' + tmp.innerHTML.replace(/\\n/g,'<br>') + '</div>';
-    }).join('');
-  }
-
-  /* ── If panel already injected — just refresh messages and badge ── */
-  var existMsgs = pd.getElementById('ai-msgs');
-  if (existMsgs) {
-    existMsgs.innerHTML = buildMsgs(messages);
-    existMsgs.scrollTop = existMsgs.scrollHeight;
-    var badge = pd.getElementById('ai-badge');
-    if (badge) {
-      badge.textContent = messages.length || '';
-      badge.style.display = messages.length ? 'flex' : 'none';
-    }
-    return;
-  }
-
-  /* ── First render: build DOM ── */
-  var root = pd.createElement('div');
-  root.id = 'ai-bubble-root';
-  pd.body.appendChild(root);
-
-  /* FAB */
-  var fab = pd.createElement('button');
-  fab.id = 'ai-fab';
-  fab.title = 'עוזר AI';
-  fab.setAttribute('type', 'button');
-  var badge = pd.createElement('span');
-  badge.id = 'ai-badge';
-  badge.textContent = messages.length || '';
-  badge.style.display = messages.length ? 'flex' : 'none';
-  fab.appendChild(pd.createTextNode('🤖'));
-  fab.appendChild(badge);
-  root.appendChild(fab);
-
-  /* Panel */
-  var panel = pd.createElement('div');
-  panel.id = 'ai-panel';
-  panel.innerHTML =
-    '<div id="ai-ph">' +
-      '<div>' +
-        '<div id="ai-ph-title">🤖 עוזר נתונים AI</div>' +
-        '<div id="ai-ph-sub">Vertex AI · Gemini 1.5 Flash</div>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;">' +
-        '<button id="ai-clear-link" type="button" title="נקה שיחה">🗑️</button>' +
-        '<button id="ai-ph-close" type="button">✕</button>' +
-      '</div>' +
-    '</div>' +
-    '<div id="ai-msgs"></div>' +
-    '<div id="ai-input-row">' +
-      '<input id="ai-input-box" type="text" placeholder="שאל שאלה על הנתונים..." autocomplete="off"/>' +
-      '<button id="ai-send-btn" type="button">שלח</button>' +
-    '</div>';
-  root.appendChild(panel);
-
-  pd.getElementById('ai-msgs').innerHTML = buildMsgs(messages);
-
-  /* ── Events ── */
-  fab.addEventListener('click', function() {
-    panel.classList.toggle('ai-open');
-    if (panel.classList.contains('ai-open')) {
-      pd.getElementById('ai-msgs').scrollTop = 99999;
-      setTimeout(function() { pd.getElementById('ai-input-box').focus(); }, 220);
-    }
-  });
-
-  pd.getElementById('ai-ph-close').addEventListener('click', function() {
-    panel.classList.remove('ai-open');
-  });
-
-  pd.getElementById('ai-clear-link').addEventListener('click', function() {
-    pd.getElementById('ai-msgs').innerHTML = '<div class="ai-msg-bot">שיחה נוקתה. כיצד אוכל לעזור? 🌿</div>';
-    var b = pd.getElementById('ai-badge');
-    if (b) { b.textContent = ''; b.style.display = 'none'; }
-  });
-
-  function sendMsg() {
-    var inputBox = pd.getElementById('ai-input-box');
-    var q = inputBox.value.trim();
-    if (!q) return;
-    inputBox.value = '';
-
-    /* Optimistic UI */
-    var msgs = pd.getElementById('ai-msgs');
-    var uDiv = pd.createElement('div');
-    uDiv.className = 'ai-msg-user';
-    uDiv.textContent = q;
-    msgs.appendChild(uDiv);
-    var tDiv = pd.createElement('div');
-    tDiv.className = 'ai-msg-bot';
-    tDiv.id = 'ai-typing';
-    tDiv.innerHTML = '<span style="opacity:.55">⏳ מנתח...</span>';
-    msgs.appendChild(tDiv);
-    msgs.scrollTop = 99999;
-
-    /* Trigger Streamlit's hidden chat input */
-    var ta = pd.querySelector('[data-testid="stChatInputTextArea"]');
-    if (ta) {
-      try {
-        var setter = Object.getOwnPropertyDescriptor(
-          window.parent.HTMLTextAreaElement.prototype, 'value'
-        ).set;
-        setter.call(ta, q);
-      } catch(e) { ta.value = q; }
-      ta.dispatchEvent(new Event('input', {bubbles: true}));
-      setTimeout(function() {
-        var btn = pd.querySelector('[data-testid="stChatInputSubmitButton"]');
-        if (btn) btn.click();
-      }, 60);
-    }
-  }
-
-  pd.getElementById('ai-send-btn').addEventListener('click', sendMsg);
-  pd.getElementById('ai-input-box').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); sendMsg(); }
-  });
-
-})();
+(function(){{
+  var msgs = document.getElementById('ai-msgs');
+  if (msgs) msgs.scrollTop = 99999;
+}})();
 </script>
-</body></html>""",
-        height=0,
-        scrolling=False,
-    )
-
-    # Hide Streamlit's native chat bar (keep it in DOM for JS to trigger)
-    st.markdown("""
-    <style>
-    .stChatFloatingInputContainer {
-        position: fixed !important;
-        bottom: -200px !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        z-index: -1 !important;
-        height: 0 !important;
-        overflow: hidden !important;
-    }
-    .main .block-container { padding-bottom: 1rem !important; }
-    </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
     if not _VERTEX_OK:
+        st.chat_input("Vertex AI לא זמין", disabled=True, key="ai_bubble_input")
         return
 
-    if prompt := st.chat_input("ai", key="ai_bubble_input"):
+    if prompt := st.chat_input("🤖 שאל אותי על הנתונים...", key="ai_bubble_input"):
+        st.session_state["ai_messages"].append({"role": "user", "content": prompt})
         try:
-            vertexai.init(project=_PROJECT, location="me-west1")
-            model = GenerativeModel(
-                "gemini-1.5-flash-002",
-                system_instruction=[_sys_prompt(data_df)],
-            )
+            sys_p = _sys_prompt(data_df)
+            model = _get_vertex_model(sys_p)
             history = []
-            for m in st.session_state["ai_messages"][-8:]:
+            for m in st.session_state["ai_messages"][-8:-1]:
                 r = "USER" if m["role"] == "user" else "MODEL"
                 history.append(Content(role=r, parts=[Part.from_text(m["content"])]))
             chat = model.start_chat(history=history)
@@ -1268,9 +1135,8 @@ def _render_ai_bubble(data_df):
             ans = resp.text
         except Exception as e:
             ans = f"שגיאת Vertex AI: {e}"
-
-        st.session_state["ai_messages"].append({"role": "user", "content": prompt})
         st.session_state["ai_messages"].append({"role": "assistant", "content": ans})
+        st.session_state["_ai_auto_open"] = True  # auto-open panel on next render
         st.rerun()
 
 
@@ -1613,23 +1479,19 @@ def render_dashboard():
     # ════ bottom: delete project rows in the table ════
     st.sidebar.title("🛠️ ניהול בסיס נתונים")
 
-    # 1. שליפת פרויקטים (כמו קודם)
-    try:
-        client = bigquery.Client()
-        query = "SELECT DISTINCT project_name FROM `argon-ace-483810-n9.netivei_emissions_db.emissions_details`"
-        results = client.query(query).result()
-        projects_list = [row.project_name for row in results]
+    @st.cache_data(ttl=120)
+    def _load_projects_list():
+        try:
+            df_p = _run_bq(
+                "SELECT DISTINCT project_name "
+                f"FROM `{_PROJECT}.{_DATASET}.emissions_details` "
+                "ORDER BY project_name"
+            )
+            return df_p["project_name"].dropna().tolist() if not df_p.empty else []
+        except Exception:
+            return []
 
-        # בדיקה ויזואלית זמנית - תמחקי אחרי שזה עובד
-        if not projects_list:
-            st.sidebar.warning("השאילתה חזרה ריקה - האם הטבלה emissions_details באמת מכילה שורות?")
-        else:
-            st.sidebar.success(f"נמצאו {len(projects_list)} פרויקטים")
-
-    except Exception as e:
-        # זה יציג לך את השגיאה המדויקת (למשל: Access Denied או Not Found)
-        st.sidebar.error(f"שגיאת BigQuery: {e}")
-        projects_list = []
+    projects_list = _load_projects_list()
 
     # התיקון: שורה אחת בלבד עם key ייחודי
     selected_project = st.sidebar.selectbox("בחר פרויקט למחיקה:", options=[""] + projects_list, key="unique_del_box")
