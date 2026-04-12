@@ -1881,7 +1881,6 @@ def render_dashboard():
                 st.caption(f"עלייה של {pct:.1f}% מהפליטה הנוכחית")
             else:
                 st.info("אין שינוי בפליטות")
-
     # ════ TAB: UPLOAD ════
     with tab_upload:
         st.markdown('<div class="section-title">☁️ קליטת קובץ חדש</div>', unsafe_allow_html=True)
