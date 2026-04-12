@@ -985,6 +985,357 @@ def render_login():
 
 
 # ════════════════════════════════════════════════════════════════════════════
+# FLOATING AI CHAT BUBBLE
+# ════════════════════════════════════════════════════════════════════════════
+def _render_ai_bubble(data_df):
+    """Floating chat bubble fixed to the bottom-left corner of the page."""
+
+    # ── Build system prompt with live data ──
+    def _build_system_prompt(df):
+        if df is None or df.empty:
+            return "אתה עוזר וירטואלי חכם של מערכת CarbonTrack360. כרגע אין נתונים זמינים, אך תוכל לסייע בשאלות כלליות."
+        proj_summary = df.groupby("project_name")[["emission_co2e", "weight_kg"]].sum().reset_index()
+        if "material" in df.columns:
+            cat_summary = df.groupby(["project_name", "category", "material"])[
+                ["emission_co2e", "weight_kg"]].sum().reset_index()
+        else:
+            cat_summary = df.groupby(["project_name", "category"])[
+                ["emission_co2e", "weight_kg"]].sum().reset_index()
+        return f"""אתה אנליסט בכיר ומומחה פחמן של נתיבי ישראל. ענה בעברית, בקצרה ובשפה ניהולית מקצועית.
+
+לפניך נתוני פרויקטים עדכניים (משקל ב-kg, פליטות ב-kg CO₂e):
+{proj_summary.to_csv(index=False)}
+
+פירוט לפי קטגוריות:
+{cat_summary.to_csv(index=False)}
+
+הנחיות:
+1. השתמש בנתונים המסוכמים שלפניך — אל תבקש חישובים נוספים.
+2. ענה רק בשורה תחתונה עניינית. אל תסביר את החישובים.
+3. הצג מספרים גדולים בטונות (חלק ב-1,000) וציין "טונות CO₂e".
+4. אם נשאל על המלצות — הצע פעולה ספציפית אחת בלבד."""
+
+    # ── CSS: floating bubble + slide-up panel ──
+    st.markdown("""
+    <style>
+    #ai-bubble-btn {
+        position: fixed;
+        bottom: 1.75rem;
+        left: 1.75rem;
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 50%;
+        background: linear-gradient(135deg, hsl(142,55%,35%), hsl(152,45%,42%));
+        color: #fff;
+        font-size: 1.5rem;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 20px hsl(142,55%,35%,.45);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform .2s, box-shadow .2s;
+        line-height: 1;
+    }
+    #ai-bubble-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 28px hsl(142,55%,35%,.6);
+    }
+    #ai-bubble-panel {
+        position: fixed;
+        bottom: 6rem;
+        left: 1.25rem;
+        width: 360px;
+        max-height: 520px;
+        background: #fff;
+        border-radius: 1rem;
+        box-shadow: 0 12px 40px rgba(0,0,0,.18);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transform: translateY(20px) scale(.97);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform .25s cubic-bezier(.4,0,.2,1), opacity .25s;
+    }
+    #ai-bubble-panel.open {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+        pointer-events: all;
+    }
+    #ai-panel-header {
+        background: linear-gradient(135deg, hsl(150,30%,10%), hsl(150,25%,16%));
+        color: #fff;
+        padding: .75rem 1rem;
+        font-family: Heebo, sans-serif;
+        font-size: .875rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+    }
+    #ai-panel-header span { opacity: .6; font-size: .7rem; font-weight: 400; }
+    #ai-close-btn {
+        background: rgba(255,255,255,.12);
+        border: none;
+        border-radius: .4rem;
+        color: #fff;
+        cursor: pointer;
+        font-size: .85rem;
+        padding: .2rem .5rem;
+    }
+    #ai-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: .75rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+        font-family: Heebo, sans-serif;
+        font-size: .825rem;
+        direction: rtl;
+    }
+    .ai-msg-user {
+        align-self: flex-start;
+        background: hsl(142,55%,35%);
+        color: #fff;
+        border-radius: .75rem .75rem .1rem .75rem;
+        padding: .5rem .75rem;
+        max-width: 82%;
+        line-height: 1.5;
+    }
+    .ai-msg-bot {
+        align-self: flex-end;
+        background: hsl(140,12%,93%);
+        color: hsl(150,25%,10%);
+        border-radius: .75rem .75rem .75rem .1rem;
+        padding: .5rem .75rem;
+        max-width: 82%;
+        line-height: 1.5;
+    }
+    .ai-msg-typing {
+        align-self: flex-end;
+        background: hsl(140,12%,93%);
+        border-radius: .75rem;
+        padding: .5rem .75rem;
+        font-size: .75rem;
+        color: hsl(150,10%,45%);
+    }
+    #ai-input-row {
+        display: flex;
+        gap: .5rem;
+        padding: .625rem .75rem;
+        border-top: 1px solid hsl(140,15%,89%);
+        flex-shrink: 0;
+        background: #fff;
+        direction: rtl;
+    }
+    #ai-input-box {
+        flex: 1;
+        border: 1px solid hsl(140,15%,89%);
+        border-radius: .5rem;
+        padding: .45rem .65rem;
+        font-family: Heebo, sans-serif;
+        font-size: .8rem;
+        outline: none;
+        direction: rtl;
+    }
+    #ai-input-box:focus { border-color: hsl(142,55%,35%); }
+    #ai-send-btn {
+        background: hsl(142,55%,35%);
+        color: #fff;
+        border: none;
+        border-radius: .5rem;
+        padding: .45rem .75rem;
+        cursor: pointer;
+        font-size: .85rem;
+    }
+    #ai-send-btn:hover { background: hsl(142,55%,28%); }
+    #ai-clear-btn {
+        background: none;
+        border: none;
+        color: rgba(255,255,255,.55);
+        cursor: pointer;
+        font-size: .8rem;
+        margin-left: .5rem;
+    }
+    #ai-clear-btn:hover { color: #fff; }
+    </style>
+
+    <div id="ai-bubble-btn" onclick="toggleAIPanel()" title="עוזר AI">🤖</div>
+
+    <div id="ai-bubble-panel">
+      <div id="ai-panel-header">
+        <div>
+          🤖 עוזר נתונים AI
+          <span style="display:block;margin-top:.1rem;">מופעל על ידי Vertex AI · Gemini</span>
+        </div>
+        <div style="display:flex;align-items:center;">
+          <button id="ai-clear-btn" onclick="clearAIChat()" title="נקה שיחה">🗑️</button>
+          <button id="ai-close-btn" onclick="toggleAIPanel()">✕</button>
+        </div>
+      </div>
+      <div id="ai-messages">
+        <div class="ai-msg-bot">שלום! אני עוזר הנתונים של CarbonTrack. שאל אותי כל שאלה על פרויקטים, פליטות, חומרים או מגמות. 🌿</div>
+      </div>
+      <div id="ai-input-row">
+        <input id="ai-input-box" type="text" placeholder="שאל שאלה על הנתונים..." onkeydown="if(event.key==='Enter')sendAIMsg()"/>
+        <button id="ai-send-btn" onclick="sendAIMsg()">שלח</button>
+      </div>
+    </div>
+
+    <script>
+    (function() {
+      var panel = document.getElementById('ai-bubble-panel');
+      var msgs  = document.getElementById('ai-messages');
+      var input = document.getElementById('ai-input-box');
+      var STORAGE_KEY = 'ct360_ai_history';
+
+      // ── restore history ──
+      try {
+        var saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
+        saved.forEach(function(m) { appendMsg(m.role, m.text, false); });
+      } catch(e) {}
+
+      function toggleAIPanel() {
+        panel.classList.toggle('open');
+        if (panel.classList.contains('open')) {
+          setTimeout(function(){ input.focus(); }, 280);
+          msgs.scrollTop = msgs.scrollHeight;
+        }
+      }
+      window.toggleAIPanel = toggleAIPanel;
+
+      function clearAIChat() {
+        sessionStorage.removeItem(STORAGE_KEY);
+        msgs.innerHTML = '<div class="ai-msg-bot">שיחה נוקתה. כיצד אוכל לעזור?</div>';
+      }
+      window.clearAIChat = clearAIChat;
+
+      function appendMsg(role, text, save) {
+        var div = document.createElement('div');
+        div.className = role === 'user' ? 'ai-msg-user' : 'ai-msg-bot';
+        div.textContent = text;
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+        if (save !== false) {
+          try {
+            var hist = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
+            hist.push({role: role, text: text});
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(hist.slice(-30)));
+          } catch(e) {}
+        }
+      }
+
+      function sendAIMsg() {
+        var q = input.value.trim();
+        if (!q) return;
+        input.value = '';
+        appendMsg('user', q);
+
+        var typing = document.createElement('div');
+        typing.className = 'ai-msg-typing';
+        typing.textContent = '⏳ מנתח...';
+        msgs.appendChild(typing);
+        msgs.scrollTop = msgs.scrollHeight;
+
+        // Call Streamlit via query param trick → handled server-side below
+        var ev = new CustomEvent('ai_query', {detail: q});
+        window.parent.document.dispatchEvent(ev);
+
+        // Fallback: post to the Streamlit hidden input
+        try {
+          var inp = window.parent.document.querySelector('#ai_bubble_hidden_input input');
+          if (inp) {
+            inp.value = q;
+            inp.dispatchEvent(new Event('input', {bubbles:true}));
+          }
+        } catch(e) {}
+
+        // Poll for response via hidden output div
+        var attempts = 0;
+        var poll = setInterval(function() {
+          attempts++;
+          try {
+            var out = window.parent.document.querySelector('#ai_bubble_response');
+            if (out && out.dataset.q === q) {
+              clearInterval(poll);
+              typing.remove();
+              appendMsg('bot', out.dataset.ans || '❌ שגיאה בקבלת תגובה');
+              out.dataset.q = '';
+            }
+          } catch(e) {}
+          if (attempts > 60) {
+            clearInterval(poll);
+            typing.remove();
+            appendMsg('bot', '⏱️ זמן קצוב עבר. אנא נסה שוב.');
+          }
+        }, 500);
+      }
+      window.sendAIMsg = sendAIMsg;
+    })();
+    </script>
+    """, unsafe_allow_html=True)
+
+    # ── Server-side: handle queries from the bubble via st.text_input (hidden) ──
+    if "ai_messages" not in st.session_state:
+        st.session_state["ai_messages"] = []
+
+    # Hidden input — completely invisible
+    st.markdown('<div id="ai_bubble_hidden_input" style="position:fixed;opacity:0;pointer-events:none;height:0;overflow:hidden;">', unsafe_allow_html=True)
+    bubble_q = st.text_input("ai_bubble_q", key="ai_bubble_q", label_visibility="collapsed")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if bubble_q and (_VERTEX_OK) and (not st.session_state.get("_ai_last_q") == bubble_q):
+        st.session_state["_ai_last_q"] = bubble_q
+        def _sys_prompt(df):
+            if df is None or df.empty:
+                return "אתה עוזר וירטואלי חכם של מערכת CarbonTrack360."
+            proj_summary = df.groupby("project_name")[["emission_co2e", "weight_kg"]].sum().reset_index()
+            if "material" in df.columns:
+                cat_summary = df.groupby(["project_name", "category", "material"])[["emission_co2e", "weight_kg"]].sum().reset_index()
+            else:
+                cat_summary = df.groupby(["project_name", "category"])[["emission_co2e", "weight_kg"]].sum().reset_index()
+            return f"""אתה אנליסט בכיר ומומחה פחמן של נתיבי ישראל. ענה בעברית, קצר ומקצועי.
+נתוני פרויקטים:
+{proj_summary.to_csv(index=False)}
+פירוט קטגוריות:
+{cat_summary.to_csv(index=False)}
+כלל: ענה רק בשורה תחתונה. מספרים גדולים — בטונות CO₂e."""
+
+        try:
+            vertexai.init(project=_PROJECT, location="me-west1")
+            model = GenerativeModel(
+                "gemini-1.5-flash-002",
+                system_instruction=[_sys_prompt(data_df)],
+            )
+            history = []
+            for m in st.session_state["ai_messages"][-6:]:
+                r = "USER" if m["role"] == "user" else "MODEL"
+                history.append(Content(role=r, parts=[Part.from_text(m["content"])]))
+            chat = model.start_chat(history=history)
+            resp = chat.send_message(bubble_q)
+            ans = resp.text
+        except Exception as e:
+            ans = f"שגיאה: {e}"
+
+        st.session_state["ai_messages"].append({"role": "user", "content": bubble_q})
+        st.session_state["ai_messages"].append({"role": "assistant", "content": ans})
+
+        # Inject answer into the DOM so the JS poll finds it
+        safe_q   = bubble_q.replace('"', '\\"').replace('\n', ' ')
+        safe_ans = ans.replace('"', '\\"').replace('\n', ' ')
+        st.markdown(
+            f'<div id="ai_bubble_response" data-q="{safe_q}" data-ans="{safe_ans}" '
+            f'style="display:none;"></div>',
+            unsafe_allow_html=True,
+        )
+
+
+# ════════════════════════════════════════════════════════════════════════════
 # DASHBOARD
 # ════════════════════════════════════════════════════════════════════════════
 def render_dashboard():
@@ -1154,8 +1505,8 @@ def render_dashboard():
         }, 100);
         </script>""", unsafe_allow_html=True)
 
-    tab_dash, tab_review, tab_whatif, tab_upload, tab_data, tab_settings, tab_ai = st.tabs([
-        "📊 דאשבורד", f"✅ Review ({rev_n})", "⇄ What-If", "☁️ קליטת קבצים", "📋 נתונים", "⚙️ הגדרות", "🤖 עוזר AI"
+    tab_dash, tab_review, tab_whatif, tab_upload, tab_data, tab_settings = st.tabs([
+        "📊 דאשבורד", f"✅ Review ({rev_n})", "⇄ What-If", "☁️ קליטת קבצים", "📋 נתונים", "⚙️ הגדרות"
     ])
 
     # ════ TAB: DASHBOARD ════
@@ -1645,88 +1996,8 @@ def render_dashboard():
             if st.button("💾 שמור משתמש"): st.success("משתמש נשמר")
             st.markdown('</div>', unsafe_allow_html=True)
 
-    # ════ TAB: AI ASSISTANT ════
-    with tab_ai:
-        st.markdown("""
-        <style>
-        div[data-testid="stAlert"] { direction: rtl; text-align: right; }
-        div[data-testid="stAlert"] > div { flex-direction: row-reverse; }
-        div[data-testid="stChatMessage"] { direction: rtl; text-align: right; flex-direction: row-reverse; }
-        div[data-testid="stMarkdownContainer"], div[data-testid="stMarkdownContainer"] > p { direction: rtl; text-align: right; }
-        .stChatFloatingInputContainer { direction: rtl; }
-        textarea { direction: rtl; text-align: right; }
-        </style>
-        """, unsafe_allow_html=True)
-
-        st.markdown('<div class="section-title">🤖 עוזר נתונים אישי (AI)</div>', unsafe_allow_html=True)
-        st.info("מופעל באופן מאובטח על ידי מנוע Vertex AI הארגוני.")
-
-        if not _VERTEX_OK:
-            st.error("חבילת `vertexai` לא מותקנת. הרץ: `pip install google-cloud-aiplatform`")
-        else:
-            def _build_system_prompt(data_df):
-                if data_df is None or data_df.empty:
-                    return "אתה עוזר וירטואלי. כרגע אין נתונים זמינים."
-                proj_summary = data_df.groupby("project_name")[["emission_co2e", "weight_kg"]].sum().reset_index()
-                if "material" in data_df.columns:
-                    cat_summary = data_df.groupby(["project_name", "category", "material"])[
-                        ["emission_co2e", "weight_kg"]].sum().reset_index()
-                else:
-                    cat_summary = data_df.groupby(["project_name", "category"])[
-                        ["emission_co2e", "weight_kg"]].sum().reset_index()
-                return f"""אתה אנליסט בכיר בנתיבי ישראל. ענה תמיד בקצרה ובשפה ניהולית.
-
-לפניך נתוני פרויקטים (משקל ב-kg, פליטות ב-kg CO₂e):
-{proj_summary.to_csv(index=False)}
-
-פירוט לפי קטגוריות:
-{cat_summary.to_csv(index=False)}
-
-הנחיות קריטיות:
-1. המערכת סיכמה עבורך את המשקל (weight_kg) ואת הפליטות (emission_co2e). השתמש בהם.
-2. ענה רק בשורה תחתונה. אל תסביר את החישובים.
-3. הצג מספרים גדולים בטונות (חלק ב-1,000) וציין "טונות"."""
-
-            ai_context = _build_system_prompt(df)
-
-            col_btn, _ = st.columns([1, 4])
-            with col_btn:
-                if st.button("🗑️ נקה שיחה וזיכרון", use_container_width=True, key="ai_clear"):
-                    st.session_state["ai_messages"] = []
-                    st.rerun()
-
-            if "ai_messages" not in st.session_state:
-                st.session_state["ai_messages"] = []
-
-            for message in st.session_state["ai_messages"]:
-                with st.chat_message(message["role"]):
-                    st.markdown(message["content"])
-
-            if prompt := st.chat_input("שאל אותי כל שאלה על הנתונים...", key="ai_input"):
-                with st.chat_message("user"):
-                    st.markdown(prompt)
-                st.session_state["ai_messages"].append({"role": "user", "content": prompt})
-
-                with st.chat_message("assistant"):
-                    try:
-                        vertexai.init(project=_PROJECT, location="me-west1")
-                        model = GenerativeModel(
-                            "gemini-1.5-flash-002",
-                            system_instruction=[ai_context],
-                        )
-                        vertex_history = []
-                        for msg in st.session_state["ai_messages"][-5:-1]:
-                            role = "USER" if msg["role"] == "user" else "MODEL"
-                            vertex_history.append(
-                                Content(role=role, parts=[Part.from_text(msg["content"])])
-                            )
-                        chat = model.start_chat(history=vertex_history)
-                        with st.spinner("מנתח..."):
-                            response = chat.send_message(prompt)
-                        st.markdown(response.text)
-                        st.session_state["ai_messages"].append({"role": "assistant", "content": response.text})
-                    except Exception as e:
-                        st.error(f"שגיאת תקשורת מול ענן Vertex AI: {e}")
+    # ════ FLOATING AI CHAT BUBBLE ════
+    _render_ai_bubble(df)
 
 
 # ════════════════════════════════════════════════════════════════════════════
