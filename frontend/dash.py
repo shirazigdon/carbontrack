@@ -988,7 +988,7 @@ def render_login():
 def _get_vertex_model(system_prompt: str):
     """Cache the Vertex AI model — avoid re-initialising on every rerun."""
     vertexai.init(project=_PROJECT, location="me-west1")
-    return GenerativeModel("gemini-2.0-flash-001", system_instruction=[system_prompt])
+    return GenerativeModel("gemini-1.5-flash-002", system_instruction=[system_prompt])
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -1098,7 +1098,7 @@ def _render_ai_bubble(data_df):
   <div id="ai-ph">
     <div>
       <div id="ai-ph-title">🤖 עוזר נתונים AI</div>
-      <div id="ai-ph-sub">Vertex AI · Gemini 2.0 Flash</div>
+      <div id="ai-ph-sub">Vertex AI · Gemini 1.5 Flash</div>
     </div>
     <div style="display:flex;align-items:center;">
       <button id="ai-ph-clear" onclick="document.getElementById('ai-msgs').innerHTML='<div class=\\'ai-msg-bot\\'>שיחה נוקתה 🌿</div>'" title="נקה">🗑️</button>
