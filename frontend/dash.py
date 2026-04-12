@@ -988,106 +988,157 @@ def render_login():
 # FLOATING AI CHAT BUBBLE
 # ════════════════════════════════════════════════════════════════════════════
 def _render_ai_bubble(data_df):
-    """Floating chat bubble fixed to the bottom-left corner of the page."""
+    """
+    Floating AI chat bubble.
+    - Toggle (open/close) is pure CSS/JS — no Streamlit rerun needed.
+    - Message history is rendered server-side from session_state into the panel HTML.
+    - st.chat_input handles the actual query (100% server-side, works on Streamlit Cloud).
+    - Vertex AI is called in Python; after response st.rerun() refreshes the panel HTML.
+    """
 
-    # ── Build system prompt with live data ──
-    def _build_system_prompt(df):
+    # ── Session state ──
+    if "ai_messages" not in st.session_state:
+        st.session_state["ai_messages"] = []
+
+    # ── System prompt builder ──
+    def _sys_prompt(df):
         if df is None or df.empty:
-            return "אתה עוזר וירטואלי חכם של מערכת CarbonTrack360. כרגע אין נתונים זמינים, אך תוכל לסייע בשאלות כלליות."
-        proj_summary = df.groupby("project_name")[["emission_co2e", "weight_kg"]].sum().reset_index()
+            return "אתה עוזר וירטואלי של מערכת CarbonTrack360. כרגע אין נתונים זמינים."
+        proj = df.groupby("project_name")[["emission_co2e", "weight_kg"]].sum().reset_index()
         if "material" in df.columns:
-            cat_summary = df.groupby(["project_name", "category", "material"])[
-                ["emission_co2e", "weight_kg"]].sum().reset_index()
+            cats = df.groupby(["project_name", "category", "material"])[["emission_co2e", "weight_kg"]].sum().reset_index()
         else:
-            cat_summary = df.groupby(["project_name", "category"])[
-                ["emission_co2e", "weight_kg"]].sum().reset_index()
-        return f"""אתה אנליסט בכיר ומומחה פחמן של נתיבי ישראל. ענה בעברית, בקצרה ובשפה ניהולית מקצועית.
+            cats = df.groupby(["project_name", "category"])[["emission_co2e", "weight_kg"]].sum().reset_index()
+        return f"""אתה אנליסט בכיר ומומחה פחמן של נתיבי ישראל. ענה בעברית, קצר ומקצועי.
 
-לפניך נתוני פרויקטים עדכניים (משקל ב-kg, פליטות ב-kg CO₂e):
-{proj_summary.to_csv(index=False)}
+נתוני פרויקטים (kg):
+{proj.to_csv(index=False)}
 
-פירוט לפי קטגוריות:
-{cat_summary.to_csv(index=False)}
+פירוט קטגוריות:
+{cats.to_csv(index=False)}
 
-הנחיות:
-1. השתמש בנתונים המסוכמים שלפניך — אל תבקש חישובים נוספים.
-2. ענה רק בשורה תחתונה עניינית. אל תסביר את החישובים.
-3. הצג מספרים גדולים בטונות (חלק ב-1,000) וציין "טונות CO₂e".
-4. אם נשאל על המלצות — הצע פעולה ספציפית אחת בלבד."""
+כללים: ענה רק בשורה תחתונה. מספרים גדולים — בטונות CO₂e. אל תסביר חישובים."""
 
-    # ── CSS: floating bubble + slide-up panel ──
-    st.markdown("""
+    # ── Build message HTML from session_state (server-side) ──
+    msgs_html = ""
+    for m in st.session_state["ai_messages"]:
+        cls  = "ai-msg-user" if m["role"] == "user" else "ai-msg-bot"
+        text = (m["content"]
+                .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                .replace("\n", "<br>"))
+        msgs_html += f'<div class="{cls}">{text}</div>\n'
+    if not msgs_html:
+        msgs_html = '<div class="ai-msg-bot">שלום! שאל אותי על הנתונים בשורת הקלט למטה 👇</div>'
+
+    # Badge with message count
+    n = len(st.session_state["ai_messages"])
+    badge_html = f'<span id="ai-badge">{n}</span>' if n > 0 else ""
+
+    # ── Inject CSS + bubble HTML (panel is purely visual / toggle) ──
+    st.markdown(f"""
     <style>
-    #ai-bubble-btn {
+    /* ── Bubble button ── */
+    #ai-fab {{
         position: fixed;
-        bottom: 1.75rem;
-        left: 1.75rem;
-        width: 3.5rem;
-        height: 3.5rem;
+        bottom: 5.5rem;   /* above Streamlit's native chat bar */
+        left: 1.5rem;
+        width: 3.25rem;
+        height: 3.25rem;
         border-radius: 50%;
         background: linear-gradient(135deg, hsl(142,55%,35%), hsl(152,45%,42%));
         color: #fff;
-        font-size: 1.5rem;
+        font-size: 1.35rem;
         border: none;
         cursor: pointer;
-        box-shadow: 0 4px 20px hsl(142,55%,35%,.45);
-        z-index: 10000;
+        box-shadow: 0 4px 18px hsl(142,55%,35%,.5);
+        z-index: 10001;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: transform .2s, box-shadow .2s;
-        line-height: 1;
-    }
-    #ai-bubble-btn:hover {
-        transform: scale(1.1);
-        box-shadow: 0 6px 28px hsl(142,55%,35%,.6);
-    }
-    #ai-bubble-panel {
+        transition: transform .18s, box-shadow .18s;
+        user-select: none;
+    }}
+    #ai-fab:hover {{ transform: scale(1.08); box-shadow: 0 6px 24px hsl(142,55%,35%,.65); }}
+    #ai-badge {{
+        position: absolute;
+        top: -.2rem; right: -.2rem;
+        background: hsl(0,72%,51%);
+        color: #fff;
+        font-size: .6rem;
+        font-weight: 700;
+        font-family: Heebo, sans-serif;
+        min-width: 1.1rem;
+        height: 1.1rem;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 .25rem;
+        pointer-events: none;
+    }}
+
+    /* ── Chat panel ── */
+    #ai-panel {{
         position: fixed;
-        bottom: 6rem;
+        bottom: 9.5rem;
         left: 1.25rem;
-        width: 360px;
-        max-height: 520px;
+        width: min(370px, calc(100vw - 2.5rem));
+        max-height: 480px;
         background: #fff;
         border-radius: 1rem;
-        box-shadow: 0 12px 40px rgba(0,0,0,.18);
-        z-index: 9999;
+        box-shadow: 0 14px 44px rgba(0,0,0,.2);
+        z-index: 10000;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        transform: translateY(20px) scale(.97);
+        /* hidden by default */
         opacity: 0;
+        transform: translateY(16px) scale(.96);
         pointer-events: none;
-        transition: transform .25s cubic-bezier(.4,0,.2,1), opacity .25s;
-    }
-    #ai-bubble-panel.open {
-        transform: translateY(0) scale(1);
+        transition: opacity .22s cubic-bezier(.4,0,.2,1),
+                    transform .22s cubic-bezier(.4,0,.2,1);
+    }}
+    #ai-panel.ai-open {{
         opacity: 1;
+        transform: translateY(0) scale(1);
         pointer-events: all;
-    }
-    #ai-panel-header {
-        background: linear-gradient(135deg, hsl(150,30%,10%), hsl(150,25%,16%));
-        color: #fff;
-        padding: .75rem 1rem;
-        font-family: Heebo, sans-serif;
-        font-size: .875rem;
-        font-weight: 700;
+    }}
+
+    /* ── Panel header ── */
+    #ai-ph {{
+        background: linear-gradient(135deg, hsl(150,30%,10%), hsl(150,22%,18%));
+        padding: .7rem 1rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-shrink: 0;
-    }
-    #ai-panel-header span { opacity: .6; font-size: .7rem; font-weight: 400; }
-    #ai-close-btn {
-        background: rgba(255,255,255,.12);
+    }}
+    #ai-ph-title {{
+        font-family: Heebo, sans-serif;
+        font-size: .875rem;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1.3;
+    }}
+    #ai-ph-sub {{
+        font-size: .68rem;
+        color: rgba(255,255,255,.5);
+        font-weight: 400;
+    }}
+    #ai-ph-close {{
+        background: rgba(255,255,255,.1);
         border: none;
         border-radius: .4rem;
-        color: #fff;
-        cursor: pointer;
-        font-size: .85rem;
+        color: rgba(255,255,255,.8);
+        font-size: .8rem;
         padding: .2rem .5rem;
-    }
-    #ai-messages {
+        cursor: pointer;
+        font-family: Heebo, sans-serif;
+    }}
+    #ai-ph-close:hover {{ background: rgba(255,255,255,.2); color:#fff; }}
+
+    /* ── Messages area ── */
+    #ai-msgs {{
         flex: 1;
         overflow-y: auto;
         padding: .75rem 1rem;
@@ -1095,217 +1146,104 @@ def _render_ai_bubble(data_df):
         flex-direction: column;
         gap: .5rem;
         font-family: Heebo, sans-serif;
-        font-size: .825rem;
+        font-size: .82rem;
         direction: rtl;
-    }
-    .ai-msg-user {
+        scroll-behavior: smooth;
+    }}
+    .ai-msg-user {{
         align-self: flex-start;
         background: hsl(142,55%,35%);
         color: #fff;
         border-radius: .75rem .75rem .1rem .75rem;
-        padding: .5rem .75rem;
-        max-width: 82%;
+        padding: .45rem .7rem;
+        max-width: 84%;
         line-height: 1.5;
-    }
-    .ai-msg-bot {
+        word-break: break-word;
+    }}
+    .ai-msg-bot {{
         align-self: flex-end;
         background: hsl(140,12%,93%);
         color: hsl(150,25%,10%);
         border-radius: .75rem .75rem .75rem .1rem;
-        padding: .5rem .75rem;
-        max-width: 82%;
+        padding: .45rem .7rem;
+        max-width: 84%;
         line-height: 1.5;
-    }
-    .ai-msg-typing {
-        align-self: flex-end;
-        background: hsl(140,12%,93%);
-        border-radius: .75rem;
-        padding: .5rem .75rem;
-        font-size: .75rem;
-        color: hsl(150,10%,45%);
-    }
-    #ai-input-row {
-        display: flex;
-        gap: .5rem;
-        padding: .625rem .75rem;
-        border-top: 1px solid hsl(140,15%,89%);
-        flex-shrink: 0;
-        background: #fff;
-        direction: rtl;
-    }
-    #ai-input-box {
-        flex: 1;
-        border: 1px solid hsl(140,15%,89%);
-        border-radius: .5rem;
-        padding: .45rem .65rem;
+        word-break: break-word;
+    }}
+
+    /* ── Footer hint ── */
+    #ai-footer {{
+        padding: .5rem 1rem;
         font-family: Heebo, sans-serif;
-        font-size: .8rem;
-        outline: none;
+        font-size: .72rem;
+        color: hsl(150,10%,55%);
+        border-top: 1px solid hsl(140,15%,89%);
         direction: rtl;
-    }
-    #ai-input-box:focus { border-color: hsl(142,55%,35%); }
-    #ai-send-btn {
-        background: hsl(142,55%,35%);
-        color: #fff;
-        border: none;
-        border-radius: .5rem;
-        padding: .45rem .75rem;
-        cursor: pointer;
-        font-size: .85rem;
-    }
-    #ai-send-btn:hover { background: hsl(142,55%,28%); }
-    #ai-clear-btn {
-        background: none;
-        border: none;
-        color: rgba(255,255,255,.55);
-        cursor: pointer;
-        font-size: .8rem;
-        margin-left: .5rem;
-    }
-    #ai-clear-btn:hover { color: #fff; }
+        background: hsl(140,10%,98%);
+        flex-shrink: 0;
+    }}
+
+    /* ── Style Streamlit's native chat input bar ── */
+    .stChatFloatingInputContainer {{
+        left: 0 !important;
+        right: 0 !important;
+    }}
     </style>
 
-    <div id="ai-bubble-btn" onclick="toggleAIPanel()" title="עוזר AI">🤖</div>
+    <div id="ai-fab" title="עוזר AI">🤖{badge_html}</div>
 
-    <div id="ai-bubble-panel">
-      <div id="ai-panel-header">
+    <div id="ai-panel">
+      <div id="ai-ph">
         <div>
-          🤖 עוזר נתונים AI
-          <span style="display:block;margin-top:.1rem;">מופעל על ידי Vertex AI · Gemini</span>
+          <div id="ai-ph-title">🤖 עוזר נתונים AI</div>
+          <div id="ai-ph-sub">Vertex AI · Gemini 1.5 Flash</div>
         </div>
-        <div style="display:flex;align-items:center;">
-          <button id="ai-clear-btn" onclick="clearAIChat()" title="נקה שיחה">🗑️</button>
-          <button id="ai-close-btn" onclick="toggleAIPanel()">✕</button>
-        </div>
+        <button id="ai-ph-close">✕ סגור</button>
       </div>
-      <div id="ai-messages">
-        <div class="ai-msg-bot">שלום! אני עוזר הנתונים של CarbonTrack. שאל אותי כל שאלה על פרויקטים, פליטות, חומרים או מגמות. 🌿</div>
-      </div>
-      <div id="ai-input-row">
-        <input id="ai-input-box" type="text" placeholder="שאל שאלה על הנתונים..." onkeydown="if(event.key==='Enter')sendAIMsg()"/>
-        <button id="ai-send-btn" onclick="sendAIMsg()">שלח</button>
-      </div>
+      <div id="ai-msgs">{msgs_html}</div>
+      <div id="ai-footer">הקלד שאלה בשורת הצ׳אט למטה ← Enter לשליחה</div>
     </div>
 
     <script>
-    (function() {
-      var panel = document.getElementById('ai-bubble-panel');
-      var msgs  = document.getElementById('ai-messages');
-      var input = document.getElementById('ai-input-box');
-      var STORAGE_KEY = 'ct360_ai_history';
+    (function() {{
+      /* Wait for DOM — Streamlit injects HTML asynchronously */
+      function init() {{
+        var fab   = document.getElementById('ai-fab');
+        var panel = document.getElementById('ai-panel');
+        var msgs  = document.getElementById('ai-msgs');
+        var closeBtn = document.getElementById('ai-ph-close');
 
-      // ── restore history ──
-      try {
-        var saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
-        saved.forEach(function(m) { appendMsg(m.role, m.text, false); });
-      } catch(e) {}
+        if (!fab || !panel) {{
+          setTimeout(init, 80);
+          return;
+        }}
 
-      function toggleAIPanel() {
-        panel.classList.toggle('open');
-        if (panel.classList.contains('open')) {
-          setTimeout(function(){ input.focus(); }, 280);
-          msgs.scrollTop = msgs.scrollHeight;
-        }
-      }
-      window.toggleAIPanel = toggleAIPanel;
+        /* scroll messages to bottom */
+        if (msgs) msgs.scrollTop = msgs.scrollHeight;
 
-      function clearAIChat() {
-        sessionStorage.removeItem(STORAGE_KEY);
-        msgs.innerHTML = '<div class="ai-msg-bot">שיחה נוקתה. כיצד אוכל לעזור?</div>';
-      }
-      window.clearAIChat = clearAIChat;
+        /* Toggle open/close */
+        fab.addEventListener('click', function() {{
+          panel.classList.toggle('ai-open');
+          if (msgs) msgs.scrollTop = msgs.scrollHeight;
+        }});
 
-      function appendMsg(role, text, save) {
-        var div = document.createElement('div');
-        div.className = role === 'user' ? 'ai-msg-user' : 'ai-msg-bot';
-        div.textContent = text;
-        msgs.appendChild(div);
-        msgs.scrollTop = msgs.scrollHeight;
-        if (save !== false) {
-          try {
-            var hist = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
-            hist.push({role: role, text: text});
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(hist.slice(-30)));
-          } catch(e) {}
-        }
-      }
-
-      function sendAIMsg() {
-        var q = input.value.trim();
-        if (!q) return;
-        input.value = '';
-        appendMsg('user', q);
-
-        var typing = document.createElement('div');
-        typing.className = 'ai-msg-typing';
-        typing.textContent = '⏳ מנתח...';
-        msgs.appendChild(typing);
-        msgs.scrollTop = msgs.scrollHeight;
-
-        // Call Streamlit via query param trick → handled server-side below
-        var ev = new CustomEvent('ai_query', {detail: q});
-        window.parent.document.dispatchEvent(ev);
-
-        // Fallback: post to the Streamlit hidden input
-        try {
-          var inp = window.parent.document.querySelector('#ai_bubble_hidden_input input');
-          if (inp) {
-            inp.value = q;
-            inp.dispatchEvent(new Event('input', {bubbles:true}));
-          }
-        } catch(e) {}
-
-        // Poll for response via hidden output div
-        var attempts = 0;
-        var poll = setInterval(function() {
-          attempts++;
-          try {
-            var out = window.parent.document.querySelector('#ai_bubble_response');
-            if (out && out.dataset.q === q) {
-              clearInterval(poll);
-              typing.remove();
-              appendMsg('bot', out.dataset.ans || '❌ שגיאה בקבלת תגובה');
-              out.dataset.q = '';
-            }
-          } catch(e) {}
-          if (attempts > 60) {
-            clearInterval(poll);
-            typing.remove();
-            appendMsg('bot', '⏱️ זמן קצוב עבר. אנא נסה שוב.');
-          }
-        }, 500);
-      }
-      window.sendAIMsg = sendAIMsg;
-    })();
+        if (closeBtn) {{
+          closeBtn.addEventListener('click', function() {{
+            panel.classList.remove('ai-open');
+          }});
+        }}
+      }}
+      init();
+    }})();
     </script>
     """, unsafe_allow_html=True)
 
-    # ── Server-side: handle queries from the bubble via st.text_input (hidden) ──
-    if "ai_messages" not in st.session_state:
-        st.session_state["ai_messages"] = []
+    # ── Native Streamlit chat input (always at bottom, server-side) ──
+    if not _VERTEX_OK:
+        return
 
-    # Hidden input — completely invisible
-    st.markdown('<div id="ai_bubble_hidden_input" style="position:fixed;opacity:0;pointer-events:none;height:0;overflow:hidden;">', unsafe_allow_html=True)
-    bubble_q = st.text_input("ai_bubble_q", key="ai_bubble_q", label_visibility="collapsed")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    if bubble_q and (_VERTEX_OK) and (not st.session_state.get("_ai_last_q") == bubble_q):
-        st.session_state["_ai_last_q"] = bubble_q
-        def _sys_prompt(df):
-            if df is None or df.empty:
-                return "אתה עוזר וירטואלי חכם של מערכת CarbonTrack360."
-            proj_summary = df.groupby("project_name")[["emission_co2e", "weight_kg"]].sum().reset_index()
-            if "material" in df.columns:
-                cat_summary = df.groupby(["project_name", "category", "material"])[["emission_co2e", "weight_kg"]].sum().reset_index()
-            else:
-                cat_summary = df.groupby(["project_name", "category"])[["emission_co2e", "weight_kg"]].sum().reset_index()
-            return f"""אתה אנליסט בכיר ומומחה פחמן של נתיבי ישראל. ענה בעברית, קצר ומקצועי.
-נתוני פרויקטים:
-{proj_summary.to_csv(index=False)}
-פירוט קטגוריות:
-{cat_summary.to_csv(index=False)}
-כלל: ענה רק בשורה תחתונה. מספרים גדולים — בטונות CO₂e."""
-
+    if prompt := st.chat_input("🤖 שאל עוזר AI על הנתונים...", key="ai_bubble_input"):
+        # Call Vertex AI
         try:
             vertexai.init(project=_PROJECT, location="me-west1")
             model = GenerativeModel(
@@ -1313,26 +1251,20 @@ def _render_ai_bubble(data_df):
                 system_instruction=[_sys_prompt(data_df)],
             )
             history = []
-            for m in st.session_state["ai_messages"][-6:]:
+            for m in st.session_state["ai_messages"][-8:]:
                 r = "USER" if m["role"] == "user" else "MODEL"
                 history.append(Content(role=r, parts=[Part.from_text(m["content"])]))
             chat = model.start_chat(history=history)
-            resp = chat.send_message(bubble_q)
+            with st.spinner("מנתח..."):
+                resp = chat.send_message(prompt)
             ans = resp.text
         except Exception as e:
-            ans = f"שגיאה: {e}"
+            ans = f"שגיאת Vertex AI: {e}"
 
-        st.session_state["ai_messages"].append({"role": "user", "content": bubble_q})
+        st.session_state["ai_messages"].append({"role": "user",      "content": prompt})
         st.session_state["ai_messages"].append({"role": "assistant", "content": ans})
-
-        # Inject answer into the DOM so the JS poll finds it
-        safe_q   = bubble_q.replace('"', '\\"').replace('\n', ' ')
-        safe_ans = ans.replace('"', '\\"').replace('\n', ' ')
-        st.markdown(
-            f'<div id="ai_bubble_response" data-q="{safe_q}" data-ans="{safe_ans}" '
-            f'style="display:none;"></div>',
-            unsafe_allow_html=True,
-        )
+        # Rerun so the panel HTML above re-renders with the new messages
+        st.rerun()
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -1837,7 +1769,7 @@ def render_dashboard():
                 with bc1: st.button("✓ אשר", key=f"ap_{row.get('review_id', '')}", type="primary")
                 with bc2: st.button("✗ דחה", key=f"rj_{row.get('review_id', '')}")
 
-    # ════ TAB: WHAT-IF ════
+        # ════ TAB: WHAT-IF ════
     with tab_whatif:
         st.markdown('<div class="section-title">⇄ סימולטור חלופות חומרים (What-If)</div>', unsafe_allow_html=True)
         st.caption("השוואת פליטה נוכחית מול חומר חלופי על בסיס פקטור היסטורי ממאגר הנתונים")
@@ -1849,22 +1781,21 @@ def render_dashboard():
         with w1:
             st.markdown("**1. מצב נוכחי**")
             src = st.selectbox("חומר קיים", cur_cats, key="wi_src")
-            src_sub = df[df["category"] == src]
-            curr_e = src_sub["emission_co2e"].sum()
-            curr_w = src_sub["weight_kg"].sum()
+            src_sub  = df[df["category"]==src]
+            curr_e   = src_sub["emission_co2e"].sum()
+            curr_w   = src_sub["weight_kg"].sum()
             kpi("פליטה נוכחית", f"{curr_e:,.0f} kg", src, variant="primary")
             st.caption(f"משקל נוכחי: {curr_w:,.0f} ק״ג")
 
         with w2:
             st.markdown("**2. חלופה מוצעת**")
             alt = st.selectbox("חומר חלופי", all_cats, key="wi_alt")
-            alt_sub = emissions_df[emissions_df["category"] == alt]
-            alt_w_tot = alt_sub["weight_kg"].sum()
-            alt_e_tot = alt_sub["emission_co2e"].sum()
+            alt_sub    = emissions_df[emissions_df["category"]==alt]
+            alt_w_tot  = alt_sub["weight_kg"].sum()
+            alt_e_tot  = alt_sub["emission_co2e"].sum()
             alt_factor = alt_e_tot / alt_w_tot if alt_w_tot > 0 else 0
-            eff_qty = st.number_input("כמות חלופית (ק״ג)", value=float(curr_w), min_value=0.0, step=1000.0,
-                                      key="wi_qty")
-            proj_e = eff_qty * alt_factor
+            eff_qty    = st.number_input("כמות חלופית (ק״ג)", value=float(curr_w), min_value=0.0, step=1000.0, key="wi_qty")
+            proj_e     = eff_qty * alt_factor
             kpi("פליטה חלופית צפויה", f"{proj_e:,.0f} kg", f"פקטור: {alt_factor:.4f}")
             st.caption(f"פקטור: {alt_factor:.4f} kg CO₂e / kg")
 
@@ -1873,11 +1804,11 @@ def render_dashboard():
             diff = curr_e - proj_e
             if diff > 0:
                 st.success(f"✅ חיסכון: {diff:,.0f} kg")
-                pct = abs(diff / curr_e * 100) if curr_e else 0
+                pct = abs(diff/curr_e*100) if curr_e else 0
                 st.caption(f"ירידה של {pct:.1f}% מהפליטה הנוכחית")
             elif diff < 0:
                 st.error(f"⚠️ תוספת: {abs(diff):,.0f} kg")
-                pct = abs(diff / curr_e * 100) if curr_e else 0
+                pct = abs(diff/curr_e*100) if curr_e else 0
                 st.caption(f"עלייה של {pct:.1f}% מהפליטה הנוכחית")
             else:
                 st.info("אין שינוי בפליטות")
