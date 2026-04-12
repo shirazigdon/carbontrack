@@ -989,261 +989,270 @@ def render_login():
 # ════════════════════════════════════════════════════════════════════════════
 def _render_ai_bubble(data_df):
     """
-    Floating AI chat bubble.
-    - Toggle (open/close) is pure CSS/JS — no Streamlit rerun needed.
-    - Message history is rendered server-side from session_state into the panel HTML.
-    - st.chat_input handles the actual query (100% server-side, works on Streamlit Cloud).
-    - Vertex AI is called in Python; after response st.rerun() refreshes the panel HTML.
+    Floating AI chat bubble injected directly into window.parent.document.body
+    via components.html() — bypasses all Streamlit container CSS transforms
+    so position:fixed and click events work correctly on both local and Cloud.
     """
+    import json as _json
 
-    # ── Session state ──
     if "ai_messages" not in st.session_state:
         st.session_state["ai_messages"] = []
 
-    # ── System prompt builder ──
     def _sys_prompt(df):
         if df is None or df.empty:
             return "אתה עוזר וירטואלי של מערכת CarbonTrack360. כרגע אין נתונים זמינים."
         proj = df.groupby("project_name")[["emission_co2e", "weight_kg"]].sum().reset_index()
         if "material" in df.columns:
-            cats = df.groupby(["project_name", "category", "material"])[["emission_co2e", "weight_kg"]].sum().reset_index()
+            cats = df.groupby(["project_name", "category", "material"])[
+                ["emission_co2e", "weight_kg"]].sum().reset_index()
         else:
-            cats = df.groupby(["project_name", "category"])[["emission_co2e", "weight_kg"]].sum().reset_index()
-        return f"""אתה אנליסט בכיר ומומחה פחמן של נתיבי ישראל. ענה בעברית, קצר ומקצועי.
+            cats = df.groupby(["project_name", "category"])[
+                ["emission_co2e", "weight_kg"]].sum().reset_index()
+        return (
+            "אתה אנליסט בכיר ומומחה פחמן של נתיבי ישראל. ענה בעברית, קצר ומקצועי.\n\n"
+            f"נתוני פרויקטים (kg):\n{proj.to_csv(index=False)}\n\n"
+            f"פירוט קטגוריות:\n{cats.to_csv(index=False)}\n\n"
+            "כללים: ענה רק בשורה תחתונה. מספרים גדולים — בטונות CO₂e. אל תסביר חישובים."
+        )
 
-נתוני פרויקטים (kg):
-{proj.to_csv(index=False)}
+    # Pass messages as JSON so JS can render them without HTML-escaping issues
+    messages_json = _json.dumps(
+        [{"role": m["role"], "content": m["content"]}
+         for m in st.session_state["ai_messages"]],
+        ensure_ascii=False,
+    )
 
-פירוט קטגוריות:
-{cats.to_csv(index=False)}
+    # CSS injected into parent document (single-quoted strings only — no template-literal conflicts)
+    CSS = (
+        "#ai-fab{"
+        "position:fixed;bottom:1.5rem;left:1.5rem;"
+        "width:3.25rem;height:3.25rem;border-radius:50%;"
+        "background:linear-gradient(135deg,hsl(142,55%,35%),hsl(152,45%,42%));"
+        "color:#fff;font-size:1.4rem;border:none;cursor:pointer;"
+        "box-shadow:0 4px 18px hsl(142,55%,35%,.55);"
+        "z-index:2147483647;"   # max z-index
+        "display:flex;align-items:center;justify-content:center;"
+        "transition:transform .18s,box-shadow .18s;user-select:none;}"
+        "#ai-fab:hover{transform:scale(1.1);box-shadow:0 6px 26px hsl(142,55%,35%,.7);}"
+        "#ai-badge{position:absolute;top:-.25rem;right:-.25rem;"
+        "background:hsl(0,72%,51%);color:#fff;font-size:.58rem;font-weight:700;"
+        "font-family:Heebo,sans-serif;min-width:1.1rem;height:1.1rem;"
+        "border-radius:999px;display:flex;align-items:center;justify-content:center;"
+        "padding:0 .25rem;pointer-events:none;}"
+        "#ai-panel{position:fixed;bottom:5.5rem;left:1.25rem;"
+        "width:min(370px,calc(100vw - 2rem));max-height:500px;"
+        "background:#fff;border-radius:1rem;"
+        "box-shadow:0 14px 44px rgba(0,0,0,.22);"
+        "z-index:2147483646;display:flex;flex-direction:column;overflow:hidden;"
+        "opacity:0;transform:translateY(18px) scale(.96);pointer-events:none;"
+        "transition:opacity .22s cubic-bezier(.4,0,.2,1),transform .22s cubic-bezier(.4,0,.2,1);}"
+        "#ai-panel.ai-open{opacity:1;transform:translateY(0) scale(1);pointer-events:all;}"
+        "#ai-ph{background:linear-gradient(135deg,hsl(150,30%,10%),hsl(150,22%,18%));"
+        "padding:.7rem 1rem;display:flex;align-items:center;"
+        "justify-content:space-between;flex-shrink:0;}"
+        "#ai-ph-title{font-family:Heebo,sans-serif;font-size:.875rem;font-weight:700;"
+        "color:#fff;line-height:1.3;}"
+        "#ai-ph-sub{font-size:.65rem;color:rgba(255,255,255,.5);font-weight:400;}"
+        "#ai-ph-close{background:rgba(255,255,255,.12);border:none;border-radius:.4rem;"
+        "color:rgba(255,255,255,.85);font-size:.8rem;padding:.25rem .55rem;"
+        "cursor:pointer;font-family:Heebo,sans-serif;}"
+        "#ai-ph-close:hover{background:rgba(255,255,255,.22);color:#fff;}"
+        "#ai-msgs{flex:1;overflow-y:auto;padding:.75rem 1rem;"
+        "display:flex;flex-direction:column;gap:.5rem;"
+        "font-family:Heebo,sans-serif;font-size:.82rem;direction:rtl;}"
+        ".ai-msg-user{align-self:flex-start;background:hsl(142,55%,35%);color:#fff;"
+        "border-radius:.75rem .75rem .1rem .75rem;padding:.45rem .7rem;"
+        "max-width:84%;line-height:1.5;word-break:break-word;}"
+        ".ai-msg-bot{align-self:flex-end;background:hsl(140,12%,93%);"
+        "color:hsl(150,25%,10%);border-radius:.75rem .75rem .75rem .1rem;"
+        "padding:.45rem .7rem;max-width:84%;line-height:1.5;word-break:break-word;}"
+        "#ai-input-row{display:flex;gap:.5rem;padding:.6rem .75rem;"
+        "border-top:1px solid hsl(140,15%,89%);flex-shrink:0;"
+        "background:#fff;direction:rtl;}"
+        "#ai-input-box{flex:1;border:1px solid hsl(140,15%,89%);border-radius:.5rem;"
+        "padding:.45rem .65rem;font-family:Heebo,sans-serif;font-size:.82rem;"
+        "outline:none;direction:rtl;}"
+        "#ai-input-box:focus{border-color:hsl(142,55%,35%);}"
+        "#ai-send-btn{background:hsl(142,55%,35%);color:#fff;border:none;"
+        "border-radius:.5rem;padding:.45rem .8rem;cursor:pointer;"
+        "font-family:Heebo,sans-serif;font-size:.82rem;font-weight:600;}"
+        "#ai-send-btn:hover{background:hsl(142,55%,28%);}"
+        "#ai-clear-link{font-size:.68rem;color:rgba(255,255,255,.5);"
+        "cursor:pointer;margin-left:.5rem;background:none;border:none;}"
+        "#ai-clear-link:hover{color:#fff;}"
+    )
 
-כללים: ענה רק בשורה תחתונה. מספרים גדולים — בטונות CO₂e. אל תסביר חישובים."""
+    css_json = _json.dumps(CSS, ensure_ascii=False)
 
-    # ── Build message HTML from session_state (server-side) ──
-    msgs_html = ""
-    for m in st.session_state["ai_messages"]:
-        cls  = "ai-msg-user" if m["role"] == "user" else "ai-msg-bot"
-        text = (m["content"]
-                .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                .replace("\n", "<br>"))
-        msgs_html += f'<div class="{cls}">{text}</div>\n'
-    if not msgs_html:
-        msgs_html = '<div class="ai-msg-bot">שלום! שאל אותי על הנתונים בשורת הקלט למטה 👇</div>'
+    # components.html creates an iframe; window.parent is the Streamlit app (same-origin)
+    # so we inject the FAB directly into the real document.body — no Streamlit container overhead
+    components.html(
+        """<!DOCTYPE html><html><head></head><body>
+<script>
+(function() {
+  var pd = (window.parent !== window) ? window.parent.document : document;
 
-    # Badge with message count
-    n = len(st.session_state["ai_messages"])
-    badge_html = f'<span id="ai-badge">{n}</span>' if n > 0 else ""
+  /* ── Inject CSS once ── */
+  if (!pd.getElementById('ai-bubble-css')) {
+    var s = pd.createElement('style');
+    s.id = 'ai-bubble-css';
+    s.textContent = """ + css_json + """;
+    pd.head.appendChild(s);
+  }
 
-    # ── Inject CSS + bubble HTML (panel is purely visual / toggle) ──
-    st.markdown(f"""
+  /* ── Build messages HTML from data ── */
+  var messages = """ + messages_json + """;
+  function buildMsgs(msgs) {
+    if (!msgs.length) return '<div class="ai-msg-bot">שלום! שאל אותי על הנתונים 👇</div>';
+    var tmp = pd.createElement('div');
+    return msgs.map(function(m) {
+      var cls = m.role === 'user' ? 'ai-msg-user' : 'ai-msg-bot';
+      tmp.textContent = m.content;
+      return '<div class="' + cls + '">' + tmp.innerHTML.replace(/\\n/g,'<br>') + '</div>';
+    }).join('');
+  }
+
+  /* ── If panel already injected — just refresh messages and badge ── */
+  var existMsgs = pd.getElementById('ai-msgs');
+  if (existMsgs) {
+    existMsgs.innerHTML = buildMsgs(messages);
+    existMsgs.scrollTop = existMsgs.scrollHeight;
+    var badge = pd.getElementById('ai-badge');
+    if (badge) {
+      badge.textContent = messages.length || '';
+      badge.style.display = messages.length ? 'flex' : 'none';
+    }
+    return;
+  }
+
+  /* ── First render: build DOM ── */
+  var root = pd.createElement('div');
+  root.id = 'ai-bubble-root';
+  pd.body.appendChild(root);
+
+  /* FAB */
+  var fab = pd.createElement('button');
+  fab.id = 'ai-fab';
+  fab.title = 'עוזר AI';
+  fab.setAttribute('type', 'button');
+  var badge = pd.createElement('span');
+  badge.id = 'ai-badge';
+  badge.textContent = messages.length || '';
+  badge.style.display = messages.length ? 'flex' : 'none';
+  fab.appendChild(pd.createTextNode('🤖'));
+  fab.appendChild(badge);
+  root.appendChild(fab);
+
+  /* Panel */
+  var panel = pd.createElement('div');
+  panel.id = 'ai-panel';
+  panel.innerHTML =
+    '<div id="ai-ph">' +
+      '<div>' +
+        '<div id="ai-ph-title">🤖 עוזר נתונים AI</div>' +
+        '<div id="ai-ph-sub">Vertex AI · Gemini 1.5 Flash</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;">' +
+        '<button id="ai-clear-link" type="button" title="נקה שיחה">🗑️</button>' +
+        '<button id="ai-ph-close" type="button">✕</button>' +
+      '</div>' +
+    '</div>' +
+    '<div id="ai-msgs"></div>' +
+    '<div id="ai-input-row">' +
+      '<input id="ai-input-box" type="text" placeholder="שאל שאלה על הנתונים..." autocomplete="off"/>' +
+      '<button id="ai-send-btn" type="button">שלח</button>' +
+    '</div>';
+  root.appendChild(panel);
+
+  pd.getElementById('ai-msgs').innerHTML = buildMsgs(messages);
+
+  /* ── Events ── */
+  fab.addEventListener('click', function() {
+    panel.classList.toggle('ai-open');
+    if (panel.classList.contains('ai-open')) {
+      pd.getElementById('ai-msgs').scrollTop = 99999;
+      setTimeout(function() { pd.getElementById('ai-input-box').focus(); }, 220);
+    }
+  });
+
+  pd.getElementById('ai-ph-close').addEventListener('click', function() {
+    panel.classList.remove('ai-open');
+  });
+
+  pd.getElementById('ai-clear-link').addEventListener('click', function() {
+    pd.getElementById('ai-msgs').innerHTML = '<div class="ai-msg-bot">שיחה נוקתה. כיצד אוכל לעזור? 🌿</div>';
+    var b = pd.getElementById('ai-badge');
+    if (b) { b.textContent = ''; b.style.display = 'none'; }
+  });
+
+  function sendMsg() {
+    var inputBox = pd.getElementById('ai-input-box');
+    var q = inputBox.value.trim();
+    if (!q) return;
+    inputBox.value = '';
+
+    /* Optimistic UI */
+    var msgs = pd.getElementById('ai-msgs');
+    var uDiv = pd.createElement('div');
+    uDiv.className = 'ai-msg-user';
+    uDiv.textContent = q;
+    msgs.appendChild(uDiv);
+    var tDiv = pd.createElement('div');
+    tDiv.className = 'ai-msg-bot';
+    tDiv.id = 'ai-typing';
+    tDiv.innerHTML = '<span style="opacity:.55">⏳ מנתח...</span>';
+    msgs.appendChild(tDiv);
+    msgs.scrollTop = 99999;
+
+    /* Trigger Streamlit's hidden chat input */
+    var ta = pd.querySelector('[data-testid="stChatInputTextArea"]');
+    if (ta) {
+      try {
+        var setter = Object.getOwnPropertyDescriptor(
+          window.parent.HTMLTextAreaElement.prototype, 'value'
+        ).set;
+        setter.call(ta, q);
+      } catch(e) { ta.value = q; }
+      ta.dispatchEvent(new Event('input', {bubbles: true}));
+      setTimeout(function() {
+        var btn = pd.querySelector('[data-testid="stChatInputSubmitButton"]');
+        if (btn) btn.click();
+      }, 60);
+    }
+  }
+
+  pd.getElementById('ai-send-btn').addEventListener('click', sendMsg);
+  pd.getElementById('ai-input-box').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); sendMsg(); }
+  });
+
+})();
+</script>
+</body></html>""",
+        height=0,
+        scrolling=False,
+    )
+
+    # Hide Streamlit's native chat bar (keep it in DOM for JS to trigger)
+    st.markdown("""
     <style>
-    /* ── Bubble button ── */
-    #ai-fab {{
-        position: fixed;
-        bottom: 5.5rem;   /* above Streamlit's native chat bar */
-        left: 1.5rem;
-        width: 3.25rem;
-        height: 3.25rem;
-        border-radius: 50%;
-        background: linear-gradient(135deg, hsl(142,55%,35%), hsl(152,45%,42%));
-        color: #fff;
-        font-size: 1.35rem;
-        border: none;
-        cursor: pointer;
-        box-shadow: 0 4px 18px hsl(142,55%,35%,.5);
-        z-index: 10001;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: transform .18s, box-shadow .18s;
-        user-select: none;
-    }}
-    #ai-fab:hover {{ transform: scale(1.08); box-shadow: 0 6px 24px hsl(142,55%,35%,.65); }}
-    #ai-badge {{
-        position: absolute;
-        top: -.2rem; right: -.2rem;
-        background: hsl(0,72%,51%);
-        color: #fff;
-        font-size: .6rem;
-        font-weight: 700;
-        font-family: Heebo, sans-serif;
-        min-width: 1.1rem;
-        height: 1.1rem;
-        border-radius: 999px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0 .25rem;
-        pointer-events: none;
-    }}
-
-    /* ── Chat panel ── */
-    #ai-panel {{
-        position: fixed;
-        bottom: 9.5rem;
-        left: 1.25rem;
-        width: min(370px, calc(100vw - 2.5rem));
-        max-height: 480px;
-        background: #fff;
-        border-radius: 1rem;
-        box-shadow: 0 14px 44px rgba(0,0,0,.2);
-        z-index: 10000;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        /* hidden by default */
-        opacity: 0;
-        transform: translateY(16px) scale(.96);
-        pointer-events: none;
-        transition: opacity .22s cubic-bezier(.4,0,.2,1),
-                    transform .22s cubic-bezier(.4,0,.2,1);
-    }}
-    #ai-panel.ai-open {{
-        opacity: 1;
-        transform: translateY(0) scale(1);
-        pointer-events: all;
-    }}
-
-    /* ── Panel header ── */
-    #ai-ph {{
-        background: linear-gradient(135deg, hsl(150,30%,10%), hsl(150,22%,18%));
-        padding: .7rem 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-shrink: 0;
-    }}
-    #ai-ph-title {{
-        font-family: Heebo, sans-serif;
-        font-size: .875rem;
-        font-weight: 700;
-        color: #fff;
-        line-height: 1.3;
-    }}
-    #ai-ph-sub {{
-        font-size: .68rem;
-        color: rgba(255,255,255,.5);
-        font-weight: 400;
-    }}
-    #ai-ph-close {{
-        background: rgba(255,255,255,.1);
-        border: none;
-        border-radius: .4rem;
-        color: rgba(255,255,255,.8);
-        font-size: .8rem;
-        padding: .2rem .5rem;
-        cursor: pointer;
-        font-family: Heebo, sans-serif;
-    }}
-    #ai-ph-close:hover {{ background: rgba(255,255,255,.2); color:#fff; }}
-
-    /* ── Messages area ── */
-    #ai-msgs {{
-        flex: 1;
-        overflow-y: auto;
-        padding: .75rem 1rem;
-        display: flex;
-        flex-direction: column;
-        gap: .5rem;
-        font-family: Heebo, sans-serif;
-        font-size: .82rem;
-        direction: rtl;
-        scroll-behavior: smooth;
-    }}
-    .ai-msg-user {{
-        align-self: flex-start;
-        background: hsl(142,55%,35%);
-        color: #fff;
-        border-radius: .75rem .75rem .1rem .75rem;
-        padding: .45rem .7rem;
-        max-width: 84%;
-        line-height: 1.5;
-        word-break: break-word;
-    }}
-    .ai-msg-bot {{
-        align-self: flex-end;
-        background: hsl(140,12%,93%);
-        color: hsl(150,25%,10%);
-        border-radius: .75rem .75rem .75rem .1rem;
-        padding: .45rem .7rem;
-        max-width: 84%;
-        line-height: 1.5;
-        word-break: break-word;
-    }}
-
-    /* ── Footer hint ── */
-    #ai-footer {{
-        padding: .5rem 1rem;
-        font-family: Heebo, sans-serif;
-        font-size: .72rem;
-        color: hsl(150,10%,55%);
-        border-top: 1px solid hsl(140,15%,89%);
-        direction: rtl;
-        background: hsl(140,10%,98%);
-        flex-shrink: 0;
-    }}
-
-    /* ── Style Streamlit's native chat input bar ── */
-    .stChatFloatingInputContainer {{
-        left: 0 !important;
-        right: 0 !important;
-    }}
+    .stChatFloatingInputContainer {
+        position: fixed !important;
+        bottom: -200px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        z-index: -1 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+    }
+    .main .block-container { padding-bottom: 1rem !important; }
     </style>
-
-    <div id="ai-fab" title="עוזר AI">🤖{badge_html}</div>
-
-    <div id="ai-panel">
-      <div id="ai-ph">
-        <div>
-          <div id="ai-ph-title">🤖 עוזר נתונים AI</div>
-          <div id="ai-ph-sub">Vertex AI · Gemini 1.5 Flash</div>
-        </div>
-        <button id="ai-ph-close">✕ סגור</button>
-      </div>
-      <div id="ai-msgs">{msgs_html}</div>
-      <div id="ai-footer">הקלד שאלה בשורת הצ׳אט למטה ← Enter לשליחה</div>
-    </div>
-
-    <script>
-    (function() {{
-      /* Wait for DOM — Streamlit injects HTML asynchronously */
-      function init() {{
-        var fab   = document.getElementById('ai-fab');
-        var panel = document.getElementById('ai-panel');
-        var msgs  = document.getElementById('ai-msgs');
-        var closeBtn = document.getElementById('ai-ph-close');
-
-        if (!fab || !panel) {{
-          setTimeout(init, 80);
-          return;
-        }}
-
-        /* scroll messages to bottom */
-        if (msgs) msgs.scrollTop = msgs.scrollHeight;
-
-        /* Toggle open/close */
-        fab.addEventListener('click', function() {{
-          panel.classList.toggle('ai-open');
-          if (msgs) msgs.scrollTop = msgs.scrollHeight;
-        }});
-
-        if (closeBtn) {{
-          closeBtn.addEventListener('click', function() {{
-            panel.classList.remove('ai-open');
-          }});
-        }}
-      }}
-      init();
-    }})();
-    </script>
     """, unsafe_allow_html=True)
 
-    # ── Native Streamlit chat input (always at bottom, server-side) ──
     if not _VERTEX_OK:
         return
 
-    if prompt := st.chat_input("🤖 שאל עוזר AI על הנתונים...", key="ai_bubble_input"):
-        # Call Vertex AI
+    if prompt := st.chat_input("ai", key="ai_bubble_input"):
         try:
             vertexai.init(project=_PROJECT, location="me-west1")
             model = GenerativeModel(
@@ -1255,15 +1264,13 @@ def _render_ai_bubble(data_df):
                 r = "USER" if m["role"] == "user" else "MODEL"
                 history.append(Content(role=r, parts=[Part.from_text(m["content"])]))
             chat = model.start_chat(history=history)
-            with st.spinner("מנתח..."):
-                resp = chat.send_message(prompt)
+            resp = chat.send_message(prompt)
             ans = resp.text
         except Exception as e:
             ans = f"שגיאת Vertex AI: {e}"
 
-        st.session_state["ai_messages"].append({"role": "user",      "content": prompt})
+        st.session_state["ai_messages"].append({"role": "user", "content": prompt})
         st.session_state["ai_messages"].append({"role": "assistant", "content": ans})
-        # Rerun so the panel HTML above re-renders with the new messages
         st.rerun()
 
 
