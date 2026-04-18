@@ -1,0 +1,15 @@
+
+# Local dev / QA scripts (not for repo)
+backend/__pycache__/
+backend/*.pyc
+backend/alter_bq.py
+backend/analyze_boq*.py
+backend/analyze_boq*.json
+backend/analyze_boq*.txt
+backend/boq_analysis*
+backend/boq_deep_analysis*
+backend/bulk_exclude.py
+backend/check_bq.py
+backend/fix_qa*.py
+backend/ingest_local_files.py
+backend/test_*.py
