@@ -4,7 +4,7 @@ steps:
     args:
       - run
       - deploy
-      - carbontrack-frontend
+      - dashboard
       - --source
       - ./frontend
       - --region
