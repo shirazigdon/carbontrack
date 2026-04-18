@@ -1,5 +1,6 @@
 import os
 import io
+import time
 import base64
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
@@ -1131,22 +1132,35 @@ def render_login():
             unsafe_allow_html=True)
 
 
+_AI_LOCATIONS = ["us-central1", "global", "europe-west1"]
+
+
 @st.cache_resource
-def _get_genai_client():
-    return _genai.Client(vertexai=True, project=_PROJECT, location="global")
+def _get_genai_client(location: str):
+    return _genai.Client(vertexai=True, project=_PROJECT, location=location)
 
 
 def _ai_generate(system_prompt: str, messages: list) -> str:
-    """Call Gemini via google-genai SDK and return the text response."""
-    client = _get_genai_client()
+    """Call Gemini with retry + region fallback on 429/quota errors."""
     contents = [{"role": ("user" if m["role"] == "user" else "model"),
                  "parts": [{"text": m["content"]}]} for m in messages]
-    resp = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=contents,
-        config=_genai_types.GenerateContentConfig(system_instruction=system_prompt),
-    )
-    return resp.text
+    cfg = _genai_types.GenerateContentConfig(system_instruction=system_prompt)
+    last_err = None
+    for loc in _AI_LOCATIONS:
+        for attempt in range(3):
+            try:
+                client = _get_genai_client(loc)
+                return client.models.generate_content(
+                    model="gemini-2.5-flash", contents=contents, config=cfg
+                ).text
+            except Exception as e:
+                last_err = e
+                msg = str(e)
+                if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
+                    time.sleep(2 ** attempt)
+                    continue
+                break  # non-quota error → try next region immediately
+    raise RuntimeError(f"כל האזורים מוצו: {last_err}")
 
 
 def _build_ai_context(df) -> str:
