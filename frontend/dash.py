@@ -730,6 +730,118 @@ def upload_to_backend(f) -> Tuple[bool, str]:
 
 
 # ════════════════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════════
+# ENGINEERING ALTERNATIVES MAP
+# For each material category: ordered list of valid engineering substitutes
+# with a short rationale string.  First entry = most preferred alternative.
+# ════════════════════════════════════════════════════════════════════════════
+_ENG_ALTERNATIVES: dict[str, list[tuple[str, str]]] = {
+    "Structural Concrete": [
+        ("Precast Concrete",           "פרפב מפחית יציקה באתר ומשפר בקרת איכות"),
+        ("Timber",                     "עץ מהנדס (CLT/Glulam) — חומר פחמן-שלילי מבחינת מחזור חיים"),
+        ("Steel Rebar",                "מסגרת פלדה מאפשרת קורות-חלל גדולות עם פחות מסה"),
+        ("Carbon Steel (Plate/Section)","פרופיל פלדה קל-משקל חלופי לעמודי בטון"),
+    ],
+    "Precast Concrete": [
+        ("Structural Concrete",        "יציקה מקומית גמישה יותר לצורות מורכבות"),
+        ("Carbon Steel (Plate/Section)","פרופיל פלדה — חלופה קלת-משקל לאלמנטים נושאים"),
+        ("Timber",                     "עץ מהנדס לגשרים ומבנים קלים"),
+    ],
+    "Asphalt": [
+        ("Structural Concrete",        "מדרכת בטון — עמידות גבוהה, תחזוקה נמוכה"),
+        ("Crushed Stone / Gravel",     "מעטפת טרשים/גרוס — לכביש שדה/דרך גישה"),
+        ("Precast Concrete",           "לוחות פרפב לאזורי עומס גבוה (צמתים, נמלים)"),
+    ],
+    "Steel Rebar": [
+        ("Galvanized Steel",           "פלדה מגולוונת — עמידות קורוזיה גבוהה לסביבות אגרסיביות"),
+        ("Stainless Steel",            "נירוסטה — לפרויקטי חוף/ים ללא תחזוקה"),
+        ("Carbon Steel (Plate/Section)","פרופיל פלדה — להחלפת כלוב ברזל בקירות/קורות"),
+        ("Structural Concrete",        "בטון HD ללא מוטות — לאלמנטים לחץ טהור"),
+    ],
+    "Crushed Stone / Gravel": [
+        ("Asphalt",                    "מעטפת אספלט לשיפור נשיאות ועמידות"),
+        ("Structural Concrete",        "שכבת בטון רזה (Lean Concrete) לבסיס יציב"),
+        ("Precast Concrete",           "לוחות פרפב לאזורי עומס מרוכז"),
+    ],
+    "Galvanized Steel": [
+        ("Stainless Steel",            "נירוסטה — אפס תחזוקה בסביבות ים/כלוריד"),
+        ("Aluminum",                   "אלומיניום — קל-משקל, עמיד קורוזיה ללא ציפוי"),
+        ("Carbon Steel (Plate/Section)","פרופיל פלדה + ציפוי אפוקסי — פתרון כלכלי"),
+    ],
+    "Aluminum": [
+        ("Galvanized Steel",           "פלדה מגולוונת — חזקה יותר בעלות נמוכה"),
+        ("Carbon Steel (Plate/Section)","פלדה קרבון עם ציפוי — לאזורים לא חשופים"),
+        ("Stainless Steel",            "נירוסטה — לחיפויים חיצוניים אסתטיים"),
+    ],
+    "Copper Wire": [
+        ("Aluminum",                   "כבל אלומיניום — מוליך, קל ב-60% מנחושת"),
+        ("Galvanized Steel",           "כבל פלדה לעיגונים ולא למוליכות"),
+    ],
+    "HDPE Pipe": [
+        ("PVC",                        "צינורות PVC — זולים יותר לקוטרים קטנים"),
+        ("Cast Iron / Ductile Iron",   "ברזל-נדן — לקווי ראשיים בלחץ גבוה"),
+        ("Structural Concrete",        "צינור בטון — לניקוז קוטר גדול ללא לחץ"),
+    ],
+    "PVC": [
+        ("HDPE Pipe",                  "HDPE — גמיש יותר, עמיד ל-UV, חיבורים מרותכים"),
+        ("Cast Iron / Ductile Iron",   "ברזל-נדן — לקווי לחץ ראשיים"),
+        ("Structural Concrete",        "צינור בטון — לניקוז קוטר גדול ללא לחץ"),
+    ],
+    "Cast Iron / Ductile Iron": [
+        ("HDPE Pipe",                  "HDPE — קל-משקל, עמיד קורוזיה לחלוטין"),
+        ("PVC",                        "PVC — לרשתות ביוב בלחץ נמוך"),
+        ("Galvanized Steel",           "פלדה מגולוונת לקטעים ישרים ועמוסים"),
+    ],
+    "Stainless Steel": [
+        ("Galvanized Steel",           "פלדה מגולוונת — עלות נמוכה פי 3-5 לסביבות פחות אגרסיביות"),
+        ("Aluminum",                   "אלומיניום — קל, עמיד, לאלמנטים לא מבניים"),
+    ],
+    "Carbon Steel (Plate/Section)": [
+        ("Galvanized Steel",           "פלדה מגולוונת — הגנת קורוזיה מובנית"),
+        ("Stainless Steel",            "נירוסטה — לסביבות אגרסיביות"),
+        ("Structural Concrete",        "בטון — לאלמנטים לחץ מסיביים"),
+    ],
+    "Timber": [
+        ("Structural Concrete",        "בטון — לעומסים כבדים וחשיפת לחות"),
+        ("Carbon Steel (Plate/Section)","פלדה — לקורות חלל גדול"),
+        ("Precast Concrete",           "פרפב — לאלמנטים חוזרים ניתנים לתיעוש"),
+    ],
+    "Brick / Masonry": [
+        ("Precast Concrete",           "בלוק פרפב — הרכבה מהירה, בקרת איכות"),
+        ("Structural Concrete",        "בטון מוצק — לקירות נושאים"),
+        ("Carbon Steel (Plate/Section)","מסגרת פלדה + מילוי קל — גמישות תכנונית"),
+    ],
+    "Insulation": [
+        ("Timber",                     "עץ כחלופת מבנה שמשלב בידוד טבעי"),
+        ("Structural Concrete",        "בטון מבודד (ICF) — מבנה ובידוד ביחד"),
+    ],
+    "Ceramic / Tiles": [
+        ("Structural Concrete",        "בטון מוחלק/צבוע — לפרויקטי תשתית"),
+        ("Precast Concrete",           "לוחות פרפב — לחיפוי מהיר"),
+    ],
+    "Glass / Glazing": [
+        ("Aluminum",                   "לוחות אלומיניום לחיפויים לא-שקופים"),
+        ("Precast Concrete",           "פאנלים פרפב לחזיתות אטומות"),
+    ],
+    "Gypsum / Plasterboard": [
+        ("Structural Concrete",        "בטון קל (Lightweight) כחלופה מבנית"),
+        ("Timber",                     "קירות עץ — בידוד וקל-משקל"),
+    ],
+}
+
+
+def _suggest_alternatives(src_cat: str, available_cats: list[str]) -> list[tuple[str, str]]:
+    """Return ordered list of (category, rationale) that exist in available_cats."""
+    candidates = _ENG_ALTERNATIVES.get(src_cat, [])
+    # Filter to categories that actually exist in the DB
+    result = [(cat, reason) for cat, reason in candidates if cat in available_cats and cat != src_cat]
+    # If no specific mapping found, fall back to all available (excluding self)
+    if not result:
+        result = [(cat, "חלופה כללית מהמאגר") for cat in available_cats if cat != src_cat]
+    return result
+
+
+# ════════════════════════════════════════════════════════════════════════════
 # BIGQUERY HELPERS
 # ════════════════════════════════════════════════════════════════════════════
 _PROJECT = "argon-ace-483810-n9"
@@ -1687,29 +1799,98 @@ def render_dashboard():
         # ════ TAB: WHAT-IF ════
     with tab_whatif:
         st.markdown('<div class="section-title">⇄ סימולטור חלופות חומרים (What-If)</div>', unsafe_allow_html=True)
-        st.caption("בנה תרחישים: השווה פליטות חומר קיים מול חלופה — ראה את ההשפעה הסביבתית בזמן אמת")
+        st.caption("בחר חומר קיים — המערכת תציע חלופות הנדסיות חכמות ותדרג אותן לפי פחמן")
 
         all_cats = sorted(emissions_df["category"].unique())
         cur_cats = sorted(df["category"].unique()) if not df.empty else all_cats
 
-        _wi1, _wi2, _wi3 = st.columns(3)
-        with _wi1:
-            src = st.selectbox("חומר קיים (נוכחי)", cur_cats, key="wi_src")
-        with _wi2:
-            alt = st.selectbox("חומר חלופי מוצע", all_cats, key="wi_alt")
-        with _wi3:
+        # ── Step 1: select current material ──
+        _wi_left, _wi_right = st.columns([2, 3])
+        with _wi_left:
+            src = st.selectbox("① חומר קיים בפרויקט", cur_cats, key="wi_src")
             src_sub = df[df["category"] == src] if not df.empty else pd.DataFrame()
             curr_w = float(src_sub["weight_kg"].sum()) if not src_sub.empty else 0.0
-            eff_qty = st.number_input("כמות חלופית (ק״ג)", value=max(curr_w, 1000.0),
-                                       min_value=0.0, step=1000.0, key="wi_qty")
+            curr_e = float(src_sub["emission_co2e"].sum()) if not src_sub.empty else 0.0
+            src_factor = curr_e / curr_w if curr_w > 0 else 0.0
+            st.markdown(f"""
+            <div class="card-surface" style="margin-top:.5rem;">
+              <div style="font-size:.72rem;color:var(--muted-fg);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;">נוכחי</div>
+              <div style="font-size:1.4rem;font-weight:700;direction:ltr;">{curr_e/1000:,.1f}<span style="font-size:.875rem;font-weight:400;color:var(--muted-fg);"> t CO₂e</span></div>
+              <div style="font-size:.8rem;color:var(--muted-fg);margin-top:.2rem;">{curr_w/1000:,.0f}t חומר · פקטור {src_factor:.4f}</div>
+            </div>""", unsafe_allow_html=True)
 
-        curr_e = float(src_sub["emission_co2e"].sum()) if not src_sub.empty else 0.0
+        # ── Step 2: build ranked alternatives ──
+        with _wi_right:
+            _eng_alts = _suggest_alternatives(src, all_cats)
+
+            # compute emission factor for each candidate from DB
+            _alt_ranked = []
+            for _cat, _reason in _eng_alts:
+                _sub = emissions_df[emissions_df["category"] == _cat]
+                _w = float(_sub["weight_kg"].sum())
+                _e = float(_sub["emission_co2e"].sum())
+                _f = _e / _w if _w > 0 else None
+                _alt_ranked.append((_cat, _reason, _f))
+
+            # sort: categories with known factor first (lowest factor = best), then unknowns
+            _alt_ranked.sort(key=lambda x: (x[2] is None, x[2] or 9999))
+
+            if _alt_ranked:
+                st.markdown("**② חלופות הנדסיות מומלצות** — לחץ לבחירה")
+                _chosen_alt = st.session_state.get("wi_alt_chosen", _alt_ranked[0][0])
+
+                _btn_cols = st.columns(min(len(_alt_ranked), 3))
+                for _bi, (_acat, _areason, _af) in enumerate(_alt_ranked[:3]):
+                    with _btn_cols[_bi]:
+                        _is_sel = _chosen_alt == _acat
+                        _border = "2px solid hsl(142,55%,35%)" if _is_sel else "1px solid var(--border)"
+                        _bg = "hsl(142,55%,35%,.07)" if _is_sel else "var(--card)"
+                        _badge = ""
+                        if _af is not None:
+                            _delta = _af - src_factor
+                            _badge_col = "hsl(152,60%,40%)" if _delta < 0 else "hsl(0,72%,51%)"
+                            _sign = "↓" if _delta < 0 else "↑"
+                            _badge = f'<span style="background:{_badge_col}22;color:{_badge_col};font-size:.65rem;font-weight:700;padding:.1rem .4rem;border-radius:999px;">{_sign} {abs(_delta/_src_factor*100 if (_src_factor:=src_factor) else 0):.0f}%</span>' if src_factor else ""
+                        st.markdown(f"""
+                        <div style="border:{_border};background:{_bg};border-radius:var(--radius);
+                             padding:.75rem;cursor:pointer;min-height:90px;">
+                          <div style="font-weight:600;font-size:.82rem;margin-bottom:.3rem;">{_acat}</div>
+                          <div style="font-size:.7rem;color:var(--muted-fg);line-height:1.5;margin-bottom:.35rem;">{_areason}</div>
+                          <div style="font-size:.72rem;direction:ltr;">
+                            {'פקטור: <b>' + f"{_af:.4f}" + '</b> kg CO₂e/kg ' + _badge if _af is not None else '<span style="color:var(--muted-fg)">אין נתון במאגר</span>'}
+                          </div>
+                        </div>""", unsafe_allow_html=True)
+                        if st.button("בחר" if not _is_sel else "✓ נבחר", key=f"wi_pick_{_bi}",
+                                     use_container_width=True,
+                                     type="primary" if _is_sel else "secondary"):
+                            st.session_state["wi_alt_chosen"] = _acat
+                            st.rerun()
+
+                # Manual override
+                with st.expander("🔧 בחירה ידנית מכל הקטגוריות"):
+                    _manual = st.selectbox("קטגוריה ידנית", all_cats,
+                                           index=all_cats.index(_chosen_alt) if _chosen_alt in all_cats else 0,
+                                           key="wi_alt_manual")
+                    if st.button("החל בחירה ידנית", key="wi_apply_manual"):
+                        st.session_state["wi_alt_chosen"] = _manual
+                        st.rerun()
+
+                alt = st.session_state.get("wi_alt_chosen", _alt_ranked[0][0])
+            else:
+                alt = st.selectbox("חומר חלופי", all_cats, key="wi_alt_fallback")
+
+        # ── Step 3: quantity & compute ──
+        eff_qty = st.number_input("כמות חלופית (ק״ג)", value=max(curr_w, 1000.0),
+                                   min_value=0.0, step=1000.0, key="wi_qty")
+
         alt_sub = emissions_df[emissions_df["category"] == alt]
         alt_w_tot = float(alt_sub["weight_kg"].sum())
         alt_e_tot = float(alt_sub["emission_co2e"].sum())
         alt_factor = alt_e_tot / alt_w_tot if alt_w_tot > 0 else 0.0
         proj_e = eff_qty * alt_factor
         diff = curr_e - proj_e
+
+        st.markdown("<div style='height:.75rem'></div>", unsafe_allow_html=True)
 
         # ── KPI row ──
         _wk1, _wk2, _wk3, _wk4 = st.columns(4)
@@ -1731,27 +1912,37 @@ def render_dashboard():
 
         st.markdown("<div style='height:.75rem'></div>", unsafe_allow_html=True)
 
+        # ── Chart + sensitivity ──
         _wc1, _wc2 = st.columns([3, 2])
         with _wc1:
             st.markdown('<div class="card-surface">', unsafe_allow_html=True)
             st.markdown('<div class="section-title">📊 השוואה ויזואלית</div>', unsafe_allow_html=True)
-            _bar_color_alt = "hsl(85,50%,45%)" if diff >= 0 else "hsl(0,72%,51%)"
+
+            # Multi-bar: show all ranked alternatives + current
             _fig_wi = go.Figure()
             _fig_wi.add_trace(go.Bar(
-                name=f"נוכחי — {src}", x=["נוכחי"], y=[curr_e / 1000],
-                marker_color="hsl(142,55%,35%)",
+                name=f"נוכחי — {src}", x=[src], y=[curr_e / 1000],
+                marker_color="hsl(150,25%,55%)",
                 text=[f"{curr_e/1000:,.1f}t"], textposition="auto",
             ))
-            _fig_wi.add_trace(go.Bar(
-                name=f"חלופה — {alt}", x=["חלופה"], y=[proj_e / 1000],
-                marker_color=_bar_color_alt,
-                text=[f"{proj_e/1000:,.1f}t"], textposition="auto",
-            ))
+            _colors = ["hsl(142,55%,35%)", "hsl(85,50%,45%)", "hsl(195,70%,45%)"]
+            for _ci, (_acat, _areason, _af) in enumerate(_alt_ranked[:3]):
+                if _af is None:
+                    continue
+                _pe = eff_qty * _af
+                _col = _colors[_ci % len(_colors)]
+                _is_sel_bar = _acat == alt
+                _fig_wi.add_trace(go.Bar(
+                    name=_acat, x=[_acat], y=[_pe / 1000],
+                    marker_color=_col,
+                    marker_line=dict(width=3 if _is_sel_bar else 0, color="#000"),
+                    text=[f"{_pe/1000:,.1f}t"], textposition="auto",
+                ))
             _fig_wi.update_layout(
-                height=260, barmode="group",
+                height=270, barmode="group",
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                 font=dict(family="Heebo, sans-serif", size=12),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02),
                 margin=dict(l=0, r=0, t=36, b=0), yaxis_title="טון CO₂e",
                 xaxis=dict(showgrid=False), yaxis=dict(gridcolor="hsl(140,15%,89%)"),
             )
@@ -1761,7 +1952,7 @@ def render_dashboard():
         with _wc2:
             st.markdown('<div class="card-surface">', unsafe_allow_html=True)
             st.markdown('<div class="section-title">📐 ניתוח רגישות</div>', unsafe_allow_html=True)
-            st.caption("השפעת שינויי כמות על הפליטות")
+            st.caption(f"חלופה נבחרת: **{alt}**")
             _sens_rows = []
             for _sp in [70, 85, 100, 115, 130]:
                 _qty_p = eff_qty * _sp / 100
@@ -1775,7 +1966,7 @@ def render_dashboard():
                 })
             st.dataframe(pd.DataFrame(_sens_rows), use_container_width=True, hide_index=True)
             if alt_factor > 0:
-                _savings_usd = diff / 1000 * 25  # ~$25/t EU ETS
+                _savings_usd = diff / 1000 * 25
                 st.caption(f"💰 שווי כלכלי (ETS ~$25/t CO₂e): ${_savings_usd:,.0f}")
             st.markdown('</div>', unsafe_allow_html=True)
     # ════ TAB: AI ASSISTANT ════
