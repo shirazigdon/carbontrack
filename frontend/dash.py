@@ -13,9 +13,8 @@ import streamlit.components.v1 as components
 from textwrap import dedent
 
 try:
-    import vertexai
-    from vertexai.generative_models import GenerativeModel, Content, Part
-
+    from google import genai as _genai
+    from google.genai import types as _genai_types
     _VERTEX_OK = True
 except Exception:
     _VERTEX_OK = False
@@ -1021,13 +1020,21 @@ def render_login():
 
 
 @st.cache_resource
-def _init_vertex():
-    vertexai.init(project=_PROJECT, location="me-west1")
+def _get_genai_client():
+    return _genai.Client(vertexai=True, project=_PROJECT, location="me-west1")
 
 
-def _get_vertex_model(system_prompt: str):
-    _init_vertex()
-    return GenerativeModel("gemini-1.5-flash-002", system_instruction=[system_prompt])
+def _ai_generate(system_prompt: str, messages: list) -> str:
+    """Call Gemini via google-genai SDK and return the text response."""
+    client = _get_genai_client()
+    contents = [{"role": ("user" if m["role"] == "user" else "model"),
+                 "parts": [{"text": m["content"]}]} for m in messages]
+    resp = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=contents,
+        config=_genai_types.GenerateContentConfig(system_instruction=system_prompt),
+    )
+    return resp.text
 
 
 def _build_ai_context(df) -> str:
@@ -1170,16 +1177,10 @@ def _render_ai_bubble(data_df):
         st.session_state["ai_messages"].append({"role": "user", "content": prompt})
         try:
             sys_p = _build_ai_context(data_df)
-            model = _get_vertex_model(sys_p)
-            history = []
-            for m in st.session_state["ai_messages"][-8:-1]:
-                r = "USER" if m["role"] == "user" else "MODEL"
-                history.append(Content(role=r, parts=[Part.from_text(m["content"])]))
-            chat = model.start_chat(history=history)
-            resp = chat.send_message(prompt)
-            ans = resp.text
+            msgs = st.session_state["ai_messages"][-8:]
+            ans = _ai_generate(sys_p, msgs)
         except Exception as e:
-            ans = f"שגיאת Vertex AI: {e}"
+            ans = f"שגיאת AI: {e}"
         st.session_state["ai_messages"].append({"role": "assistant", "content": ans})
         st.session_state["_ai_auto_open"] = True  # auto-open panel on next render
         st.rerun()
@@ -1814,10 +1815,8 @@ def render_dashboard():
                             with st.spinner("מנתח..."):
                                 try:
                                     _ctx = _build_ai_context(df)
-                                    _m = _get_vertex_model(_ctx)
-                                    _chat = _m.start_chat(history=[])
-                                    _r = _chat.send_message(_q_s)
-                                    st.session_state["ai_messages"].append({"role": "assistant", "content": _r.text})
+                                    _ans_q = _ai_generate(_ctx, [{"role": "user", "content": _q_s}])
+                                    st.session_state["ai_messages"].append({"role": "assistant", "content": _ans_q})
                                 except Exception as _e:
                                     st.session_state["ai_messages"].append({"role": "assistant", "content": f"שגיאה: {_e}"})
                             st.rerun()
@@ -1834,13 +1833,7 @@ def render_dashboard():
                 with st.spinner("מנתח..."):
                     try:
                         _ctx2 = _build_ai_context(df)
-                        _m2 = _get_vertex_model(_ctx2)
-                        _hist = []
-                        for _hm in st.session_state["ai_messages"][-8:-1]:
-                            _hr = "USER" if _hm["role"] == "user" else "MODEL"
-                            _hist.append(Content(role=_hr, parts=[Part.from_text(_hm["content"])]))
-                        _chat2 = _m2.start_chat(history=_hist)
-                        _ans = _chat2.send_message(_prompt_tab).text
+                        _ans = _ai_generate(_ctx2, st.session_state["ai_messages"][-8:])
                     except Exception as _e2:
                         _ans = f"שגיאה: {_e2}"
                 st.session_state["ai_messages"].append({"role": "assistant", "content": _ans})
