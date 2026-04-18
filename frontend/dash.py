@@ -353,7 +353,43 @@ input[type="number"], input[dir="ltr"], code, pre { direction: ltr; unicode-bidi
 /* ── Info/Warning boxes ── */
 .stAlert { border-radius: var(--radius); }
 
+/* ── Buttons (secondary / default) ── */
+.stButton > button:not([kind="primary"]) {
+    border-radius: .6rem !important;
+    font-weight: 500 !important;
+    border: 1px solid var(--border) !important;
+    background: var(--card) !important;
+    color: var(--foreground) !important;
+    transition: background .15s, color .15s;
+}
+.stButton > button:not([kind="primary"]):hover {
+    background: hsl(142,55%,35%,.07) !important;
+    border-color: hsl(142,55%,35%,.4) !important;
+    color: hsl(142,55%,28%) !important;
+}
 
+/* ── AI chat messages (native Streamlit chat) ── */
+[data-testid="stChatMessage"] {
+    border-radius: var(--radius) !important;
+    border: 1px solid var(--border) !important;
+    margin-bottom: .5rem !important;
+    box-shadow: var(--shadow-card) !important;
+}
+[data-testid="stChatMessage"][data-testid*="user"] {
+    background: hsl(142,55%,35%,.06) !important;
+}
+
+/* ── Dataframe ── */
+[data-testid="stDataFrame"] { border-radius: var(--radius) !important; overflow: hidden; }
+
+/* ── Number input ── */
+[data-testid="stNumberInput"] input { border-radius: .5rem !important; }
+
+/* ── Selectbox ── */
+[data-baseweb="select"] > div:first-child { border-radius: .5rem !important; }
+
+/* ── Plotly chart frame ── */
+[data-testid="stPlotlyChart"] { border-radius: var(--radius); overflow: hidden; }
 
 /* ── Custom sidebar content blocks ── */
 .sidebar-panel {
@@ -985,10 +1021,36 @@ def render_login():
 
 
 @st.cache_resource
-def _get_vertex_model(system_prompt: str):
-    """Cache the Vertex AI model — avoid re-initialising on every rerun."""
+def _init_vertex():
     vertexai.init(project=_PROJECT, location="me-west1")
+
+
+def _get_vertex_model(system_prompt: str):
+    _init_vertex()
     return GenerativeModel("gemini-1.5-flash-002", system_instruction=[system_prompt])
+
+
+def _build_ai_context(df) -> str:
+    """Build a rich data context string for the AI assistant."""
+    if df is None or df.empty:
+        return "אתה עוזר וירטואלי של מערכת CarbonTrack360. כרגע אין נתונים זמינים."
+    proj = df.groupby("project_name")[["emission_co2e", "weight_kg"]].sum().reset_index()
+    if "material" in df.columns:
+        cats = df.groupby(["project_name", "category", "material"])[
+            ["emission_co2e", "weight_kg"]].sum().reset_index()
+    else:
+        cats = df.groupby(["project_name", "category"])[
+            ["emission_co2e", "weight_kg"]].sum().reset_index()
+    total_t = df["emission_co2e"].sum() / 1000
+    top_proj = proj.nlargest(1, "emission_co2e")["project_name"].iloc[0] if not proj.empty else "N/A"
+    return (
+        "אתה עוזר AI מומחה של מערכת CarbonTrack360 — מעקב פליטות פחמן לנתיבי ישראל.\n"
+        "תפקידך: לנתח נתונים, לזהות מגמות, להציע המלצות לצמצום פחמן, ולענות בעברית בצורה מקצועית.\n"
+        "מספרים גדולים — הצג בטונות CO₂e. ענה בנקודות קצרות. הצע פעולות מעשיות.\n\n"
+        f"סה\"כ {total_t:,.0f} טון CO₂e · פרויקט מוביל: {top_proj}\n\n"
+        f"נתוני פרויקטים:\n{proj.to_csv(index=False)}\n\n"
+        f"פירוט קטגוריות:\n{cats.to_csv(index=False)}"
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -1004,23 +1066,6 @@ def _render_ai_bubble(data_df):
     """
     if "ai_messages" not in st.session_state:
         st.session_state["ai_messages"] = []
-
-    def _sys_prompt(df):
-        if df is None or df.empty:
-            return "אתה עוזר וירטואלי של מערכת CarbonTrack360. כרגע אין נתונים זמינים."
-        proj = df.groupby("project_name")[["emission_co2e", "weight_kg"]].sum().reset_index()
-        if "material" in df.columns:
-            cats = df.groupby(["project_name", "category", "material"])[
-                ["emission_co2e", "weight_kg"]].sum().reset_index()
-        else:
-            cats = df.groupby(["project_name", "category"])[
-                ["emission_co2e", "weight_kg"]].sum().reset_index()
-        return (
-            "אתה אנליסט בכיר ומומחה פחמן של נתיבי ישראל. ענה בעברית, קצר ומקצועי.\n\n"
-            f"נתוני פרויקטים (kg):\n{proj.to_csv(index=False)}\n\n"
-            f"פירוט קטגוריות:\n{cats.to_csv(index=False)}\n\n"
-            "כללים: ענה רק בשורה תחתונה. מספרים גדולים — בטונות CO₂e. אל תסביר חישובים."
-        )
 
     # Build server-side message HTML
     msgs_html = ""
@@ -1124,7 +1169,7 @@ def _render_ai_bubble(data_df):
     if prompt := st.chat_input("🤖 שאל אותי על הנתונים...", key="ai_bubble_input"):
         st.session_state["ai_messages"].append({"role": "user", "content": prompt})
         try:
-            sys_p = _sys_prompt(data_df)
+            sys_p = _build_ai_context(data_df)
             model = _get_vertex_model(sys_p)
             history = []
             for m in st.session_state["ai_messages"][-8:-1]:
@@ -1310,8 +1355,8 @@ def render_dashboard():
         }, 100);
         </script>""", unsafe_allow_html=True)
 
-    tab_dash, tab_review, tab_whatif, tab_upload, tab_data, tab_settings = st.tabs([
-        "📊 דאשבורד", f"✅ Review ({rev_n})", "⇄ What-If", "☁️ קליטת קבצים", "📋 נתונים", "⚙️ הגדרות"
+    tab_dash, tab_review, tab_whatif, tab_ai, tab_upload, tab_data, tab_settings = st.tabs([
+        "📊 דאשבורד", f"✅ Review ({rev_n})", "⇄ What-If", "🤖 AI", "☁️ קליטת קבצים", "📋 נתונים", "⚙️ הגדרות"
     ])
 
     # ════ TAB: DASHBOARD ════
@@ -1641,46 +1686,166 @@ def render_dashboard():
         # ════ TAB: WHAT-IF ════
     with tab_whatif:
         st.markdown('<div class="section-title">⇄ סימולטור חלופות חומרים (What-If)</div>', unsafe_allow_html=True)
-        st.caption("השוואת פליטה נוכחית מול חומר חלופי על בסיס פקטור היסטורי ממאגר הנתונים")
+        st.caption("בנה תרחישים: השווה פליטות חומר קיים מול חלופה — ראה את ההשפעה הסביבתית בזמן אמת")
 
         all_cats = sorted(emissions_df["category"].unique())
         cur_cats = sorted(df["category"].unique()) if not df.empty else all_cats
 
-        w1, w2, w3 = st.columns(3)
-        with w1:
-            st.markdown("**1. מצב נוכחי**")
-            src = st.selectbox("חומר קיים", cur_cats, key="wi_src")
-            src_sub  = df[df["category"]==src]
-            curr_e   = src_sub["emission_co2e"].sum()
-            curr_w   = src_sub["weight_kg"].sum()
-            kpi("פליטה נוכחית", f"{curr_e:,.0f} kg", src, variant="primary")
-            st.caption(f"משקל נוכחי: {curr_w:,.0f} ק״ג")
+        _wi1, _wi2, _wi3 = st.columns(3)
+        with _wi1:
+            src = st.selectbox("חומר קיים (נוכחי)", cur_cats, key="wi_src")
+        with _wi2:
+            alt = st.selectbox("חומר חלופי מוצע", all_cats, key="wi_alt")
+        with _wi3:
+            src_sub = df[df["category"] == src] if not df.empty else pd.DataFrame()
+            curr_w = float(src_sub["weight_kg"].sum()) if not src_sub.empty else 0.0
+            eff_qty = st.number_input("כמות חלופית (ק״ג)", value=max(curr_w, 1000.0),
+                                       min_value=0.0, step=1000.0, key="wi_qty")
 
-        with w2:
-            st.markdown("**2. חלופה מוצעת**")
-            alt = st.selectbox("חומר חלופי", all_cats, key="wi_alt")
-            alt_sub    = emissions_df[emissions_df["category"]==alt]
-            alt_w_tot  = alt_sub["weight_kg"].sum()
-            alt_e_tot  = alt_sub["emission_co2e"].sum()
-            alt_factor = alt_e_tot / alt_w_tot if alt_w_tot > 0 else 0
-            eff_qty    = st.number_input("כמות חלופית (ק״ג)", value=float(curr_w), min_value=0.0, step=1000.0, key="wi_qty")
-            proj_e     = eff_qty * alt_factor
-            kpi("פליטה חלופית צפויה", f"{proj_e:,.0f} kg", f"פקטור: {alt_factor:.4f}")
-            st.caption(f"פקטור: {alt_factor:.4f} kg CO₂e / kg")
+        curr_e = float(src_sub["emission_co2e"].sum()) if not src_sub.empty else 0.0
+        alt_sub = emissions_df[emissions_df["category"] == alt]
+        alt_w_tot = float(alt_sub["weight_kg"].sum())
+        alt_e_tot = float(alt_sub["emission_co2e"].sum())
+        alt_factor = alt_e_tot / alt_w_tot if alt_w_tot > 0 else 0.0
+        proj_e = eff_qty * alt_factor
+        diff = curr_e - proj_e
 
-        with w3:
-            st.markdown("**3. שורת הרווח הסביבתי**")
-            diff = curr_e - proj_e
+        # ── KPI row ──
+        _wk1, _wk2, _wk3, _wk4 = st.columns(4)
+        with _wk1:
+            kpi("פליטה נוכחית", f"{curr_e/1000:,.1f}t", f"CO₂e · {curr_w/1000:,.0f}t חומר", variant="default")
+        with _wk2:
+            kpi("פקטור חלופה", f"{alt_factor:.4f}", "kg CO₂e / kg חומר", variant="default")
+        with _wk3:
+            kpi("פליטה חלופית", f"{proj_e/1000:,.1f}t", f"CO₂e צפויה · {alt}", variant="primary")
+        with _wk4:
             if diff > 0:
-                st.success(f"✅ חיסכון: {diff:,.0f} kg")
-                pct = abs(diff/curr_e*100) if curr_e else 0
-                st.caption(f"ירידה של {pct:.1f}% מהפליטה הנוכחית")
+                _pct = abs(diff / curr_e * 100) if curr_e else 0
+                kpi("✅ חיסכון", f"{diff/1000:,.1f}t", f"↓ {_pct:.1f}% פחות פחמן", variant="accent")
             elif diff < 0:
-                st.error(f"⚠️ תוספת: {abs(diff):,.0f} kg")
-                pct = abs(diff/curr_e*100) if curr_e else 0
-                st.caption(f"עלייה של {pct:.1f}% מהפליטה הנוכחית")
+                _pct = abs(diff / curr_e * 100) if curr_e else 0
+                kpi("⚠️ תוספת פחמן", f"{abs(diff)/1000:,.1f}t", f"↑ {_pct:.1f}% יותר פחמן", variant="default")
             else:
-                st.info("אין שינוי בפליטות")
+                kpi("אין שינוי", "0t", "פליטות זהות", variant="default")
+
+        st.markdown("<div style='height:.75rem'></div>", unsafe_allow_html=True)
+
+        _wc1, _wc2 = st.columns([3, 2])
+        with _wc1:
+            st.markdown('<div class="card-surface">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">📊 השוואה ויזואלית</div>', unsafe_allow_html=True)
+            _bar_color_alt = "hsl(85,50%,45%)" if diff >= 0 else "hsl(0,72%,51%)"
+            _fig_wi = go.Figure()
+            _fig_wi.add_trace(go.Bar(
+                name=f"נוכחי — {src}", x=["נוכחי"], y=[curr_e / 1000],
+                marker_color="hsl(142,55%,35%)",
+                text=[f"{curr_e/1000:,.1f}t"], textposition="auto",
+            ))
+            _fig_wi.add_trace(go.Bar(
+                name=f"חלופה — {alt}", x=["חלופה"], y=[proj_e / 1000],
+                marker_color=_bar_color_alt,
+                text=[f"{proj_e/1000:,.1f}t"], textposition="auto",
+            ))
+            _fig_wi.update_layout(
+                height=260, barmode="group",
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family="Heebo, sans-serif", size=12),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                margin=dict(l=0, r=0, t=36, b=0), yaxis_title="טון CO₂e",
+                xaxis=dict(showgrid=False), yaxis=dict(gridcolor="hsl(140,15%,89%)"),
+            )
+            st.plotly_chart(_fig_wi, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with _wc2:
+            st.markdown('<div class="card-surface">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">📐 ניתוח רגישות</div>', unsafe_allow_html=True)
+            st.caption("השפעת שינויי כמות על הפליטות")
+            _sens_rows = []
+            for _sp in [70, 85, 100, 115, 130]:
+                _qty_p = eff_qty * _sp / 100
+                _proj_p = _qty_p * alt_factor
+                _d = curr_e - _proj_p
+                _sens_rows.append({
+                    "כמות": f"{_sp}%",
+                    "ק״ג (t)": f"{_qty_p/1000:,.0f}",
+                    "פליטה (t)": f"{_proj_p/1000:,.1f}",
+                    "חיסכון (t)": f"{'+' if _d >= 0 else ''}{_d/1000:,.1f}",
+                })
+            st.dataframe(pd.DataFrame(_sens_rows), use_container_width=True, hide_index=True)
+            if alt_factor > 0:
+                _savings_usd = diff / 1000 * 25  # ~$25/t EU ETS
+                st.caption(f"💰 שווי כלכלי (ETS ~$25/t CO₂e): ${_savings_usd:,.0f}")
+            st.markdown('</div>', unsafe_allow_html=True)
+    # ════ TAB: AI ASSISTANT ════
+    with tab_ai:
+        st.markdown('<div class="section-title">🤖 עוזר AI — ניתוח נתוני פחמן</div>', unsafe_allow_html=True)
+
+        if not _VERTEX_OK:
+            st.error("Vertex AI לא זמין — בדוק את ה-credentials")
+        else:
+            ai_msgs = st.session_state.get("ai_messages", [])
+
+            if not ai_msgs:
+                st.markdown("""
+                <div class="card-surface" style="text-align:center;padding:2.5rem 2rem 2rem;margin-bottom:1.5rem;">
+                  <div style="font-size:2.5rem;margin-bottom:.75rem;">🤖</div>
+                  <div style="font-weight:700;font-size:1.1rem;margin-bottom:.4rem;color:var(--foreground);">עוזר AI של CarbonTrack360</div>
+                  <div style="color:var(--muted-fg);font-size:.875rem;line-height:1.6;">
+                    שאל אותי כל שאלה על נתוני הפחמן — אנתח, אשווה ואמליץ בזמן אמת
+                  </div>
+                </div>""", unsafe_allow_html=True)
+
+                st.markdown('<div class="section-title">💡 שאלות מוצעות</div>', unsafe_allow_html=True)
+                _suggestions = [
+                    ("🏆", "מה הפרויקט עם הכי הרבה פליטות?"),
+                    ("📊", "פרט את הפליטות לפי קטגוריית חומר"),
+                    ("💡", "הצע 3 דרכים מעשיות לצמצום פליטות"),
+                    ("⚖️", "השווה בין הפרויקטים לפי פחמן לטון חומר"),
+                    ("🔥", "אילו חומרים הם הפולטים הגדולים ביותר?"),
+                    ("📈", "מה המגמה של הפליטות לאורך השנים?"),
+                ]
+                _sq1, _sq2, _sq3 = st.columns(3)
+                _sq_cols = [_sq1, _sq2, _sq3]
+                for _si, (_icon_s, _q_s) in enumerate(_suggestions):
+                    with _sq_cols[_si % 3]:
+                        if st.button(f"{_icon_s} {_q_s}", key=f"ai_sq_{_si}", use_container_width=True):
+                            st.session_state["ai_messages"].append({"role": "user", "content": _q_s})
+                            with st.spinner("מנתח..."):
+                                try:
+                                    _ctx = _build_ai_context(df)
+                                    _m = _get_vertex_model(_ctx)
+                                    _chat = _m.start_chat(history=[])
+                                    _r = _chat.send_message(_q_s)
+                                    st.session_state["ai_messages"].append({"role": "assistant", "content": _r.text})
+                                except Exception as _e:
+                                    st.session_state["ai_messages"].append({"role": "assistant", "content": f"שגיאה: {_e}"})
+                            st.rerun()
+            else:
+                for _msg in ai_msgs:
+                    with st.chat_message("user" if _msg["role"] == "user" else "assistant"):
+                        st.markdown(_msg["content"])
+                if st.button("🗑️ נקה שיחה", key="ai_tab_clear", help="מחק היסטוריית שיחה"):
+                    st.session_state["ai_messages"] = []
+                    st.rerun()
+
+            if _prompt_tab := st.chat_input("שאל אותי על הנתונים...", key="ai_tab_input"):
+                st.session_state["ai_messages"].append({"role": "user", "content": _prompt_tab})
+                with st.spinner("מנתח..."):
+                    try:
+                        _ctx2 = _build_ai_context(df)
+                        _m2 = _get_vertex_model(_ctx2)
+                        _hist = []
+                        for _hm in st.session_state["ai_messages"][-8:-1]:
+                            _hr = "USER" if _hm["role"] == "user" else "MODEL"
+                            _hist.append(Content(role=_hr, parts=[Part.from_text(_hm["content"])]))
+                        _chat2 = _m2.start_chat(history=_hist)
+                        _ans = _chat2.send_message(_prompt_tab).text
+                    except Exception as _e2:
+                        _ans = f"שגיאה: {_e2}"
+                st.session_state["ai_messages"].append({"role": "assistant", "content": _ans})
+                st.rerun()
+
     # ════ TAB: UPLOAD ════
     with tab_upload:
         st.markdown('<div class="section-title">☁️ קליטת קובץ חדש</div>', unsafe_allow_html=True)
