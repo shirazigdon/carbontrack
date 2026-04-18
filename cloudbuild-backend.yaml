@@ -1,0 +1,22 @@
+steps:
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - calc-carbon
+      - --source
+      - ./backend
+      - --region
+      - me-west1
+      - --project
+      - argon-ace-483810-n9
+      - --platform
+      - managed
+      - --allow-unauthenticated
+      - --quiet
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1200s
