@@ -277,6 +277,186 @@ CATEGORY_EMISSION_OVERRIDES: Dict[str, float] = {
     "HDPE Granulate":       1.930,  # ICE DB: HDPE — Climatiq returns 1.795 (7% low)
 }
 
+# ==========================================================
+# COMPOSITE MATERIAL RECIPES
+# ==========================================================
+# Each recipe defines a composite material that is really a mixture of
+# two or more category components. Each component has:
+#   "category"  – must be in CATEGORY_EMISSION_OVERRIDES / DEFAULT_CATEGORY_CONFIG
+#   "fraction"  – mass fraction (must sum to 1.0)
+#   "description" – human-readable label for the sub-row
+#
+# Only applied when total weight_kg >= the recipe's min_weight_kg
+# (default 500 kg) to avoid noise from tiny quantities.
+
+MIN_WEIGHT_FOR_COMPOSITE_SPLIT_KG: float = 500.0
+
+COMPOSITE_MATERIAL_RECIPES: List[Dict[str, Any]] = [
+    # ── Reinforced Concrete (בטון מזוין) ─────────────────────────────────
+    # ICE DB: typical reinforced slab has ~100-160 kg rebar/m³ (2400 kg/m³ concrete)
+    # => ~5% steel by mass, 95% concrete
+    {
+        "name": "Reinforced Concrete",
+        "name_he": "בטון מזוין",
+        "patterns": [
+            r"בטון\s*מזו?[יין]",
+            r"reinforced\s*concrete",
+            r"בטון\s*(?:B|G)\d+.*זיון",
+            r"זיון.*בטון",
+        ],
+        "min_weight_kg": 500.0,
+        "components": [
+            {"category": "Structural Concrete", "fraction": 0.95, "description": "בטון מזוין — רכיב בטון (95%)"},
+            {"category": "Steel Rebar",         "fraction": 0.05, "description": "בטון מזוין — רכיב זיון (5%)"},
+        ],
+    },
+    # ── Prestressed / Post-tensioned Concrete ────────────────────────────
+    # Higher steel ratio: ~7% (tendons + stirrups)
+    {
+        "name": "Prestressed Concrete",
+        "name_he": "בטון דחוס / פרה-מתוח",
+        "patterns": [
+            r"בטון\s*(?:דחוס|פרה.?מתוח|פרה.?נפוח)",
+            r"post.?tens|pre.?stress|prestress",
+            r"קורה\s*דריכת\s*קדם",
+            r"כבל\s*דריכה",
+        ],
+        "min_weight_kg": 1000.0,
+        "components": [
+            {"category": "Structural Concrete", "fraction": 0.93, "description": "בטון דחוס — רכיב בטון (93%)"},
+            {"category": "Steel Rebar",         "fraction": 0.07, "description": "בטון דחוס — רכיב פלדה/כבלים (7%)"},
+        ],
+    },
+    # ── Precast Reinforced (ביטון טרומי מזוין) ───────────────────────────
+    {
+        "name": "Precast Reinforced",
+        "name_he": "ביטון טרומי מזוין",
+        "patterns": [
+            r"טרומי\s*מזו?[יין]",
+            r"precast.*reinforc",
+            r"מזוין.*טרומי",
+        ],
+        "min_weight_kg": 500.0,
+        "components": [
+            {"category": "Precast Concrete", "fraction": 0.94, "description": "טרומי מזוין — רכיב בטון טרומי (94%)"},
+            {"category": "Steel Rebar",      "fraction": 0.06, "description": "טרומי מזוין — רכיב זיון (6%)"},
+        ],
+    },
+    # ── Composite Steel-Concrete Column / Beam ───────────────────────────
+    {
+        "name": "Composite Steel-Concrete",
+        "name_he": "עמוד/קורה קומפוזיטי פלדה-בטון",
+        "patterns": [
+            r"composite.*steel.*concrete",
+            r"פלדה\s*ממולאת?\s*בטון",
+            r"עמוד\s*קומפוזיטי",
+        ],
+        "min_weight_kg": 1000.0,
+        "components": [
+            {"category": "Galvanized Steel",    "fraction": 0.40, "description": "קומפוזיט — רכיב פלדה (40%)"},
+            {"category": "Structural Concrete", "fraction": 0.60, "description": "קומפוזיט — רכיב בטון (60%)"},
+        ],
+    },
+    # ── Gabion (גביון / סלסלת סלעים) ─────────────────────────────────────
+    # Wire basket + stones: ~3% steel wire, ~97% crushed stone by mass
+    {
+        "name": "Gabion",
+        "name_he": "גביון / סלסלת סלעים",
+        "patterns": [
+            r"גביון",
+            r"gabion",
+            r"סלסלת\s*סלעים",
+            r"סל\s*(?:גבי|סלע|אבן)",
+        ],
+        "min_weight_kg": 500.0,
+        "components": [
+            {"category": "Crushed Stone",    "fraction": 0.97, "description": "גביון — רכיב סלעים (97%)"},
+            {"category": "Galvanized Steel", "fraction": 0.03, "description": "גביון — רכיב רשת פלדה (3%)"},
+        ],
+    },
+    # ── Full Road Pavement (אספלט + מצע) ─────────────────────────────────
+    {
+        "name": "Full Road Pavement",
+        "name_he": "מבנה כביש מלא (אספלט + מצע)",
+        "patterns": [
+            r"מבנה\s*(?:כביש|מסלול)\s*מלא",
+            r"full\s*pavement\s*structure",
+            r"(?:כביש|מסלול).*אספלט.*חצץ",
+        ],
+        "min_weight_kg": 5000.0,
+        "components": [
+            {"category": "Asphalt",       "fraction": 0.50, "description": "מסלול מלא — רכיב אספלט (50%)"},
+            {"category": "Crushed Stone", "fraction": 0.50, "description": "מסלול מלא — רכיב מצע (50%)"},
+        ],
+    },
+    # ── HDPE Pipe with Concrete Surround ─────────────────────────────────
+    {
+        "name": "Pipe with Concrete Surround",
+        "name_he": "צינור עטוף בטון",
+        "patterns": [
+            r"עטיפ[תה]\s*בטון",
+            r"צינור.*(?:עטוף|ממולא)\s*בטון",
+            r"concrete\s*surround",
+        ],
+        "min_weight_kg": 500.0,
+        "components": [
+            {"category": "Structural Concrete", "fraction": 0.85, "description": "צינור עטוף — רכיב עטיפת בטון (85%)"},
+            {"category": "HDPE Granulate",      "fraction": 0.15, "description": "צינור עטוף — רכיב צינור פלסטיק (15%)"},
+        ],
+    },
+    # ── Concrete with Permanent PVC Formwork ─────────────────────────────
+    {
+        "name": "Concrete with PVC Formwork",
+        "name_he": "בטון עם ביס/מודולה קבוע PVC",
+        "patterns": [
+            r"ביס\s*(?:קבוע|מודולה|pvc)",
+            r"מודולה.*(?:pvc|פלסטי)",
+            r"pvc\s*permanent\s*formwork",
+        ],
+        "min_weight_kg": 500.0,
+        "components": [
+            {"category": "Structural Concrete", "fraction": 0.90, "description": "בטון עם ביס — רכיב בטון (90%)"},
+            {"category": "PVC Pipe",            "fraction": 0.10, "description": "בטון עם ביס — רכיב PVC (10%)"},
+        ],
+    },
+]
+
+
+def detect_composite_split(
+    material_text: str,
+    weight_kg: float,
+) -> Optional[List[Dict[str, Any]]]:
+    """
+    If material_text matches a composite recipe AND weight_kg >= threshold,
+    returns a list of component dicts (one per sub-material):
+        [{"category", "fraction", "weight_kg", "description", "recipe_name"}, ...]
+    Otherwise returns None → process as a single-category row.
+    """
+    if not material_text or not weight_kg or weight_kg <= 0:
+        return None
+    text_norm = normalize_text(material_text)
+    for recipe in COMPOSITE_MATERIAL_RECIPES:
+        min_w = float(recipe.get("min_weight_kg", MIN_WEIGHT_FOR_COMPOSITE_SPLIT_KG))
+        if weight_kg < min_w:
+            continue
+        for pattern in recipe["patterns"]:
+            try:
+                if re.search(pattern, text_norm, flags=re.IGNORECASE):
+                    return [
+                        {
+                            "category":    c["category"],
+                            "fraction":    c["fraction"],
+                            "weight_kg":   round(weight_kg * c["fraction"], 3),
+                            "description": c["description"],
+                            "recipe_name": recipe["name"],
+                        }
+                        for c in recipe["components"]
+                    ]
+            except re.error:
+                logger.warning("Composite recipe pattern error: %s", pattern)
+    return None
+
+
 CATEGORY_RULES: List[Tuple[str, List[str]]] = [
     ("Waterproofing",
      [r"איטו[םמ]", r"ממברנה", r"ביטומ", r"יריעת\s*hdpe", r"גאוטכני", r"פריימר", r"זפת", r"פוליאוריטן", r"סילר",
@@ -872,7 +1052,7 @@ def query_to_dicts(query: str) -> List[Dict[str, Any]]:
 @lru_cache(maxsize=1)
 def load_catalog_mapping_rows() -> List[Dict[str, Any]]:
     rows = query_to_dicts(
-        f"SELECT * FROM `{BQ_MAPPING_TABLE}` WHERE is_active = TRUE ORDER BY confidence DESC, updated_at DESC"
+        f"SELECT * FROM `{BQ_MAPPING_TABLE}` WHERE is_active = TRUE ORDER BY confidence DESC, created_at DESC"
     )
     for row in rows:
         row["_exact_norm"] = normalize_for_compare(row.get("exact_material")) if row.get("exact_material") else ""
@@ -1775,6 +1955,7 @@ BOQ_SUBPREFIX_EXCLUDE = {
     "18.01.07",  # pipe inspection services
     "18.01.08",  # pipe-related services
     "51.02.004",  # soil compaction operations (הידוק קרקע) — not a material
+    "51.23.04",  # drainage trench excavation (חפירת תעלת ניקוז) — earthworks/service
 }
 # Sub-chapter prefixes that force a specific category (material, but wrong default)
 BOQ_SUBPREFIX_FORCE = {
@@ -1785,7 +1966,6 @@ BOQ_SUBPREFIX_FORCE = {
 BOQ_SUBPREFIX_CATEGORY = {
     "51.05.28": "Crushed Stone",   # rocks/boulders/aggregates — NOT Galvanized Steel
     "51.05.30": "Crushed Stone",   # washed/graded gravel — NOT Galvanized Steel
-    "51.99.99": "Crushed Stone",   # 51.99.9975 חצץ special item — force Crushed Stone
     "41.01.03": "HDPE Granulate",  # irrigation PE pipes
     "41.01.04": "HDPE Granulate",
     "41.01.05": "HDPE Granulate",
@@ -1817,7 +1997,7 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
                 "exclusion_code": "T_PREFIX",
             }, None
 
-        if prefix_2 in BOQ_PREFIX_EXCLUDE or prefix_5 in BOQ_SUBPREFIX_EXCLUDE:
+        if prefix_2 in BOQ_PREFIX_EXCLUDE or prefix_5 in BOQ_SUBPREFIX_EXCLUDE or prefix_8 in BOQ_SUBPREFIX_EXCLUDE:
             return None, {
                 "method": "boq_prefix_exclude",
                 "reason": f"BOQ prefix {prefix_5 or prefix_2} is an admin/service chapter",
@@ -2148,12 +2328,14 @@ def lookup_cable_kg_per_m(category: str, material_text: str) -> Tuple[Optional[f
         if weight is not None:
             return weight, f"Cable catalog {best.get('cable_pattern') or f'{cores}x{mm2}'}"
 
-    # Formula fallback.
+    # Formula fallback — total copper/aluminum mass = cores × mm2 × density
     density = DEFAULT_CATEGORY_CONFIG[category]["density_kg_m3"]
     if cores is None:
         factor = copper_or_aluminum_kg_per_m(mm2, density)
         return factor, f"Cable formula using {mm2} mm2"
-    factor = cores * mm2 * 1e-6 * density
+    # cores x mm2: conductor area per meter in m^2 = cores × mm2 × 1e-6
+    # Also add ~15% for insulation/sheath (practical cable weight > bare conductor)
+    factor = round(cores * mm2 * 1e-6 * density * 1.15, 4)
     return factor, f"Cable formula using {cores}x{mm2} mm2"
 
 
@@ -2291,6 +2473,23 @@ def convert_quantity_to_kg(
             factor = cfg.get("kg_per_m2_membrane")
             return ConversionResult(quantity, "m2", assumed_uom, quantity * factor, factor,
                                     "Bituminous membrane default kg/m2", thickness_cm)
+
+        # Glass — extract thickness in mm from text for accurate kg/m2
+        if category == "Glass":
+            # Try to extract mm thickness: "8 מ'מ", "10mm", "12מ\"מ"
+            import re as _re
+            _gm = _re.search(r'(\d+(?:\.\d+)?)\s*(?:מ(?:["״\'\\]?)מ|mm)', text, flags=_re.IGNORECASE)
+            if _gm:
+                thickness_mm = float(_gm.group(1))
+                # Sanity: normal glass 3-40mm, laminated up to 60mm
+                if 2 <= thickness_mm <= 80:
+                    factor = round(DEFAULT_CATEGORY_CONFIG["Glass"]["density_kg_m3"] * thickness_mm / 1000.0, 3)
+                    return ConversionResult(quantity, "m2", assumed_uom, quantity * factor, factor,
+                                            f"Glass {thickness_mm:.0f}mm: {factor} kg/m2", thickness_cm)
+            # Default: assume 6mm architectural glass (~15 kg/m2)
+            factor = 15.0
+            return ConversionResult(quantity, "m2", assumed_uom, quantity * factor, factor,
+                                    "Glass m2 default 6mm: 15 kg/m2", thickness_cm)
 
         if category == "Fill Material":
             per_cm = safe_float(cfg.get("kg_per_m2_per_cm"))
@@ -2664,7 +2863,7 @@ Dict[str, Any]:
 
 def maybe_write_learning_rows(material: str, boq_code: Optional[str], category: str, assumed_uom: str,
                               conversion: ConversionResult, matched_by: str, reliability_score: float,
-                              source: str) -> None:
+                              source: str, emission_factor: Optional[float] = None, emission_factor_source: Optional[str] = None) -> None:
     if not AUTO_WRITE_MAPPINGS or category in {"Unknown", "EXCLUDE"}:
         return
     if reliability_score < AUTO_APPROVE_CONFIDENCE:
@@ -2725,6 +2924,8 @@ def maybe_write_learning_rows(material: str, boq_code: Optional[str], category: 
                     "notes": f"Auto approved from {source}",
                     "source": source,
                     "created_by": "system_auto_learning",
+                    "emission_factor": emission_factor,
+                    "emission_factor_source": emission_factor_source,
                 }
                 append_rows_json(BQ_BOQ_MAPPING_TABLE, [boq_row])
             except Exception:
@@ -2906,14 +3107,92 @@ def _process_single_row_task(row_tuple, metadata, regulator_catalog, threshold, 
     if conversion.weight_kg is None:
         stats["conversion_failed"] = 1
 
+    # ── Composite Material Split ──────────────────────────────────────────
+    # If this material is a known composite (e.g. בטון מזוין), split its
+    # weight across constituent categories and compute a blended emission.
+    if conversion.weight_kg is not None and conversion.weight_kg >= MIN_WEIGHT_FOR_COMPOSITE_SPLIT_KG:
+        composite_components = detect_composite_split(classification_material, conversion.weight_kg)
+        if composite_components:
+            composite_emission = 0.0
+            composite_breakdown = []
+            for comp in composite_components:
+                comp_cat   = comp["category"]
+                comp_wt    = comp["weight_kg"]
+                comp_ef    = CATEGORY_EMISSION_OVERRIDES.get(comp_cat)
+                comp_co2e  = round(comp_wt * comp_ef, 3) if comp_ef is not None else 0.0
+                composite_emission += comp_co2e
+                composite_breakdown.append({
+                    "category":    comp_cat,
+                    "fraction":    comp["fraction"],
+                    "weight_kg":   comp_wt,
+                    "ef_kgco2e_kg": comp_ef,
+                    "emission_co2e": comp_co2e,
+                    "description": comp["description"],
+                })
+            stats["emission"] = composite_emission
+            stats["estimated"] = 1
+            recipe_name = composite_components[0]["recipe_name"]
+            detail_row = {
+                **metadata, "calculation_date": current_time, "material": material,
+                "short_text": material, "normalized_material": classification_material, "boq_code": boq_code,
+                "category": category,
+                "category_rule": f"Composite split: {recipe_name}",
+                "classification_method": classification_method,
+                "classification_confidence": classification_confidence,
+                "review_required": False,
+                "original_quantity": quantity,
+                "original_uom": provided_uom, "effective_input_uom": effective_provided_uom,
+                "assumed_uom": assumed_uom,
+                "weight_kg": conversion.weight_kg,
+                "conversion_factor_used": conversion.factor_used,
+                "conversion_assumption": f"{uom_reason}; {conversion.assumption}",
+                "quantity_unit": assumed_uom,
+                "quantity_kg": conversion.weight_kg,
+                "data_source": "ICE_DB_composite",
+                "ef_id": f"composite:{recipe_name}",
+                "emission_co2e": composite_emission,
+                "reliability_score": 0.92,
+                "reliability_status": "auto_approved",
+                "matched_by": matched_by,
+                "excluded": False,
+                "status": "estimated",
+                "thickness_cm_extracted": thickness_cm,
+                "matched": True,
+                "source_mode": source_mode,
+                "annual_reference_material": annual_reference_material,
+                "annual_reference_uom": annual_reference_uom,
+                "annual_reference_match_type": annual_reference_match_type,
+                "error_reason": None,
+                # Store breakdown as JSON in the notes field for traceability
+                "conversion_assumption": (
+                    f"{uom_reason}; {conversion.assumption} | "
+                    f"COMPOSITE {recipe_name}: "
+                    + " + ".join(
+                        f"{c['description']} {c['weight_kg']:,.0f}kg×{c['ef_kgco2e_kg']}={c['emission_co2e']:,.0f}kgCO2e"
+                        for c in composite_breakdown
+                    )
+                ),
+            }
+            logger.info(
+                "Composite split [%s] material=%s weight=%.0f kg → %d components, total CO2e=%.1f",
+                recipe_name, material, conversion.weight_kg, len(composite_components), composite_emission
+            )
+            return complete_emissions_detail_row(detail_row, metadata), stats
+    # ─────────────────────────────────────────────────────────────────────
+
     factor_meta = None
     manual_factor = None
     current_data_source = "Climatiq API"
     material_norm = normalize_for_compare(classification_material)
 
-    # ── Category-level ICE DB overrides (Climatiq returns wrong factors for these) ──
+    # ── Granular BOQ/Category-level overrides ──
     # ICE DB 2019 values in kgCO2e/kg
-    if category in CATEGORY_EMISSION_OVERRIDES:
+    boq_ef = safe_float((boq_mapping or {}).get("emission_factor"))
+    if boq_ef is not None:
+        manual_factor = boq_ef
+        ef_src = str((boq_mapping or {}).get("emission_factor_source") or "BOQ_mapping").strip()
+        current_data_source = f"BOQ_specific:{ef_src}"
+    elif category in CATEGORY_EMISSION_OVERRIDES:
         manual_factor = CATEGORY_EMISSION_OVERRIDES[category]
         current_data_source = "ICE_DB_override"
 
@@ -3017,7 +3296,8 @@ def _process_single_row_task(row_tuple, metadata, regulator_catalog, threshold, 
         if auto_write_ai_approved:
             maybe_write_learning_rows(material, boq_code, category, assumed_uom, conversion, matched_by,
                                       reliability_score,
-                                      "vertex_auto_approved" if classification_method == "vertex_ai" else "system_auto_approved")
+                                      "vertex_auto_approved" if classification_method == "vertex_ai" else "system_auto_approved",
+                                      locals().get('factor', manual_factor), current_data_source)
         if classification_method == "vertex_ai":
             stats["auto_learned"] = 1
 
@@ -3406,7 +3686,7 @@ def process_excel_route() -> Any:
                   AND project_name = @proj
                 LIMIT 1
             """
-            _dup_result = client.query(
+            _dup_result = bq_client.query(
                 _dup_sql,
                 job_config=bigquery.QueryJobConfig(query_parameters=[
                     bigquery.ScalarQueryParameter("fname", "STRING", file_name),
@@ -3432,6 +3712,8 @@ def process_excel_route() -> Any:
             # Non-blocking — continue processing even if check fails
 
         # Warm caches once per run.
+        load_boq_code_mapping_rows.cache_clear()
+        load_catalog_mapping_rows.cache_clear()
         load_boq_code_mapping_rows()
         load_catalog_mapping_rows()
         load_unit_conversion_rules()
