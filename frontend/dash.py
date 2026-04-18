@@ -1021,7 +1021,7 @@ def render_login():
 
 @st.cache_resource
 def _get_genai_client():
-    return _genai.Client(vertexai=True, project=_PROJECT, location="me-west1")
+    return _genai.Client(vertexai=True, project=_PROJECT, location="global")
 
 
 def _ai_generate(system_prompt: str, messages: list) -> str:
