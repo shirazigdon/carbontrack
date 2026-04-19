@@ -11,6 +11,7 @@ const ROLE_DISPLAY: Record<string, string> = {
 };
 
 const NAV = [
+  { id: 'home',      label: 'עמוד הבית', icon: <IconHome /> },
   { id: 'dashboard', label: 'דאשבורד', icon: <IconDashboard /> },
   { id: 'review',    label: 'תור סקירה', icon: <IconReview /> },
   { id: 'whatif',   label: 'סימולטור What-If', icon: <IconWhatIf /> },
@@ -164,6 +165,11 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
   );
 }
 
+function IconHome() {
+  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+  </svg>;
+}
 function IconDashboard() {
   return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>

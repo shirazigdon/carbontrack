@@ -10,9 +10,11 @@ import { UploadTab } from './tabs/UploadTab';
 import { DataTab } from './tabs/DataTab';
 import { SettingsTab } from './tabs/SettingsTab';
 import { AiBubble } from './AiBubble';
+import { HomeTab } from './tabs/HomeTab';
 import { fetchEmissions, fetchReview, fetchProjects, EmissionRow, ReviewRow } from '../lib/api';
 
 const TAB_META: Record<string, { label: string; desc: string }> = {
+  home:      { label: 'עמוד הבית', desc: 'סקירה מהירה וניווט למערכת' },
   dashboard: { label: 'דאשבורד', desc: 'סקירה כללית של פליטות פחמן' },
   review:    { label: 'תור סקירה', desc: 'אישור ודחיית רשומות' },
   whatif:    { label: 'סימולטור What-If', desc: 'השוואת חלופות חומרים' },
@@ -31,7 +33,7 @@ interface Settings {
 
 export function Dashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('home');
   const [emissions, setEmissions] = useState<EmissionRow[]>([]);
   const [review, setReview] = useState<ReviewRow[]>([]);
   const [projects, setProjects] = useState<string[]>([]);
@@ -145,6 +147,7 @@ export function Dashboard() {
 
         {/* Content */}
         <div className="flex-1 p-6 tab-content">
+          {activeTab === 'home'      && <HomeTab data={filteredEmissions} reviewCount={review.length} userName={user?.name || user?.email || ''} onNavigate={setActiveTab} />}
           {activeTab === 'dashboard' && <DashboardTab data={filteredEmissions} reviewCount={review.length} />}
           {activeTab === 'review'    && <ReviewTab data={review} onRefresh={loadData} reliabilityThreshold={reliabilityThreshold} />}
           {activeTab === 'whatif'    && <WhatIfTab data={filteredEmissions} />}
