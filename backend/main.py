@@ -4122,6 +4122,33 @@ def projects_list():
         return jsonify({"error": str(exc)}), 500
 
 
+# ====================================================================
+# FILE UPLOAD ENDPOINT — uploads file to GCS, then triggers processing
+# ====================================================================
+@app.route("/upload", methods=["POST"])
+def upload_file_endpoint():
+    try:
+        if "file" not in request.files:
+            return jsonify({"error": "no file provided"}), 400
+
+        f = request.files["file"]
+        if not f.filename:
+            return jsonify({"error": "empty filename"}), 400
+
+        bucket_name = request.form.get("bucket", "green_excal")
+        dest_name = f.filename
+
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(dest_name)
+        blob.upload_from_file(f.stream, content_type=f.content_type or "application/octet-stream")
+
+        logger.info(f"Uploaded {dest_name} to gs://{bucket_name}/{dest_name}")
+        return jsonify({"ok": True, "bucket": bucket_name, "file": dest_name}), 200
+    except Exception as exc:
+        logger.exception("upload failed")
+        return jsonify({"error": str(exc)}), 500
+
+
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 8080))

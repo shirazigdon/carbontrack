@@ -64,27 +64,19 @@ export function UploadTab({ userEmail, settings }: Props) {
         auto_write_ai_approved: settings.autoWriteAiApproved,
       };
 
-      // Upload file to GCS
-      const formData = new FormData();
-      formData.append('file', file);
-      const gcsRes = await fetch(`https://storage.googleapis.com/upload/storage/v1/b/${GCS_BUCKET}/o?uploadType=media&name=${encodeURIComponent(file.name)}`, {
-        method: 'POST',
-        body: file,
-      });
-      if (!gcsRes.ok) {
-        // Fallback: call backend upload endpoint
-        const fd = new FormData();
-        fd.append('file', file);
-        fd.append('project_name', project);
-        fd.append('contractor', contractor);
-        fd.append('region', region);
-        fd.append('source_mode', sourceMode);
-        const uploadRes = await fetch(`${BACKEND}/upload`, { method: 'POST', body: fd });
-        if (!uploadRes.ok) throw new Error(await uploadRes.text());
-      }
+      // Upload file to GCS via backend /upload endpoint
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('bucket', GCS_BUCKET);
+      fd.append('project_name', project);
+      fd.append('contractor', contractor);
+      fd.append('region', region);
+      fd.append('source_mode', sourceMode);
+      const uploadRes = await fetch(`${BACKEND}/upload`, { method: 'POST', body: fd });
+      if (!uploadRes.ok) throw new Error(await uploadRes.text());
 
       // Trigger backend processing
-      const res = await fetch(BACKEND, {
+      const res = await fetch(`${BACKEND}/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
