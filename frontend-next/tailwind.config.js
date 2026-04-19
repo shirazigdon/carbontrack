@@ -8,23 +8,26 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: 'hsl(142, 55%, 35%)',
-          light: 'hsl(152, 45%, 42%)',
+          DEFAULT: 'hsl(152, 60%, 32%)',
+          light: 'hsl(152, 55%, 40%)',
+          50: 'hsl(152, 70%, 96%)',
+          100: 'hsl(152, 65%, 90%)',
         },
         sidebar: {
-          bg: 'hsl(150, 30%, 10%)',
-          fg: 'hsl(140, 15%, 85%)',
-          border: 'hsl(150, 18%, 18%)',
-          accent: 'hsl(150, 22%, 16%)',
+          bg: '#0f1729',
+          fg: '#94a3b8',
+          border: 'rgba(255,255,255,0.07)',
+          accent: 'rgba(255,255,255,0.06)',
+          active: '#10b981',
         },
-        border: 'hsl(140, 15%, 89%)',
+        border: '#e2e8f0',
         muted: {
-          DEFAULT: 'hsl(140, 12%, 93%)',
-          fg: 'hsl(150, 10%, 45%)',
+          DEFAULT: '#f8fafc',
+          fg: '#64748b',
         },
         card: '#ffffff',
-        bg: 'hsl(140, 10%, 97%)',
-        success: 'hsl(152, 60%, 40%)',
+        bg: '#f1f5f9',
+        success: 'hsl(152, 60%, 38%)',
         warning: 'hsl(38, 92%, 50%)',
         destructive: 'hsl(0, 72%, 51%)',
       },
@@ -32,11 +35,15 @@ module.exports = {
         sans: ['Heebo', 'sans-serif'],
       },
       boxShadow: {
-        card: '0 1px 3px 0 hsl(150 25% 10% / 0.04), 0 1px 2px -1px hsl(150 25% 10% / 0.04)',
-        elevated: '0 10px 25px -5px hsl(150 25% 10% / 0.08), 0 8px 10px -6px hsl(150 25% 10% / 0.04)',
+        card: '0 1px 3px 0 rgb(15 23 42 / 0.05), 0 1px 2px -1px rgb(15 23 42 / 0.04)',
+        elevated: '0 10px 25px -5px rgb(15 23 42 / 0.08), 0 8px 10px -6px rgb(15 23 42 / 0.04)',
+        kpi: '0 0 0 1px #e2e8f0, 0 2px 8px 0 rgb(15 23 42 / 0.06)',
+      },
+      borderRadius: {
+        '2xl': '1rem',
+        '3xl': '1.5rem',
       },
     },
   },
   plugins: [],
 };
-
