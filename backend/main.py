@@ -110,6 +110,8 @@ LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 # APP + CLIENTS
 # ==========================================================
 app = Flask(__name__)
+from flask_cors import CORS
+CORS(app, resources={r"/*": {"origins": "*"}})
 logging.basicConfig(level=LOG_LEVEL, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("calc-carbon")
 
@@ -3958,6 +3960,167 @@ def manage_db():
     except Exception as e:
         logger.error(traceback.format_exc())
         return jsonify({"status": "error", "message": str(e)}), 500
+
+# ====================================================================
+# AUTH ENDPOINT
+# ====================================================================
+_BQ_USERS_TABLE = f"{BQ_PROJECT_ID}.{DATASET_ID}.users"
+_BQ_DETAILS_TABLE_FULL = f"{BQ_PROJECT_ID}.{DATASET_ID}.emissions_details"
+_BQ_DETAILS_VIEW_FULL = f"{BQ_PROJECT_ID}.{DATASET_ID}.emissions_details_view"
+_BQ_PROCESSING_RUNS_FULL = f"{BQ_PROJECT_ID}.{DATASET_ID}.processing_runs"
+
+
+@app.post("/auth/login")
+def auth_login():
+    try:
+        body = request.get_json(force=True) or {}
+        email = (body.get("email") or "").strip().lower()
+        password = body.get("password") or ""
+        if not email or not password:
+            return jsonify({"error": "חסר אימייל או סיסמה"}), 400
+        query = f"SELECT email, name, role, password, is_first_login FROM `{_BQ_USERS_TABLE}` WHERE LOWER(email)=@e LIMIT 1"
+        job = bq_client.query(query, job_config=bigquery.QueryJobConfig(
+            query_parameters=[bigquery.ScalarQueryParameter("e", "STRING", email)]))
+        rows = list(job.result())
+        if not rows:
+            return jsonify({"error": "משתמש לא נמצא"}), 401
+        user = dict(rows[0].items())
+        if user.get("password") != password:
+            return jsonify({"error": "סיסמה שגויה"}), 401
+        return jsonify({
+            "email": user.get("email"),
+            "name": user.get("name"),
+            "role": user.get("role"),
+            "is_first_login": bool(user.get("is_first_login")),
+        }), 200
+    except Exception as exc:
+        logger.exception("auth/login failed")
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.post("/auth/change-password")
+def auth_change_password():
+    try:
+        body = request.get_json(force=True) or {}
+        email = (body.get("email") or "").strip().lower()
+        new_password = body.get("new_password") or ""
+        if not email or len(new_password) < 4:
+            return jsonify({"error": "סיסמה חייבת להיות לפחות 4 תווים"}), 400
+        bq_client.query(
+            f"UPDATE `{_BQ_USERS_TABLE}` SET password=@p, is_first_login=FALSE WHERE LOWER(email)=@e",
+            job_config=bigquery.QueryJobConfig(query_parameters=[
+                bigquery.ScalarQueryParameter("p", "STRING", new_password),
+                bigquery.ScalarQueryParameter("e", "STRING", email),
+            ])
+        ).result()
+        return jsonify({"ok": True}), 200
+    except Exception as exc:
+        logger.exception("auth/change-password failed")
+        return jsonify({"error": str(exc)}), 500
+
+
+# ====================================================================
+# EMISSIONS ENDPOINT
+# ====================================================================
+@app.get("/emissions")
+def emissions():
+    try:
+        try:
+            query = f"SELECT * FROM `{_BQ_DETAILS_VIEW_FULL}` ORDER BY calculation_date DESC LIMIT 2000"
+            job = bq_client.query(query)
+            rows = [sanitize_for_json(dict(r.items())) for r in job.result()]
+        except Exception:
+            query = f"SELECT * FROM `{_BQ_DETAILS_TABLE_FULL}` ORDER BY calculation_date DESC LIMIT 2000"
+            job = bq_client.query(query)
+            rows = [sanitize_for_json(dict(r.items())) for r in job.result()]
+        return jsonify({"items": rows}), 200
+    except Exception as exc:
+        logger.exception("emissions failed")
+        return jsonify({"error": str(exc)}), 500
+
+
+# ====================================================================
+# PROCESSING STATUS ENDPOINT
+# ====================================================================
+@app.get("/processing/status")
+def processing_status():
+    try:
+        active_q = f"""
+            SELECT * FROM `{_BQ_PROCESSING_RUNS_FULL}`
+            WHERE status IN ('running','processing','in_progress','started')
+              AND created_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 12 HOUR)
+            ORDER BY created_at DESC LIMIT 1
+        """
+        job = bq_client.query(active_q)
+        rows = list(job.result())
+        if not rows:
+            job2 = bq_client.query(
+                f"SELECT * FROM `{_BQ_PROCESSING_RUNS_FULL}` ORDER BY created_at DESC LIMIT 1")
+            rows = list(job2.result())
+        if not rows:
+            return jsonify({"run": None}), 200
+        run = sanitize_for_json(dict(rows[0].items()))
+        return jsonify({"run": run}), 200
+    except Exception as exc:
+        logger.exception("processing/status failed")
+        return jsonify({"error": str(exc)}), 500
+
+
+# ====================================================================
+# AI CHAT ENDPOINT
+# ====================================================================
+@app.post("/ai/chat")
+def ai_chat():
+    try:
+        body = request.get_json(force=True) or {}
+        messages = body.get("messages", [])
+        context = body.get("context", "")
+        if not messages:
+            return jsonify({"error": "חסרות הודעות"}), 400
+
+        contents = [
+            {"role": ("user" if m["role"] == "user" else "model"), "parts": [{"text": m["content"]}]}
+            for m in messages
+        ]
+        cfg = types.GenerateContentConfig(system_instruction=context or "אתה עוזר AI מומחה לניתוח פליטות פחמן. ענה בעברית.")
+
+        locations = ["global", "us-central1", "europe-west1"]
+        last_err = None
+        for loc in locations:
+            for attempt in range(3):
+                try:
+                    client = genai.Client(vertexai=True, project=VERTEX_PROJECT, location=loc)
+                    text = client.models.generate_content(
+                        model=VERTEX_MODEL, contents=contents, config=cfg
+                    ).text
+                    return jsonify({"reply": text}), 200
+                except Exception as e:
+                    last_err = e
+                    if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                        import time as _time
+                        _time.sleep(2 ** attempt)
+                        continue
+                    break
+        return jsonify({"error": f"AI לא זמין: {last_err}"}), 503
+    except Exception as exc:
+        logger.exception("ai/chat failed")
+        return jsonify({"error": str(exc)}), 500
+
+
+# ====================================================================
+# PROJECTS LIST ENDPOINT
+# ====================================================================
+@app.get("/projects")
+def projects_list():
+    try:
+        query = f"SELECT DISTINCT project_name FROM `{_BQ_DETAILS_TABLE_FULL}` WHERE project_name IS NOT NULL ORDER BY project_name"
+        job = bq_client.query(query)
+        names = [r["project_name"] for r in job.result()]
+        return jsonify({"projects": names}), 200
+    except Exception as exc:
+        logger.exception("projects failed")
+        return jsonify({"error": str(exc)}), 500
+
 
 if __name__ == "__main__":
     import os

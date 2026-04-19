@@ -6,7 +6,7 @@ steps:
       - deploy
       - dashboard
       - --source
-      - ./frontend
+      - ./frontend-next
       - --region
       - me-west1
       - --project
@@ -14,6 +14,8 @@ steps:
       - --platform
       - managed
       - --allow-unauthenticated
+      - --port
+      - '8080'
       - --quiet
 
 options:
