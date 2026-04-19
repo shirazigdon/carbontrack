@@ -14,7 +14,7 @@
   --green-100: #d8f3e3;
   --green-50:  #eef8f2;
   --sage:      #a8c5a0;
-  --cream:     #f7fbf7;
+  --cream:     #f6f4ef;   /* warm parchment — not green */
 
   --grad-hero:    linear-gradient(135deg, #1b4332 0%, #2d6a4f 60%, #40916c 100%);
   --grad-primary: linear-gradient(135deg, #40916c, #52b788);
@@ -26,10 +26,10 @@
 
 body {
   font-family: 'Rubik', sans-serif !important;
-  background: var(--cream);
+  background: #f6f4ef;   /* warm parchment */
   direction: rtl;
   -webkit-font-smoothing: antialiased;
-  color: var(--green-900);
+  color: #2c3e2d;
 }
 
 /* Force Rubik on all elements */

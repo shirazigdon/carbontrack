@@ -11,12 +11,12 @@ interface Props {
 }
 
 const QUICK_ACTIONS = [
-  { id: 'dashboard', icon: '📊', title: 'דאשבורד', desc: 'סקירת KPI, גרפים ומפת פליטות', color: '#059669', bg: '#f0fdf4' },
-  { id: 'review',   icon: '✅', title: 'תור סקירה', desc: 'אשרי או דחי רשומות ממתינות', color: '#f59e0b', bg: '#fffbeb' },
-  { id: 'whatif',   icon: '⚡', title: 'סימולטור What-If', desc: 'השוואת חלופות חומרים ופוטנציאל חיסכון', color: '#6366f1', bg: '#f5f3ff' },
-  { id: 'ai',       icon: '🤖', title: 'עוזר AI', desc: 'שאל שאלות על נתוני הפליטות', color: '#0ea5e9', bg: '#f0f9ff' },
-  { id: 'upload',   icon: '📤', title: 'קליטת קבצים', desc: 'העלה קבצי פליטות לעיבוד', color: '#8b5cf6', bg: '#faf5ff' },
-  { id: 'data',     icon: '🗃️', title: 'נתונים גולמיים', desc: 'עיון ובחינת כל הרשומות', color: '#64748b', bg: '#f8fafc' },
+  { id: 'dashboard', icon: '📊', title: 'דאשבורד', desc: 'סקירת KPI, גרפים ומפת פליטות', color: '#3a7fc1', bg: '#edf4fb' },
+  { id: 'review',   icon: '✅', title: 'תור סקירה', desc: 'אשרי או דחי רשומות ממתינות', color: '#c07a2a', bg: '#fdf3e7' },
+  { id: 'whatif',   icon: '⚡', title: 'סימולטור What-If', desc: 'השוואת חלופות חומרים ופוטנציאל חיסכון', color: '#52b788', bg: '#eef8f2' },
+  { id: 'ai',       icon: '🤖', title: 'עוזר AI', desc: 'שאל שאלות על נתוני הפליטות', color: '#7b66b2', bg: '#f2eff9' },
+  { id: 'upload',   icon: '📤', title: 'קליטת קבצים', desc: 'העלה קבצי פליטות לעיבוד', color: '#b05e5e', bg: '#faeeee' },
+  { id: 'data',     icon: '🗃️', title: 'נתונים גולמיים', desc: 'עיון ובחינת כל הרשומות', color: '#6b7c6b', bg: '#f0ede6' },
 ];
 
 function greeting(name: string) {
@@ -86,10 +86,10 @@ export function HomeTab({ data, reviewCount, userName, onNavigate }: Props) {
       {/* KPI strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: `פליטות ${curYear}`, value: `${fmt(stats.yearE / 1000, 1)}t`, sub: 'CO₂e', color: '#059669' },
-          { label: 'סה"כ פליטות', value: `${fmt(stats.totalE / 1000, 1)}t`, sub: 'כל הפרויקטים', color: '#0f172a' },
-          { label: 'פרויקטים', value: `${stats.projects}`, sub: 'פעילים', color: '#6366f1' },
-          { label: 'ממוצע אמינות', value: `${(stats.avgRel * 100).toFixed(0)}%`, sub: 'accuracy', color: '#0ea5e9' },
+          { label: `פליטות ${curYear}`, value: `${fmt(stats.yearE / 1000, 1)}t`, sub: 'CO₂e שנה נוכחית', color: '#40916c' },
+          { label: 'סה"כ פליטות', value: `${fmt(stats.totalE / 1000, 1)}t`, sub: 'כל הפרויקטים', color: '#3a7fc1' },
+          { label: 'פרויקטים', value: `${stats.projects}`, sub: 'פעילים', color: '#7b66b2' },
+          { label: 'ממוצע אמינות', value: `${(stats.avgRel * 100).toFixed(0)}%`, sub: 'accuracy', color: '#c07a2a' },
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card">
             <div className="text-xs text-slate-400 mb-2">{label}</div>

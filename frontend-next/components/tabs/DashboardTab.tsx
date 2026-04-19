@@ -9,7 +9,8 @@ import { IsraelMap } from '../IsraelMap';
 import { EmissionRow } from '../../lib/api';
 import { fmt } from '../../lib/utils';
 
-const COLORS = ['#52b788','#74c69d','#95d5b2','#b7e4c7','#40916c','#2d6a4f'];
+// Nature palette: sky, amber, sage, earth, lavender, coral
+const COLORS = ['#5b9bd5', '#e8a87c', '#52b788', '#8b6f47', '#9b8fc7', '#e07b7b'];
 
 interface Props { data: EmissionRow[]; reviewCount: number; }
 
@@ -85,7 +86,7 @@ export function DashboardTab({ data, reviewCount }: Props) {
                 formatter={(v)=>[`${fmt(Number(v),1)} ${barMode==='total'?'t CO₂e':'kg/t'}`,'']}
                 contentStyle={{fontFamily:'Heebo',fontSize:12,borderRadius:'12px',border:'1px solid #e2e8f0',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}
               />
-              <Bar dataKey={barMode==='total'?'total':'normalized'} fill="#059669" radius={[0,6,6,0]}
+              <Bar dataKey={barMode==='total'?'total':'normalized'} fill="#5b9bd5" radius={[0,6,6,0]}
                 label={{position:'right',fontSize:10,fill:'#64748b',formatter:(v: unknown)=>fmt(Number(v),1)}}/>
             </BarChart>
           </ResponsiveContainer>
