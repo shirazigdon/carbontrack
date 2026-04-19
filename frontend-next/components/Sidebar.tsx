@@ -48,11 +48,12 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
       {/* Brand */}
       <div className="px-5 pt-6 pb-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
         <div className="flex items-center gap-2.5 mb-5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#059669,#10b981)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22V12M12 12C12 7 7 4 3 6M12 12C12 7 17 4 21 6" />
-            </svg>
-          </div>
+          <img
+            src="https://storage.googleapis.com/green_excal/carbontrack-logo.png"
+            className="w-9 h-9 object-contain flex-shrink-0"
+            alt="CarbonTrack"
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
           <div>
             <div className="text-white font-bold text-sm leading-tight">Carbon₂Track</div>
             <div className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>נתיבי ישראל</div>
