@@ -9,7 +9,7 @@ import { IsraelMap } from '../IsraelMap';
 import { EmissionRow } from '../../lib/api';
 import { fmt } from '../../lib/utils';
 
-const COLORS = ['#059669','#10b981','#34d399','#f59e0b','#6ee7b7','#a7f3d0'];
+const COLORS = ['#52b788','#74c69d','#95d5b2','#b7e4c7','#40916c','#2d6a4f'];
 
 interface Props { data: EmissionRow[]; reviewCount: number; }
 
@@ -62,7 +62,7 @@ export function DashboardTab({ data, reviewCount }: Props) {
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-5 shadow-card">
+        <div className="lg:col-span-3 rounded-2xl p-5" style={{ background: '#ffffff', border: '1.5px solid #b7e4c7', boxShadow: '0 2px 12px rgba(27,67,50,0.07)' }}>
           <div className="flex items-center justify-between mb-5">
             <div>
               <div className="font-semibold text-sm text-slate-800">פליטות לפי פרויקט</div>
@@ -91,7 +91,7 @@ export function DashboardTab({ data, reviewCount }: Props) {
           </ResponsiveContainer>
         </div>
 
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 shadow-card">
+        <div className="lg:col-span-2 rounded-2xl p-5" style={{ background: '#ffffff', border: '1.5px solid #b7e4c7', boxShadow: '0 2px 12px rgba(27,67,50,0.07)' }}>
           <div className="font-semibold text-sm text-slate-800 mb-1">פילוח לפי חומר</div>
           <div className="text-xs text-slate-400 mb-3">אחוז מסך הפליטות</div>
           <ResponsiveContainer width="100%" height={260}>
@@ -107,7 +107,7 @@ export function DashboardTab({ data, reviewCount }: Props) {
       </div>
 
       {/* Map row */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-card">
+      <div className="rounded-2xl p-5" style={{ background: '#ffffff', border: '1.5px solid #b7e4c7', boxShadow: '0 2px 12px rgba(27,67,50,0.07)' }}>
         <div className="font-semibold text-sm text-slate-800 mb-1">פליטות לפי אזור גיאוגרפי</div>
         <div className="text-xs text-slate-400 mb-5">t CO₂e לפי אזור</div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">

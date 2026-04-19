@@ -96,7 +96,7 @@ export function Dashboard() {
   const meta = TAB_META[activeTab];
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#f1f5f9' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: '#f7fbf7' }}>
       <Sidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -118,11 +118,11 @@ export function Dashboard() {
 
       <main className="flex-1 overflow-y-auto flex flex-col min-w-0">
         {/* Top header */}
-        <header className="sticky top-0 z-10 border-b px-6 py-0 flex-shrink-0" style={{ background: 'rgba(240,247,244,0.85)', backdropFilter: 'blur(12px)', borderColor: '#c8e6c9' }}>
+        <header className="sticky top-0 z-10 border-b px-6 py-0 flex-shrink-0" style={{ background: 'rgba(247,251,247,0.9)', backdropFilter: 'blur(14px)', borderColor: '#b7e4c7' }}>
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
               <div>
-                <div className="font-semibold text-sm text-slate-800">{meta.label}</div>
+                <div className="font-semibold text-sm" style={{ color: '#1b4332' }}>{meta.label}</div>
                 <div className="text-[11px] text-slate-400 leading-tight">{meta.desc}</div>
               </div>
             </div>

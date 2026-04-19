@@ -5,31 +5,63 @@
 @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  --primary: #52b788;
-  --primary-light: #74c69d;
+  --green-900: #1b4332;
+  --green-700: #2d6a4f;
+  --green-500: #52b788;
+  --green-400: #74c69d;
+  --green-300: #95d5b2;
+  --green-200: #b7e4c7;
+  --green-100: #d8f3e3;
+  --green-50:  #eef8f2;
+  --sage:      #a8c5a0;
+  --cream:     #f7fbf7;
+
+  --grad-hero:    linear-gradient(135deg, #1b4332 0%, #2d6a4f 60%, #40916c 100%);
   --grad-primary: linear-gradient(135deg, #40916c, #52b788);
-  --grad-accent:  linear-gradient(135deg, #74c69d, #b7e4c7);
-  --grad-hero:    linear-gradient(135deg, #1b4332, #2d6a4f);
+  --grad-mint:    linear-gradient(135deg, #52b788, #95d5b2);
   --sidebar-width: 240px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'Rubik', 'Heebo', sans-serif;
-  background: #f0f7f4;
+  font-family: 'Rubik', sans-serif !important;
+  background: var(--cream);
   direction: rtl;
   -webkit-font-smoothing: antialiased;
-  color: #1b4332;
+  color: var(--green-900);
+}
+
+/* Force Rubik on all elements */
+*, button, input, select, textarea {
+  font-family: 'Rubik', sans-serif !important;
 }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #b7e4c7; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #74c69d; }
+::-webkit-scrollbar-track { background: var(--green-50); }
+::-webkit-scrollbar-thumb { background: var(--green-300); border-radius: 99px; }
 
-.tab-content { animation: fadeSlide 0.18s ease; }
+.tab-content { animation: fadeSlide 0.2s ease; }
 @keyframes fadeSlide {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Pastel card */
+.card-pastel {
+  background: #ffffff;
+  border: 1.5px solid var(--green-200);
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(27,67,50,0.07);
+}
+
+/* Nature chip */
+.chip-nature {
+  background: var(--green-100);
+  color: var(--green-700);
+  border: 1px solid var(--green-200);
+  border-radius: 99px;
+  font-size: 11px;
+  padding: 3px 10px;
+  font-weight: 500;
 }
