@@ -56,12 +56,12 @@ export function HomeTab({ data, reviewCount, userName, onNavigate }: Props) {
     <div className="space-y-6 max-w-5xl mx-auto">
 
       {/* Hero welcome */}
-      <div className="rounded-3xl overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #0f1729 0%, #1a3a28 100%)' }}>
-        <div className="absolute inset-0 opacity-20"
-          style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, #10b981 0%, transparent 55%), radial-gradient(circle at 15% 80%, #059669 0%, transparent 45%)' }} />
+      <div className="rounded-3xl overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #1b4332 0%, #2d6a4f 60%, #40916c 100%)' }}>
+        <div className="absolute inset-0 opacity-25"
+          style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, #95d5b2 0%, transparent 55%), radial-gradient(circle at 15% 80%, #52b788 0%, transparent 45%)' }} />
         <div className="relative px-8 py-8 flex items-center justify-between gap-6 flex-wrap">
           <div>
-            <p className="text-emerald-400 text-sm font-medium mb-1">{new Date().toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p className="text-sm font-medium mb-1" style={{ color: '#95d5b2' }}>{new Date().toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
             <h1 className="text-3xl font-black text-white mb-2">{greeting(userName)} 👋</h1>
             <p className="text-white/50 text-sm">ברוכה הבאה למערכת Carbon₂Track — נתיבי ישראל</p>
           </div>
@@ -169,7 +169,7 @@ function InsightCard({ icon, title, value, sub, onClick }: {
         <span className="text-xs text-slate-400 font-medium">{title}</span>
       </div>
       <div className="font-bold text-slate-800 text-sm leading-snug mb-1 truncate">{value}</div>
-      <div className="text-xs text-emerald-600 font-semibold">{sub}</div>
+      <div className="text-xs text-primary font-semibold">{sub}</div>
     </button>
   );
 }

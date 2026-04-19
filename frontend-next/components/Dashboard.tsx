@@ -118,7 +118,7 @@ export function Dashboard() {
 
       <main className="flex-1 overflow-y-auto flex flex-col min-w-0">
         {/* Top header */}
-        <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-200/70 px-6 py-0 flex-shrink-0" style={{ backdropFilter: 'blur(12px)' }}>
+        <header className="sticky top-0 z-10 border-b px-6 py-0 flex-shrink-0" style={{ background: 'rgba(240,247,244,0.85)', backdropFilter: 'blur(12px)', borderColor: '#c8e6c9' }}>
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
               <div>
@@ -133,8 +133,8 @@ export function Dashboard() {
                   טוען...
                 </div>
               )}
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-full px-3 py-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+              <div className="flex items-center gap-1.5 text-xs rounded-full px-3 py-1" style={{ color: '#4a7c59', background: '#d8f3e3', border: '1px solid #b7e4c7' }}>
+                <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#52b788' }} />
                 {emissions.length.toLocaleString()} רשומות
               </div>
               <button onClick={loadData}

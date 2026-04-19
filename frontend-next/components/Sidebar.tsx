@@ -44,10 +44,10 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
   const { user, logout } = useAuth();
 
   return (
-    <aside className="flex-shrink-0 flex flex-col h-screen overflow-y-auto" style={{ width: 'var(--sidebar-width)', background: '#0f1729' }}>
+    <aside className="flex-shrink-0 flex flex-col h-screen overflow-y-auto" style={{ width: 'var(--sidebar-width)', background: '#1b4332' }}>
 
       {/* Brand */}
-      <div className="px-5 pt-6 pb-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+      <div className="px-5 pt-6 pb-5 border-b" style={{ borderColor: 'rgba(183,228,199,0.12)' }}>
         <div className="flex items-center gap-2.5 mb-5">
           <img
             src="https://storage.googleapis.com/green_excal/carbontrack-logo.png"
@@ -56,20 +56,20 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
           <div>
-            <div className="text-white font-bold text-sm leading-tight">Carbon₂Track</div>
-            <div className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>נתיבי ישראל</div>
+            <div className="font-bold text-sm leading-tight" style={{ color: '#d8f3e3' }}>Carbon₂Track</div>
+            <div className="text-[10px]" style={{ color: 'rgba(183,228,199,0.5)' }}>נתיבי ישראל</div>
           </div>
         </div>
 
         {user && (
-          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: 'rgba(255,255,255,0.06)' }}>
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg,#059669,#10b981)' }}>
+          <div className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5" style={{ background: 'rgba(183,228,199,0.09)' }}>
+            <div className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg,#52b788,#95d5b2)', color: '#1b4332' }}>
               {(user.name || user.email)[0]?.toUpperCase()}
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-medium truncate" style={{ color: 'rgba(255,255,255,0.85)' }}>{user.name || user.email}</div>
-              <div className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{ROLE_DISPLAY[user.role] || user.role}</div>
+              <div className="text-xs font-medium truncate" style={{ color: '#d8f3e3' }}>{user.name || user.email}</div>
+              <div className="text-[10px] truncate" style={{ color: 'rgba(183,228,199,0.5)' }}>{ROLE_DISPLAY[user.role] || user.role}</div>
             </div>
           </div>
         )}
@@ -77,40 +77,40 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
-        <div className="text-[9px] font-bold uppercase tracking-widest px-3 mb-2" style={{ color: 'rgba(255,255,255,0.25)' }}>תפריט ראשי</div>
+        <div className="text-[9px] font-semibold uppercase tracking-widest px-3 mb-2" style={{ color: 'rgba(183,228,199,0.35)' }}>תפריט ראשי</div>
         {NAV.map(({ id, label, icon }) => {
           const isActive = activeTab === id;
           return (
             <button key={id} onClick={() => onTabChange(id)}
-              className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-right group')}
+              className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-medium transition-all text-right')}
               style={isActive
-                ? { background: 'rgba(16,185,129,0.15)', color: '#34d399' }
-                : { color: 'rgba(255,255,255,0.5)' }}
-              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.8)'; }}
-              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'; } }}
+                ? { background: 'rgba(149,213,178,0.18)', color: '#95d5b2' }
+                : { color: 'rgba(183,228,199,0.55)' }}
+              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.background = 'rgba(183,228,199,0.07)'; (e.currentTarget as HTMLElement).style.color = '#b7e4c7'; } }}
+              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'rgba(183,228,199,0.55)'; } }}
             >
-              <span className="w-4 h-4 flex-shrink-0 flex items-center justify-center opacity-90">{icon}</span>
+              <span className="w-4 h-4 flex-shrink-0 flex items-center justify-center">{icon}</span>
               <span className="flex-1">{label}</span>
               {id === 'review' && reviewCount > 0 && (
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(16,185,129,0.25)', color: '#34d399' }}>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(149,213,178,0.22)', color: '#95d5b2' }}>
                   {reviewCount}
                 </span>
               )}
-              {isActive && <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: '#10b981' }} />}
+              {isActive && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#95d5b2' }} />}
             </button>
           );
         })}
       </nav>
 
       {/* Filters */}
-      <div className="px-4 py-4 space-y-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
-        <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.25)' }}>סינון נתונים</div>
+      <div className="px-4 py-4 space-y-4 border-t" style={{ borderColor: 'rgba(183,228,199,0.12)' }}>
+        <div className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(183,228,199,0.35)' }}>סינון נתונים</div>
 
         <div>
-          <label className="text-[10px] mb-1.5 block" style={{ color: 'rgba(255,255,255,0.4)' }}>שנה</label>
+          <label className="text-[10px] mb-1.5 block" style={{ color: 'rgba(183,228,199,0.5)' }}>שנה</label>
           <select
-            className="w-full text-xs rounded-lg px-3 py-1.5 focus:outline-none transition-colors"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.1)' }}
+            className="w-full text-xs rounded-xl px-3 py-1.5 focus:outline-none transition-colors"
+            style={{ background: 'rgba(183,228,199,0.07)', color: '#b7e4c7', border: '1px solid rgba(183,228,199,0.15)' }}
             value={filters.selectedYear ?? ''}
             onChange={e => filters.onYearChange(e.target.value ? Number(e.target.value) : null)}
           >
@@ -121,11 +121,11 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
 
         {filters.regions.length > 0 && (
           <div>
-            <label className="text-[10px] mb-1.5 block" style={{ color: 'rgba(255,255,255,0.4)' }}>אזור</label>
+            <label className="text-[10px] mb-1.5 block" style={{ color: 'rgba(183,228,199,0.5)' }}>אזור</label>
             <div className="space-y-1.5">
               {filters.regions.map(r => (
-                <label key={r} className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                  <input type="checkbox" className="accent-emerald-500 w-3 h-3"
+                <label key={r} className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'rgba(183,228,199,0.65)' }}>
+                  <input type="checkbox" className="w-3 h-3 accent-[#95d5b2]"
                     checked={filters.selectedRegions.includes(r)}
                     onChange={e => {
                       const next = e.target.checked ? [...filters.selectedRegions, r] : filters.selectedRegions.filter(x => x !== r);
@@ -139,21 +139,21 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
         )}
 
         <div>
-          <label className="text-[10px] mb-1.5 flex justify-between" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          <label className="text-[10px] mb-1.5 flex justify-between" style={{ color: 'rgba(183,228,199,0.5)' }}>
             <span>סף אמינות</span>
-            <span style={{ color: '#34d399' }}>{filters.reliabilityThreshold.toFixed(2)}</span>
+            <span style={{ color: '#95d5b2' }}>{filters.reliabilityThreshold.toFixed(2)}</span>
           </label>
           <input type="range" min={0.5} max={1} step={0.01}
             value={filters.reliabilityThreshold}
             onChange={e => filters.onReliabilityChange(Number(e.target.value))}
-            className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-emerald-500" />
+            className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-[#95d5b2]" />
         </div>
 
         <button onClick={logout}
-          className="w-full flex items-center justify-center gap-2 text-xs rounded-xl py-2 transition-all"
-          style={{ color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.07)' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#f87171'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(248,113,113,0.2)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'; }}
+          className="w-full flex items-center justify-center gap-2 text-xs rounded-2xl py-2 transition-all"
+          style={{ color: 'rgba(183,228,199,0.4)', border: '1px solid rgba(183,228,199,0.1)' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#fca5a5'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(252,165,165,0.2)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(183,228,199,0.4)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(183,228,199,0.1)'; }}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />

@@ -55,7 +55,7 @@ export function LoginPage() {
 
   /* ── Landing ── */
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(160deg, #f0fdf4 0%, #ecfdf5 40%, #f8fafc 100%)' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(160deg, #f0f7f4 0%, #d8f3e3 50%, #f0f7f4 100%)' }}>
 
       {/* Top bar */}
       <header className="flex items-center justify-between px-8 py-4">
@@ -94,7 +94,7 @@ export function LoginPage() {
         {!showForm ? (
           <button onClick={() => setShowForm(true)}
             className="px-10 py-4 rounded-2xl text-white font-bold text-base shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 transition-all"
-            style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}>
+            style={{ background: 'linear-gradient(135deg, #40916c, #52b788)' }}>
             כניסה למערכת ←
           </button>
         ) : (
@@ -156,7 +156,7 @@ function Btn({ children, loading }: { children: React.ReactNode; loading: boolea
   return (
     <button type="submit" disabled={loading}
       className="w-full py-3.5 rounded-xl text-white font-semibold text-sm disabled:opacity-60 transition-all hover:opacity-90 active:scale-[0.99]"
-      style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}>
+      style={{ background: 'linear-gradient(135deg, #40916c, #52b788)' }}>
       {children}
     </button>
   );
