@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarbonTrack — מצגת</title>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cream:   #f5f2eb;
+  --green9:  #1b4332;
+  --green7:  #2d6a4f;
+  --green5:  #52b788;
+  --green3:  #95d5b2;
+  --green1:  #d8f3e3;
+  --border:  #c8ddc0;
+  --text:    #1b4332;
+  --sub:     #4a7c59;
+  --muted:   #8aaa8e;
+}
+
+body {
+  font-family: 'Rubik', sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  overflow: hidden;
+  direction: rtl;
+}
+
+.deck { width: 100vw; height: 100vh; position: relative; }
+
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: flex-start;
+  padding: 56px 64px;
+  background: var(--cream);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.slide.active { opacity: 1; pointer-events: all; }
+
+/* ── shared ── */
+.label {
+  font-size: 11px; font-weight: 700; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--green5);
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.label::before { content: ''; display: block; width: 24px; height: 2px; background: var(--green5); border-radius: 2px; }
+
+h1.hero { font-size: 68px; font-weight: 900; line-height: 1.05; color: var(--green9); }
+h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--green9); margin-bottom: 32px; }
+.sub { font-size: 18px; color: var(--sub); font-weight: 400; }
+
+.green { color: var(--green5); }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; padding: 6px 16px;
+  border-radius: 99px; border: 1.5px solid var(--border);
+  color: var(--sub); background: white;
+}
+
+/* ── nav ── */
+.nav {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 14px; z-index: 100;
+  background: rgba(27,67,50,0.08); backdrop-filter: blur(12px);
+  border: 1px solid var(--border); border-radius: 99px;
+  padding: 8px 20px;
+}
+.nav button {
+  background: none; border: none; color: var(--green9);
+  font-size: 16px; cursor: pointer; padding: 4px 8px;
+  border-radius: 8px; transition: background 0.15s;
+}
+.nav button:hover { background: var(--green1); }
+.counter { font-size: 12px; color: var(--muted); min-width: 48px; text-align: center; font-weight: 600; }
+.dots { display: flex; gap: 5px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); cursor: pointer; transition: all 0.2s; }
+.dot.active { background: var(--green5); width: 18px; border-radius: 3px; }
+
+/* ═══════════════════════════════════════
+   SLIDES
+═══════════════════════════════════════ */
+
+/* ── S1 Title ── */
+.s1 { flex-direction: column; align-items: center; text-align: center; overflow: hidden; justify-content: center; gap: 40px; }
+
+.s1 .bg-ring {
+  position: absolute; width: 700px; height: 700px; border-radius: 50%;
+  border: 1.5px solid var(--border); opacity: 0.5;
+}
+.s1 .ring1 { top: -200px; right: -200px; }
+.s1 .ring2 { bottom: -300px; left: -250px; width: 600px; height: 600px; }
+
+.s1 .logo-area { position: relative; margin-bottom: 0; }
+.s1 .glow { position: absolute; inset: -32px; border-radius: 50%; background: radial-gradient(circle, rgba(82,183,136,0.22), transparent); filter: blur(24px); }
+.s1 img.logo { position: relative; width: 150px; height: 150px; object-fit: contain; filter: drop-shadow(0 4px 24px rgba(27,67,50,0.18)); }
+
+.s1 h1 { font-size: 96px; font-weight: 900; letter-spacing: -3px; color: var(--green9); margin: 0; }
+.s1 .tagline { font-size: 24px; color: var(--sub); max-width: 620px; line-height: 1.5; margin: 0; }
+
+.s1 .partners-bar {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%;
+}
+.s1 .partner { display: flex; align-items: center; gap: 8px; }
+.s1 .partner-logo {
+  height: 28px; max-width: 100px; object-fit: contain;
+  filter: grayscale(1) opacity(0.55);
+  transition: filter 0.2s;
+}
+.s1 .partner-text {
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  line-height: 1.3; white-space: nowrap;
+}
+.s1 .partner-sep { width: 1px; height: 24px; background: var(--border); }
+
+/* ── S2 Team ── */
+.s2 { gap: 0; }
+.s2 .top { margin-bottom: 36px; }
+.s2 .team-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; width: 100%; }
+.s2 .member {
+  background: white; border: 1.5px solid var(--border);
+  border-radius: 20px; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.s2 .photo-wrap { width: 100%; aspect-ratio: 4/5; overflow: hidden; background: var(--green1); position: relative; }
+.s2 .photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.s2 .photo-fallback {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48px; font-weight: 900; color: var(--green5);
+  background: linear-gradient(160deg, var(--green1), white);
+}
+.s2 .info { padding: 16px 14px; }
+.s2 .name { font-size: 15px; font-weight: 800; color: var(--green9); margin-bottom: 4px; }
+.s2 .role { font-size: 11px; font-weight: 600; color: var(--green5); margin-bottom: 6px; letter-spacing: 0.5px; }
+.s2 .unit { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+/* ── S3 Problem ── */
+.s3 { align-items: center; text-align: center; }
+.s3 .big { font-size: 110px; font-weight: 900; line-height: 1; letter-spacing: -4px; margin: 12px 0 8px; background: linear-gradient(135deg, #c07a2a, #e07b7b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.s3 .stat-label { font-size: 22px; color: var(--sub); margin-bottom: 40px; max-width: 600px; }
+.s3 .facts { display: flex; gap: 16px; }
+.s3 .fact { background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 20px 24px; text-align: center; min-width: 160px; }
+.s3 .fn { font-size: 28px; font-weight: 800; color: var(--green9); }
+.s3 .ft { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+/* ── S4 GHG ── */
+.s4 .scopes { display: flex; gap: 16px; width: 100%; }
+.s4 .scope { border-radius: 18px; padding: 28px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.s4 .sn { font-size: 10px; font-weight: 800; letter-spacing: 3px; opacity: 0.7; }
+.s4 .st { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+.s4 .sd { font-size: 13px; line-height: 1.6; opacity: 0.8; }
+.s4 .sc1 { background: #edf4fb; color: #2a5a8c; }
+.s4 .sc2 { background: #fdf3e7; color: #8c5a2a; }
+.s4 .sc3 { background: var(--green9); color: white; flex: 2; }
+.s4 .bar-wrap { margin-top: 12px; }
+.s4 .bar-bg { height: 8px; background: rgba(255,255,255,0.15); border-radius: 99px; }
+.s4 .bar-fill { height: 100%; background: var(--green3); border-radius: 99px; width: 80%; }
+.s4 .pct-label { font-size: 22px; font-weight: 900; color: var(--green3); margin-top: 8px; }
+
+/* ── S5 Global ── */
+.s5 .cards { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; width: 100%; }
+.s5 .card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 24px 28px; }
+.s5 .year { font-size: 40px; font-weight: 900; color: var(--green5); margin-bottom: 8px; line-height: 1; }
+.s5 .ct { font-size: 14px; color: var(--sub); line-height: 1.6; }
+.s5 .ct strong { color: var(--green9); }
+.s5 .paris { grid-column: span 2; background: var(--green9); color: white; border: none; display: flex; align-items: center; gap: 20px; padding: 20px 28px; }
+.s5 .paris .icon { font-size: 32px; flex-shrink: 0; }
+.s5 .paris .text { font-size: 14px; color: rgba(255,255,255,0.8); line-height: 1.6; }
+.s5 .paris .text strong { color: var(--green3); }
+
+/* ── S6 Before/After ── */
+.s6 { flex-direction: row; padding: 0; gap: 0; align-items: stretch; }
+.s6 .half { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 56px 52px; }
+.s6 .before { background: white; border-left: 1px solid var(--border); }
+.s6 .after { background: var(--green9); }
+.s6 .hl { font-size: 10px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; }
+.s6 .before .hl { color: #c0392b; }
+.s6 .after .hl { color: var(--green3); }
+.s6 .hh { font-size: 26px; font-weight: 800; margin-bottom: 28px; }
+.s6 .before .hh { color: var(--green9); }
+.s6 .after .hh { color: white; }
+.s6 .points { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+.s6 .pt { display: flex; align-items: flex-start; gap: 12px; font-size: 14px; line-height: 1.5; }
+.s6 .before .pt { color: var(--sub); }
+.s6 .after .pt { color: rgba(255,255,255,0.8); }
+.s6 .pi { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; margin-top: 1px; font-weight: 700; }
+.s6 .before .pi { background: #fde8e8; color: #c0392b; }
+.s6 .after .pi { background: rgba(149,213,178,0.2); color: var(--green3); }
+.s6 .vs { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; border-radius: 50%; background: var(--cream); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: var(--green9); z-index: 10; }
+
+/* ── S7 System ── */
+.s7 .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; width: 100%; }
+.s7 .card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 22px; }
+.s7 .icon { font-size: 28px; margin-bottom: 10px; }
+.s7 .ct { font-size: 15px; font-weight: 800; color: var(--green9); margin-bottom: 6px; }
+.s7 .cd { font-size: 12px; color: var(--sub); line-height: 1.6; }
+
+/* ── S8 Tech ── */
+.s8 { background: var(--green9); }
+.s8 .label { color: var(--green3); }
+.s8 .label::before { background: var(--green3); }
+.s8 h2.title { color: white; }
+.s8 .flow { display: flex; align-items: center; gap: 0; width: 100%; margin-bottom: 24px; }
+.s8 .step { flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(149,213,178,0.2); border-radius: 16px; padding: 20px 14px; text-align: center; }
+.s8 .si { font-size: 26px; margin-bottom: 8px; }
+.s8 .st { font-size: 13px; font-weight: 700; color: var(--green1); margin-bottom: 4px; }
+.s8 .sd { font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.4; }
+.s8 .arr { font-size: 18px; color: var(--green5); padding: 0 6px; flex-shrink: 0; }
+.s8 .notes { display: flex; gap: 14px; width: 100%; }
+.s8 .note { flex: 1; background: rgba(149,213,178,0.1); border: 1px solid rgba(149,213,178,0.2); border-radius: 14px; padding: 14px 16px; }
+.s8 .nt { font-size: 12px; font-weight: 700; color: var(--green3); margin-bottom: 4px; }
+.s8 .nd { font-size: 11px; color: rgba(255,255,255,0.55); line-height: 1.4; }
+
+/* ── S9 Video ── */
+.s9 { align-items: center; text-align: center; }
+.s9 h2 { text-align: center; }
+.s9 .frame { width: min(760px,88vw); height: 400px; background: white; border: 2px solid var(--border); border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; box-shadow: 0 8px 40px rgba(27,67,50,0.08); margin-top: 8px; }
+.s9 .play { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg,var(--green7),var(--green5)); display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(82,183,136,0.35); }
+.s9 .vl { font-size: 14px; color: var(--muted); }
+
+/* ── S10 Roadmap ── */
+.s10 .timeline { width: 100%; position: relative; padding-top: 60px; }
+.s10 .line { position: absolute; top: 26px; right: 0; left: 0; height: 3px; background: linear-gradient(to left, var(--border), var(--green5), var(--green9)); border-radius: 99px; }
+.s10 .milestones { display: flex; justify-content: space-between; }
+.s10 .ms { display: flex; flex-direction: column; align-items: center; gap: 12px; flex: 1; position: relative; }
+.s10 .dot { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; position: absolute; top: -60px; z-index: 1; }
+.s10 .done .dot { background: var(--green9); box-shadow: 0 0 0 4px var(--green1); }
+.s10 .curr .dot { background: var(--green5); box-shadow: 0 0 0 4px rgba(82,183,136,0.25); }
+.s10 .future .dot { background: white; border: 2.5px solid var(--border); }
+.s10 .md { font-size: 11px; font-weight: 700; color: var(--green5); }
+.s10 .mt { font-size: 13px; font-weight: 800; color: var(--green9); text-align: center; }
+.s10 .ms-desc { font-size: 11px; color: var(--muted); text-align: center; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- ═══ S1: TITLE ═══ -->
+<div class="slide s1 active">
+  <div class="bg-ring ring1"></div>
+  <div class="bg-ring ring2"></div>
+
+  <!-- top content group -->
+  <div style="display:flex; flex-direction:column; align-items:center; gap:0;">
+    <div class="logo-area">
+      <div class="glow"></div>
+      <img class="logo" src="https://storage.googleapis.com/green_excal/carbontrack-logo.png"
+           onerror="this.style.display='none'" alt="logo">
+    </div>
+    <h1><span class="green">C</span>arb<span class="green">O</span><sup style="font-size:0.5em;color:var(--green5)">2</sup>Track</h1>
+    <p class="tagline">מעקב חכם אחר פליטות CO₂ בתשתיות לאומיות — Scope 3</p>
+  </div>
+
+  <!-- Partner logos pinned to bottom -->
+  <div class="partners-bar">
+    <img src="file:///C:/Users/user/Documents/%D7%99%D7%96%D7%9E%D7%95%D7%AA/%D7%A9%D7%99%D7%AA%D7%95%D7%A3%20%D7%A4%D7%A2%D7%95%D7%9C%D7%94.png"
+         alt="שיתופי פעולה"
+         style="height:70px; max-width:900px; object-fit:contain; mix-blend-mode:multiply; opacity:0.92; clip-path:inset(4px 10px);">
+  </div>
+</div>
+
+<!-- ═══ S2: TEAM ═══ -->
+<div class="slide s2">
+  <div class="top">
+    <div class="label">הצוות</div>
+    <h2 class="title" style="margin-bottom:8px">אכפת לנו. יודעים לעשות.</h2>
+    <p class="sub" style="font-size:15px;max-width:700px">ארבעה סטודנטים להנדסת חשמל ומחשבים, יוצאי יחידות מודיעין ולוחמה — <strong>מוטיבציה גדולה לפתור בעיה גדולה.</strong></p>
+  </div>
+  <div class="team-grid">
+
+    <!-- אסף -->
+    <div class="member">
+      <div class="photo-wrap">
+        <img src="file:///C:/Users/user/Documents/%D7%99%D7%96%D7%9E%D7%95%D7%AA/%D7%90%D7%A1%D7%A3%20%D7%A9%D7%93%D7%94.jpg" alt="אסף שדה"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="photo-fallback" style="display:none">א</div>
+      </div>
+      <div class="info">
+        <div class="name">אסף שדה</div>
+        <div class="role">Algorithms & Backend</div>
+        <div class="unit">לוחם יחידת אגוז · מילואים פעיל</div>
+      </div>
+    </div>
+
+    <!-- גל -->
+    <div class="member">
+      <div class="photo-wrap">
+        <img src="file:///C:/Users/user/Documents/%D7%99%D7%96%D7%9E%D7%95%D7%AA/%D7%92%D7%9C%20%D7%94%D7%A8%D7%90%D7%9C.jpg" alt="גל הראל"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="photo-fallback" style="display:none">ג</div>
+      </div>
+      <div class="info">
+        <div class="name">גל הראל</div>
+        <div class="role">Data Engineering</div>
+        <div class="unit">יחידה 9900 · מילואים פעילה</div>
+      </div>
+    </div>
+
+    <!-- מיקה -->
+    <div class="member">
+      <div class="photo-wrap">
+        <img src="file:///C:/Users/user/Documents/%D7%99%D7%96%D7%9E%D7%95%D7%AA/%D7%9E%D7%99%D7%A7%D7%94%20%D7%94%D7%A8%D7%A4%D7%96.jpg" alt="מיקה הרפז"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="photo-fallback" style="display:none">מ</div>
+      </div>
+      <div class="info">
+        <div class="name">מיקה הרפז</div>
+        <div class="role">AI & Machine Learning</div>
+        <div class="unit">יחידה 8200 · מודיעין אותות · מילואים פעילה</div>
+      </div>
+    </div>
+
+    <!-- שירה -->
+    <div class="member">
+      <div class="photo-wrap">
+        <img src="file:///C:/Users/user/Documents/%D7%99%D7%96%D7%9E%D7%95%D7%AA/%D7%A9%D7%99%D7%A8%D7%94%20%D7%96%D7%99%D7%92%D7%93%D7%95%D7%9F.jpg" alt="שירה זיגדון"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="photo-fallback" style="display:none">ש</div>
+      </div>
+      <div class="info">
+        <div class="name">שירה זיגדון</div>
+        <div class="role">Full-Stack & Product Lead</div>
+        <div class="unit">יחידה 8200 · חוקרת RF · מילואים פעילה</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ S3: PROBLEM ═══ -->
+<div class="slide s3">
+  <div class="label">הבעיה</div>
+  <div class="big">37.4B</div>
+  <p class="stat-label">טון CO₂ מדי שנה — שיא כל הזמנים. ותשתיות אחראיות ל-<strong>~25%</strong> מהם.</p>
+  <div class="facts">
+    <div class="fact"><div class="fn">421 ppm</div><div class="ft">ריכוז CO₂ — הגבוה ביותר ב-3M שנה</div></div>
+    <div class="fact"><div class="fn">70–90%</div><div class="ft">מפליטות בנייה הן Scope 3 — לא מחושב</div></div>
+    <div class="fact"><div class="fn">0</div><div class="ft">חברות תשתית ישראליות שמודדות Scope 3 כיום</div></div>
+    <div class="fact"><div class="fn">1.5°C</div><div class="ft">הגבול שהעולם עומד לחצות</div></div>
+  </div>
+</div>
+
+<!-- ═══ S4: GHG ═══ -->
+<div class="slide s4">
+  <div class="label">המדידה</div>
+  <h2 class="title">פרוטוקול GHG — כיצד מודדים?</h2>
+  <div class="scopes">
+    <div class="scope sc1">
+      <div class="sn">SCOPE 1</div>
+      <div class="st">פליטות ישירות</div>
+      <div class="sd">שריפת דלק בציוד הארגון. ניתן למדידה.</div>
+    </div>
+    <div class="scope sc2">
+      <div class="sn">SCOPE 2</div>
+      <div class="st">אנרגיה נרכשת</div>
+      <div class="sd">חשמל מספקים. ניתן להערכה סבירה.</div>
+    </div>
+    <div class="scope sc3">
+      <div class="sn" style="color:var(--green3)">SCOPE 3 — הבעיה האמיתית</div>
+      <div class="st" style="color:white;font-size:22px">שרשרת האספקה</div>
+      <div class="sd" style="color:rgba(255,255,255,0.75)">ייצור חומרים, הובלה, קבלני משנה. קשה לחישוב — וזה בדיוק מה שאנחנו פותרים.</div>
+      <div class="bar-wrap">
+        <div class="pct-label">70–90% מסך הפליטות</div>
+        <div class="bar-bg"><div class="bar-fill"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S5: GLOBAL ═══ -->
+<div class="slide s5">
+  <div class="label">ההקשר העולמי</div>
+  <h2 class="title">ישראל מחויבת — חסר הכלי</h2>
+  <div class="cards">
+    <div class="card"><div class="year">2030</div><div class="ct">ישראל: צמצום פליטות ב-<strong>27%</strong> ביחס ל-2015</div></div>
+    <div class="card"><div class="year">2050</div><div class="ct">יעד <strong>Net Zero</strong> — ניטרליות פחמנית מלאה</div></div>
+    <div class="card"><div class="year">2023</div><div class="ct"><strong>חוק האקלים</strong> מחייב דיווח פליטות מחברות ממשלתיות</div></div>
+    <div class="card"><div class="year">היום</div><div class="ct">אין כלי מדידה מעשי — <strong>CarbonTrack ממלאת את הפער</strong></div></div>
+    <div class="card paris">
+      <div class="icon">🕊️</div>
+      <div class="text"><strong>הסכם פריז 2015</strong> — 195 מדינות מחויבות לשמור על פחות מ-1.5°C ולדווח שנתי על פליטות</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S6: BEFORE/AFTER ═══ -->
+<div class="slide s6">
+  <div class="half before">
+    <div class="hl">❌ ללא CarbonTrack</div>
+    <div class="hh">איך נראה היום?</div>
+    <ul class="points">
+      <li class="pt"><div class="pi">✗</div>חישוב ידני — שגיאות, חוסר עקביות</li>
+      <li class="pt"><div class="pi">✗</div>Scope 3 לא מחושב כלל</li>
+      <li class="pt"><div class="pi">✗</div>הסתמכות על הצהרת מהנדס בלבד</li>
+      <li class="pt"><div class="pi">✗</div>עיבוד קובץ אחד לוקח שבועות</li>
+      <li class="pt"><div class="pi">✗</div>אי עמידה בדרישות רגולציה</li>
+    </ul>
+  </div>
+  <div class="vs">VS</div>
+  <div class="half after">
+    <div class="hl">✅ עם CarbonTrack</div>
+    <div class="hh" style="color:white">איך נראה המחר?</div>
+    <ul class="points">
+      <li class="pt"><div class="pi">✓</div>חישוב אוטומטי מיידי מכתב כמויות</li>
+      <li class="pt"><div class="pi">✓</div>Scope 3 מלא לפי GHG Protocol</li>
+      <li class="pt"><div class="pi">✓</div>AI + פרוטוקול בינלאומי, לא הצהרה</li>
+      <li class="pt"><div class="pi">✓</div>עיבוד אלפי שורות בדקות</li>
+      <li class="pt"><div class="pi">✓</div>מוכן לדיווח רגולטורי</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══ S7: SYSTEM ═══ -->
+<div class="slide s7">
+  <div class="label">הפתרון</div>
+  <h2 class="title">מה עושה CarbonTrack?</h2>
+  <div class="grid">
+    <div class="card"><div class="icon">📂</div><div class="ct">קליטה אוטומטית</div><div class="cd">Excel/CSV → זיהוי חומרים בשפה הנדסית, חישוב אוטומטי ללא התערבות</div></div>
+    <div class="card"><div class="icon">🤖</div><div class="ct">AI מכונה לומדת</div><div class="cd">Human-in-the-Loop: כשהמערכת לא בטוחה — אישור אנושי + למידה לעתיד</div></div>
+    <div class="card"><div class="icon">📊</div><div class="ct">דאשבורד BI</div><div class="cd">פליטות לפי פרויקט, קבלן, חומר. סימולטור What-If לחלופות וחיסכון</div></div>
+    <div class="card" style="background:#edf4fb;border-color:#c0d8f0"><div class="icon">🔒</div><div class="ct">עמידה ברגולציה</div><div class="cd">מחושב לפי GHG Protocol — מוכן לחוק האקלים הישראלי 2023</div></div>
+    <div class="card" style="background:#fdf3e7;border-color:#f0d8b0"><div class="icon">☁️</div><div class="ct">Google Cloud</div><div class="cd">BigQuery, Vertex AI, Cloud Run — מדרגי לכל גודל</div></div>
+    <div class="card" style="background:var(--green9);border:none"><div class="icon">🌍</div><div class="ct" style="color:white">סקאלביליות</div><div class="cd" style="color:rgba(255,255,255,0.7)">מנתיבי ישראל → רכבת, מקורות, תחברות ועוד</div></div>
+  </div>
+</div>
+
+<!-- ═══ S8: TECH ═══ -->
+<div class="slide s8">
+  <div class="label">הטכנולוגיה</div>
+  <h2 class="title">מכתב כמויות לדוח פליטות — בדקות</h2>
+  <div class="flow">
+    <div class="step"><div class="si">📄</div><div class="st">כתב כמויות</div><div class="sd">Excel / CSV</div></div>
+    <div class="arr">→</div>
+    <div class="step"><div class="si">🧠</div><div class="st">זיהוי AI</div><div class="sd">NLP הנדסי</div></div>
+    <div class="arr">→</div>
+    <div class="step"><div class="si">⚖️</div><div class="st">המרת משקל</div><div class="sd">קטלוג חומרים</div></div>
+    <div class="arr">→</div>
+    <div class="step"><div class="si">🔢</div><div class="st">מקדמי פליטה</div><div class="sd">Climatiq API</div></div>
+    <div class="arr">→</div>
+    <div class="step"><div class="si">📊</div><div class="st">דוח BI</div><div class="sd">דאשבורד חי</div></div>
+  </div>
+  <div class="notes">
+    <div class="note"><div class="nt">🔄 Human-in-the-Loop</div><div class="nd">אמינות נמוכה → אישור אנושי → למידה</div></div>
+    <div class="note"><div class="nt">📈 Self-Learning</div><div class="nd">משתפרת בכל קובץ שנכנס</div></div>
+    <div class="note"><div class="nt">⚡ ביצועים</div><div class="nd">אלפי שורות בדקות, progress בזמן אמת</div></div>
+  </div>
+</div>
+
+<!-- ═══ S9: VIDEO ═══ -->
+<div class="slide s9">
+  <div class="label">הדגמה</div>
+  <h2 class="title">ראו איך זה עובד</h2>
+  <div class="frame">
+    <div class="play">▶</div>
+    <div class="vl">הכנס סרטון הדגמה של המוצר</div>
+  </div>
+</div>
+
+<!-- ═══ S10: ROADMAP ═══ -->
+<div class="slide s10">
+  <div class="label">מפת דרכים</div>
+  <h2 class="title">מה עשינו ולאן אנחנו הולכים</h2>
+  <div class="timeline">
+    <div class="line"></div>
+    <div class="milestones">
+      <div class="ms done"><div class="dot">✅</div><div class="md">ינו׳ 2025</div><div class="mt">PoC ראשוני</div><div class="ms-desc">אלגוריתם + Excel parser</div></div>
+      <div class="ms done"><div class="dot">✅</div><div class="md">מרץ 2025</div><div class="mt">AI Integration</div><div class="ms-desc">Vertex AI + BigQuery</div></div>
+      <div class="ms done"><div class="dot">✅</div><div class="md">אפר׳ 2025</div><div class="mt">Dashboard MVP</div><div class="ms-desc">Next.js + Review + What-If</div></div>
+      <div class="ms curr"><div class="dot">🔧</div><div class="md">Q3 2025</div><div class="mt">Pilot נתיבי ישראל</div><div class="ms-desc">נתונים אמיתיים</div></div>
+      <div class="ms future"><div class="dot" style="color:var(--muted)">🌍</div><div class="md">2026</div><div class="mt">Scale-Up</div><div class="ms-desc">רכבת ישראל, מקורות</div></div>
+      <div class="ms future"><div class="dot" style="color:var(--muted)">🚀</div><div class="md">2027</div><div class="mt">SaaS Platform</div><div class="ms-desc">כל חברות התשתית</div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- Navigation -->
+<div class="nav">
+  <button onclick="go(-1)">←</button>
+  <div class="dots" id="dots"></div>
+  <span class="counter" id="counter"></span>
+  <button onclick="go(1)">→</button>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const dotsEl = document.getElementById('dots');
+const counterEl = document.getElementById('counter');
+let cur = 0;
+const total = slides.length;
+
+for (let i = 0; i < total; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+}
+
+function goTo(n) {
+  slides[cur].classList.remove('active');
+  dotsEl.children[cur].classList.remove('active');
+  cur = (n + total) % total;
+  slides[cur].classList.add('active');
+  dotsEl.children[cur].classList.add('active');
+  counterEl.textContent = `${cur+1} / ${total}`;
+}
+function go(d) { goTo(cur + d); }
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowLeft'||e.key==='ArrowDown') go(1);
+  if (e.key==='ArrowRight'||e.key==='ArrowUp') go(-1);
+});
+goTo(0);
+</script>
+</body>
+</html>
