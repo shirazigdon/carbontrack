@@ -262,21 +262,25 @@ ALLOWED_CATEGORIES = list(DEFAULT_CATEGORY_CONFIG.keys()) + ["Unknown", "EXCLUDE
 # Used when Climatiq returns a known-wrong factor for a category.
 # Source: ICE DB v3.0 (University of Bath, 2019)
 CATEGORY_EMISSION_OVERRIDES: Dict[str, float] = {
-    "Copper Wire (Cable)":  3.81,   # ICE DB: Copper, primary & secondary — 3.81 kgCO2e/kg
-    "Aluminum":             8.24,   # Primary aluminium (Israel: infrastructure uses primary, not recycled)
-    "Structural Concrete":  0.149,  # ICE DB: Concrete (reinforced) — Climatiq returning ~5x too low
-    "Lean Concrete":        0.107,  # ICE DB: Concrete (not reinforced)
-    "Precast Concrete":     0.182,  # ICE DB: Precast concrete (includes reinforcement)
-    "Fill Material":        0.0048, # ICE DB: General aggregate/fill
-    "Earthworks":           0.0024, # ICE DB: Earthworks, bulk excavation
-    "Crushed Stone":        0.0048, # ICE DB: Aggregate — Climatiq returns 0.01 (2x high)
-    "Waterproofing":        2.000,  # ICE DB: Bituminous membrane — Climatiq returns 0.22 (9x low)
-    "Cementitious Mortar":  0.208,  # ICE DB: Mortar — Climatiq returns near zero
-    "Galvanized Steel":     2.890,  # ICE DB: Galvanized steel — Climatiq returns 2.284 (21% low)
-    "PVC Pipe":             3.100,  # ICE DB: PVC — Climatiq returns 2.43 (22% low)
-    "Asphalt":              0.0472, # ICE DB: Asphalt — Climatiq API always fails for this category
-    "Steel Rebar":          1.990,  # ICE DB: Steel rebar — Climatiq returns 1.72 (13% low)
-    "HDPE Granulate":       1.930,  # ICE DB: HDPE — Climatiq returns 1.795 (7% low)
+    "Copper Wire (Cable)":  3.81,   # ICE DB v3.0: Copper, primary & secondary
+    "Aluminum":             8.24,   # ICE DB v3.0: Primary aluminium (Israel: infrastructure uses primary)
+    "Structural Concrete":  0.149,  # ICE DB v3.0: Concrete (reinforced) — Climatiq returning ~5x too low
+    "Lean Concrete":        0.107,  # ICE DB v3.0: Concrete (not reinforced)
+    "Precast Concrete":     0.182,  # ICE DB v3.0: Precast concrete (includes reinforcement)
+    "Fill Material":        0.0048, # ICE DB v3.0: General aggregate/fill
+    "Earthworks":           0.0024, # ICE DB v3.0: Earthworks, bulk excavation
+    "Crushed Stone":        0.0048, # ICE DB v3.0: Aggregate — Climatiq returns 0.01 (2x high)
+    "Waterproofing":        2.000,  # ICE DB v3.0: Bituminous membrane — Climatiq returns 0.22 (9x low)
+    "Cementitious Mortar":  0.208,  # ICE DB v3.0: Mortar — Climatiq returns near zero
+    "Galvanized Steel":     2.890,  # ICE DB v3.0: Galvanized steel — Climatiq returns 2.284 (21% low)
+    "PVC Pipe":             3.100,  # ICE DB v3.0: PVC — Climatiq returns 2.43 (22% low)
+    "Asphalt":              0.0472, # ICE DB v3.0: Asphalt — Climatiq API always fails for this category
+    "Steel Rebar":          1.990,  # ICE DB v3.0: Steel rebar — Climatiq returns 1.72 (13% low)
+    "HDPE Granulate":       1.930,  # ICE DB v3.0: HDPE — Climatiq returns 1.795 (7% low)
+    "Glass":                1.530,  # ICE DB v3.0: Float glass
+    "Wood":                 0.420,  # ICE DB v3.0: Softwood timber, kiln dried (cradle-to-gate)
+    "Concrete Pipe":        0.149,  # ICE DB v3.0: Precast concrete pipe (same as Structural Concrete)
+    "Paving":               0.182,  # ICE DB v3.0: Precast concrete paving/kerbstones
 }
 
 # ==========================================================
@@ -2953,9 +2957,14 @@ def compute_reliability_score(material: str, category: Optional[str], assumed_uo
     has_boq = bool(cls_meta.get("boq_mapping"))
 
     if method == "vertex_ai":
-        if conf < 0.85:
+        # Graduated penalty: only penalise meaningfully below 0.80
+        if conf < 0.70:
             score -= 0.20
-            reasons.append("AI/classification confidence below 0.85")
+            reasons.append("AI confidence below 0.70")
+        elif conf < 0.80:
+            score -= 0.10
+            reasons.append("AI confidence below 0.80")
+        # conf >= 0.80 with dual-engineer agreement: no penalty
         e1 = cls_meta.get("ai_engineer_1") or {}
         e2 = cls_meta.get("ai_engineer_2") or {}
         if e1.get("category") != e2.get("category"):
@@ -2966,8 +2975,14 @@ def compute_reliability_score(material: str, category: Optional[str], assumed_uo
         reasons.append("Classification confidence below 0.50")
 
     if contains_suspect_non_material_text(material) and not (has_catalog or has_boq):
-        score -= 0.30
-        reasons.append("Text contains suspect non-material terms")
+        if method == "vertex_ai" and category and category not in {"Unknown", "EXCLUDE"}:
+            # Both AI engineers found a concrete material category despite service-like wording
+            # (e.g. "אספקה והתקנה של צנרת HDPE") — minor penalty only
+            score -= 0.10
+            reasons.append("Text contains service-like terms but material category identified by AI")
+        else:
+            score -= 0.30
+            reasons.append("Text contains suspect non-material terms")
     if not category or category == "Unknown":
         score -= 0.40
         reasons.append("Unknown category")
