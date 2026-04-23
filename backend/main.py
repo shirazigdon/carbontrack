@@ -3573,8 +3573,41 @@ def process_dataframe(df: pd.DataFrame, metadata: Dict[str, str], reliability_th
 # ==========================================================
 # BIGQUERY WRITES
 # ==========================================================
-# BIGQUERY WRITES
-# ==========================================================
+
+# Columns that must exist in emissions_details but may be missing from older table schemas.
+# BigQuery type, Python default value.
+_REQUIRED_DETAILS_COLUMNS: List[tuple] = [
+    ("reliability_score",  "FLOAT64",  None),
+    ("reliability_status", "STRING",   None),
+    ("scope",              "STRING",   None),
+    ("measurement_year",   "INT64",    None),
+    ("matched_by",         "STRING",   None),
+]
+
+_ensured_tables: set = set()
+
+
+def ensure_table_columns(table_id: str) -> None:
+    """Add any missing required columns to the BigQuery table (once per process lifetime)."""
+    if table_id in _ensured_tables:
+        return
+    try:
+        table = bq_client.get_table(table_id)
+        existing = {field.name for field in table.schema}
+        new_fields = [
+            bigquery.SchemaField(col_name, bq_type, mode="NULLABLE")
+            for col_name, bq_type, _ in _REQUIRED_DETAILS_COLUMNS
+            if col_name not in existing
+        ]
+        if new_fields:
+            table.schema = list(table.schema) + new_fields
+            bq_client.update_table(table, ["schema"])
+            logger.info("Added %d column(s) to %s: %s", len(new_fields), table_id, [f.name for f in new_fields])
+        _ensured_tables.add(table_id)
+    except Exception as exc:
+        logger.warning("ensure_table_columns failed for %s: %s", table_id, exc)
+
+
 def filter_rows_to_table_schema(table_id: str, rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     allowed_columns = get_table_columns(table_id)
     return [{k: sanitize_for_json(v) for k, v in row.items() if k in allowed_columns} for row in rows]
@@ -3584,6 +3617,8 @@ def append_rows_json(table_id: str, rows: List[Dict[str, Any]], max_retries: int
     if not rows:
         return
     import time as _time
+    if table_id == BQ_DETAILS_TABLE:
+        ensure_table_columns(table_id)
     filtered_rows = filter_rows_to_table_schema(table_id, rows)
     last_exc = None
     for attempt in range(1, max_retries + 1):
