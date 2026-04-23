@@ -46,25 +46,37 @@ export function Dashboard() {
     autoWriteAiApproved: true,
   });
 
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [selectedYear, setSelectedYear]           = useState<number | null>(null);
+  const [selectedRegions, setSelectedRegions]     = useState<string[]>([]);
+  const [selectedProject, setSelectedProject]     = useState<string>('');
+  const [selectedContractor, setSelectedContractor] = useState<string>('');
   const [reliabilityThreshold, setReliabilityThreshold] = useState(0.85);
 
-  const years = useMemo(() => {
-    return Array.from(new Set(emissions.map(r => r.year).filter(Boolean) as number[])).sort((a, b) => b - a);
-  }, [emissions]);
+  const years = useMemo(() =>
+    Array.from(new Set(emissions.map(r => r.year).filter(Boolean) as number[])).sort((a, b) => b - a),
+  [emissions]);
 
   const regions = useMemo(() =>
     Array.from(new Set(emissions.map(r => r.region).filter(Boolean) as string[])).sort(),
+  [emissions]);
+
+  const allProjects = useMemo(() =>
+    Array.from(new Set(emissions.map(r => r.project_name).filter(Boolean) as string[])).sort(),
+  [emissions]);
+
+  const allContractors = useMemo(() =>
+    Array.from(new Set(emissions.map(r => r.contractor).filter(Boolean) as string[])).sort(),
   [emissions]);
 
   const filteredEmissions = useMemo(() => {
     return emissions.filter(r => {
       if (selectedYear && r.year !== selectedYear) return false;
       if (selectedRegions.length && !selectedRegions.includes(r.region)) return false;
+      if (selectedProject && r.project_name !== selectedProject) return false;
+      if (selectedContractor && r.contractor !== selectedContractor) return false;
       return true;
     });
-  }, [emissions, selectedYear, selectedRegions]);
+  }, [emissions, selectedYear, selectedRegions, selectedProject, selectedContractor]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -102,14 +114,17 @@ export function Dashboard() {
         onTabChange={setActiveTab}
         reviewCount={review.length}
         filters={{
-          projects,
-          selectedProjects: [],
+          projects: allProjects,
+          selectedProject,
+          contractors: allContractors,
+          selectedContractor,
           regions,
           selectedRegions,
           years,
           selectedYear,
           reliabilityThreshold,
-          onProjectsChange: () => {},
+          onProjectChange: setSelectedProject,
+          onContractorChange: setSelectedContractor,
           onRegionsChange: setSelectedRegions,
           onYearChange: setSelectedYear,
           onReliabilityChange: setReliabilityThreshold,

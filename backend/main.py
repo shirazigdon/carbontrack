@@ -601,7 +601,11 @@ THICKNESS_CM_PATTERNS = [
     r"""\d+(?:\.\d+)?\s*/\s*\d+(?:\.\d+)?\s*/\s*(\d+(?:\.\d+)?)\s*ס["'׳]?מ""",
     # Format: _עובי 5_ or עובי 5 (without ס"מ — common in asphalt BOQ codes)
     r"""[_\s]עובי\s*(\d+(?:\.\d+)?)[_\s]""",
-    r"""עובי\s+שכבה\s+(\d+(?:\.\d+)?)""",  # הטלאה בעובי שכבה 5 ס"מ
+    r"""עובי\s+שכבה\s+(\d+(?:\.\d+)?)""",  # עובי שכבה 5 ס"מ
+    # "שכבה" alone without "עובי" prefix — e.g. "שכבה 5 ס"מ" or "שכבת אספלט 7ס"מ"
+    r"""שכבה[ת]?\s+(?:אספלט\s+)?(\d+(?:\.\d+)?)\s*ס["'׳]?מ""",
+    # Standalone thickness spec: e.g. "t=5cm" or "e=5cm" (engineering notation)
+    r"""[te]\s*=\s*(\d+(?:\.\d+)?)\s*(?:ס["'׳]?מ|cm)""",
 ]
 
 POSSIBLE_MATERIAL_COLUMNS = [
@@ -622,10 +626,24 @@ POSSIBLE_BOQ_CODE_COLUMNS = [
     "חומר"
 ]
 ANNUAL_2025_LAYOUT_COLUMNS = {
-    "boq_code": ["חומר/שירות חוזה"],
-    "material": ["תאור חומר/שירות חוזה", "תיאור חומר/שירות חוזה"],
-    "unit": ["יחידת מידה בחוזה"],
-    "quantity": ["כמות בקבלות טובין"],
+    "boq_code": [
+        "חומר/שירות חוזה", "חומר שירות חוזה", "חומר/שירות", "חומר שירות",
+        "קוד חומר", "מקט חומר", "item code",
+    ],
+    "material": [
+        "תאור חומר/שירות חוזה", "תיאור חומר/שירות חוזה",
+        "תאור חומר שירות חוזה", "תיאור חומר שירות חוזה",
+        "תאור חומר/שירות", "תיאור חומר/שירות",
+        "תאור שירות", "תיאור שירות", "תאור", "תיאור",
+        "item description", "description",
+    ],
+    "unit": [
+        "יחידת מידה בחוזה", "יחידת מידה", "יחידה", "יח'", "uom", "unit",
+    ],
+    "quantity": [
+        "כמות בקבלות טובין", "כמות קבלות טובין", "כמות לתשלום",
+        "כמות מאושרת", "כמות", "qty", "quantity",
+    ],
 }
 SOURCE_MODE_AUTO = "auto"
 SOURCE_MODE_BOQ = "boq"
@@ -990,6 +1008,7 @@ def normalize_uom(raw_unit: Optional[str]) -> Optional[str]:
         "m2": "m2", "מר": "m2", "מ2": "m2", 'מ"ר': "m2", "sqm": "m2",
         "m": "m", "מ": "m", "lm": "m", "מטר": "m", 'מ"א': "m",
         "km": "km",
+        "מא": "m",   # מ"א / מ״א after quote-stripping → linear meter
         "unit": "unit", "ea": "unit", "יחידה": "unit", "יח": "unit", 'יח׳': "unit", 'יח"': "unit",
         "tag": "unit", "std": "unit", "p": "unit", "dun": "unit",
         "cmp": "unit", "mic": "unit", "mon": "unit", "h": "hour", "hr": "hour",
@@ -2797,7 +2816,11 @@ def aggregate_dataframe(df: pd.DataFrame, requested_source_mode: Optional[str] =
         .replace({"": None, "nan": None, "None": None})
     )
     work_df["quantity"] = pd.to_numeric(work_df["quantity"], errors="coerce")
-    work_df["unit"] = work_df["unit"].map(lambda x: normalize_text(x) if pd.notna(x) else None)
+    # Normalize units to their canonical form BEFORE grouping so that synonymous
+    # spellings (e.g. "טון" / "ton" / "t", "מ\"א" / "מ" / "m") merge into one row.
+    work_df["unit"] = work_df["unit"].map(
+        lambda x: normalize_uom(normalize_text(x)) or normalize_text(x) if pd.notna(x) else None
+    )
     work_df["boq_code"] = work_df["boq_code"].map(lambda x: normalize_text(x) if pd.notna(x) else None)
     work_df = work_df.dropna(subset=["material", "quantity"])
     work_df = work_df[work_df["material"].astype(str).str.strip() != ""]
@@ -3288,7 +3311,15 @@ def _process_single_row_task(row_tuple, metadata, regulator_catalog, threshold, 
                                                                                            threshold, max_candidates,
                                                                                            max_factor_spread_pct)
     review_required = reliability_status != "auto_approved"
-    if category and category != "Unknown" and assumed_uom not in {None, "unknown"} and conversion.weight_kg not in {None, 0} and emission is not None and (catalog_mapping or boq_mapping):
+    _conversion_is_low_confidence = bool(
+        conversion and conversion.assumption and conversion.assumption.startswith("LOW_CONFIDENCE")
+    )
+    if (category and category != "Unknown"
+            and assumed_uom not in {None, "unknown"}
+            and conversion.weight_kg not in {None, 0}
+            and emission is not None
+            and (catalog_mapping or boq_mapping)
+            and not _conversion_is_low_confidence):  # don't auto-approve uncertain thickness/weight
         review_required = False
         reliability_status = "auto_approved"
         reliability_reasons = []

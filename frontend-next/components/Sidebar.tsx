@@ -27,13 +27,16 @@ interface SidebarProps {
   reviewCount?: number;
   filters: {
     projects: string[];
-    selectedProjects: string[];
+    selectedProject: string;
+    contractors: string[];
+    selectedContractor: string;
     regions: string[];
     selectedRegions: string[];
     years: number[];
     selectedYear: number | null;
     reliabilityThreshold: number;
-    onProjectsChange: (v: string[]) => void;
+    onProjectChange: (v: string) => void;
+    onContractorChange: (v: string) => void;
     onRegionsChange: (v: string[]) => void;
     onYearChange: (v: number | null) => void;
     onReliabilityChange: (v: number) => void;
@@ -103,13 +106,61 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
       </nav>
 
       {/* Filters */}
-      <div className="px-4 py-4 space-y-4 border-t" style={{ borderColor: 'rgba(183,228,199,0.12)' }}>
-        <div className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(183,228,199,0.35)' }}>סינון נתונים</div>
+      <div className="px-4 py-4 space-y-3 border-t" style={{ borderColor: 'rgba(183,228,199,0.12)' }}>
+        <div className="flex items-center justify-between">
+          <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(183,228,199,0.35)' }}>סינון נתונים</span>
+          {(filters.selectedProject || filters.selectedContractor || filters.selectedYear || filters.selectedRegions.length > 0) && (
+            <button
+              onClick={() => {
+                filters.onProjectChange('');
+                filters.onContractorChange('');
+                filters.onYearChange(null);
+                filters.onRegionsChange([]);
+              }}
+              className="text-[9px] px-1.5 py-0.5 rounded"
+              style={{ color: 'rgba(252,165,165,0.8)', background: 'rgba(252,165,165,0.08)' }}>
+              ✕ נקה
+            </button>
+          )}
+        </div>
 
+        {/* Project filter */}
+        {filters.projects.length > 0 && (
+          <div>
+            <label className="text-[10px] mb-1 block" style={{ color: 'rgba(183,228,199,0.5)' }}>פרויקט</label>
+            <select
+              className="w-full text-xs rounded-xl px-2 py-1.5 focus:outline-none"
+              style={{ background: 'rgba(183,228,199,0.07)', color: '#b7e4c7', border: '1px solid rgba(183,228,199,0.15)' }}
+              value={filters.selectedProject}
+              onChange={e => filters.onProjectChange(e.target.value)}
+            >
+              <option value="">כל הפרויקטים</option>
+              {filters.projects.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* Contractor filter */}
+        {filters.contractors.length > 0 && (
+          <div>
+            <label className="text-[10px] mb-1 block" style={{ color: 'rgba(183,228,199,0.5)' }}>קבלן</label>
+            <select
+              className="w-full text-xs rounded-xl px-2 py-1.5 focus:outline-none"
+              style={{ background: 'rgba(183,228,199,0.07)', color: '#b7e4c7', border: '1px solid rgba(183,228,199,0.15)' }}
+              value={filters.selectedContractor}
+              onChange={e => filters.onContractorChange(e.target.value)}
+            >
+              <option value="">כל הקבלנים</option>
+              {filters.contractors.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* Year filter */}
         <div>
-          <label className="text-[10px] mb-1.5 block" style={{ color: 'rgba(183,228,199,0.5)' }}>שנה</label>
+          <label className="text-[10px] mb-1 block" style={{ color: 'rgba(183,228,199,0.5)' }}>שנה</label>
           <select
-            className="w-full text-xs rounded-xl px-3 py-1.5 focus:outline-none transition-colors"
+            className="w-full text-xs rounded-xl px-2 py-1.5 focus:outline-none"
             style={{ background: 'rgba(183,228,199,0.07)', color: '#b7e4c7', border: '1px solid rgba(183,228,199,0.15)' }}
             value={filters.selectedYear ?? ''}
             onChange={e => filters.onYearChange(e.target.value ? Number(e.target.value) : null)}
@@ -119,10 +170,11 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
           </select>
         </div>
 
+        {/* Region checkboxes */}
         {filters.regions.length > 0 && (
           <div>
-            <label className="text-[10px] mb-1.5 block" style={{ color: 'rgba(183,228,199,0.5)' }}>אזור</label>
-            <div className="space-y-1.5">
+            <label className="text-[10px] mb-1 block" style={{ color: 'rgba(183,228,199,0.5)' }}>אזור</label>
+            <div className="space-y-1">
               {filters.regions.map(r => (
                 <label key={r} className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'rgba(183,228,199,0.65)' }}>
                   <input type="checkbox" className="w-3 h-3 accent-[#95d5b2]"
@@ -137,17 +189,6 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
             </div>
           </div>
         )}
-
-        <div>
-          <label className="text-[10px] mb-1.5 flex justify-between" style={{ color: 'rgba(183,228,199,0.5)' }}>
-            <span>סף אמינות</span>
-            <span style={{ color: '#95d5b2' }}>{filters.reliabilityThreshold.toFixed(2)}</span>
-          </label>
-          <input type="range" min={0.5} max={1} step={0.01}
-            value={filters.reliabilityThreshold}
-            onChange={e => filters.onReliabilityChange(Number(e.target.value))}
-            className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-[#95d5b2]" />
-        </div>
 
         <button onClick={logout}
           className="w-full flex items-center justify-center gap-2 text-xs rounded-2xl py-2 transition-all"

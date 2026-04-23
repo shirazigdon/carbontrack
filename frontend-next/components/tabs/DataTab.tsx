@@ -79,26 +79,21 @@ function distinct<T>(arr: T[]): T[] {
 }
 
 export function DataTab({ data }: Props) {
-  const [search, setSearch]             = useState('');
-  const [yearFilter, setYearFilter]     = useState('');
-  const [projectFilter, setProject]     = useState('');
-  const [contractorFilter, setContractor] = useState('');
-  const [categoryFilter, setCategory]   = useState('');
-  const [statusFilter, setStatus]       = useState('');
-  const [sort, setSort]                 = useState<SortState>({ key: 'emission_co2e', dir: 'desc' });
-  const [page, setPage]                 = useState(0);
+  const [search, setSearch]           = useState('');
+  const [yearFilter, setYearFilter]   = useState('');
+  const [categoryFilter, setCategory] = useState('');
+  const [statusFilter, setStatus]     = useState('');
+  const [sort, setSort]               = useState<SortState>({ key: 'emission_co2e', dir: 'desc' });
+  const [page, setPage]               = useState(0);
   const pageSize = 50;
 
-  const years       = useMemo(() => distinct(data.map(r => r.year)).sort((a, b) => (b as number) - (a as number)), [data]);
-  const projects    = useMemo(() => distinct(data.map(r => r.project_name)).sort(), [data]);
-  const contractors = useMemo(() => distinct(data.map(r => r.contractor)).sort(), [data]);
-  const categories  = useMemo(() => distinct(data.map(r => r.category)).sort(), [data]);
+  const years      = useMemo(() => distinct(data.map(r => r.year)).sort((a, b) => (b as number) - (a as number)), [data]);
+  const categories = useMemo(() => distinct(data.map(r => r.category)).sort(), [data]);
 
-  const hasFilters = yearFilter || projectFilter || contractorFilter || categoryFilter || statusFilter || search;
+  const hasFilters = yearFilter || categoryFilter || statusFilter || search;
 
   function resetFilters() {
-    setYearFilter(''); setProject(''); setContractor('');
-    setCategory(''); setStatus(''); setSearch(''); setPage(0);
+    setYearFilter(''); setCategory(''); setStatus(''); setSearch(''); setPage(0);
   }
 
   function toggleSort(key: keyof EmissionRow) {
