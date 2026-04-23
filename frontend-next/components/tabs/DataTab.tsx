@@ -103,11 +103,9 @@ export function DataTab({ data }: Props) {
 
   const filtered = useMemo(() => {
     let rows = data;
-    if (yearFilter)       rows = rows.filter(r => String(r.year) === yearFilter);
-    if (projectFilter)    rows = rows.filter(r => r.project_name === projectFilter);
-    if (contractorFilter) rows = rows.filter(r => r.contractor === contractorFilter);
-    if (categoryFilter)   rows = rows.filter(r => r.category === categoryFilter);
-    if (statusFilter)     rows = rows.filter(r => r.reliability_status === statusFilter);
+    if (yearFilter)     rows = rows.filter(r => String(r.year) === yearFilter);
+    if (categoryFilter) rows = rows.filter(r => r.category === categoryFilter);
+    if (statusFilter)   rows = rows.filter(r => r.reliability_status === statusFilter);
     if (search) {
       const s = search.toLowerCase();
       rows = rows.filter(r =>
@@ -116,7 +114,7 @@ export function DataTab({ data }: Props) {
       );
     }
     return rows;
-  }, [data, yearFilter, projectFilter, contractorFilter, categoryFilter, statusFilter, search]);
+  }, [data, yearFilter, categoryFilter, statusFilter, search]);
 
   const sorted = useMemo(() => {
     const { key, dir } = sort;
@@ -159,24 +157,6 @@ export function DataTab({ data }: Props) {
 
       {/* ── Filters ── */}
       <div className="bg-muted/50 border border-border rounded-xl p-3 flex flex-wrap gap-2 items-end">
-        {/* Project */}
-        <div className="flex flex-col gap-0.5">
-          <label className="text-[11px] text-muted-fg font-medium">פרויקט</label>
-          <select value={projectFilter} onChange={e => { setProject(e.target.value); setPage(0); }} className={selectCls}>
-            <option value="">הכל</option>
-            {projects.map(p => <option key={p} value={String(p)}>{p}</option>)}
-          </select>
-        </div>
-
-        {/* Contractor */}
-        <div className="flex flex-col gap-0.5">
-          <label className="text-[11px] text-muted-fg font-medium">קבלן</label>
-          <select value={contractorFilter} onChange={e => { setContractor(e.target.value); setPage(0); }} className={selectCls}>
-            <option value="">הכל</option>
-            {contractors.map(c => <option key={c} value={String(c)}>{c}</option>)}
-          </select>
-        </div>
-
         {/* Category */}
         <div className="flex flex-col gap-0.5">
           <label className="text-[11px] text-muted-fg font-medium">קטגוריה</label>
@@ -214,7 +194,6 @@ export function DataTab({ data }: Props) {
             className={`${selectCls} w-36`} />
         </div>
 
-        {/* Reset */}
         {hasFilters && (
           <button onClick={resetFilters}
             className="self-end text-xs px-2.5 py-1.5 rounded-lg border border-border bg-white hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-colors text-slate-600">
