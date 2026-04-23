@@ -4026,11 +4026,11 @@ def auth_change_password():
 def emissions():
     try:
         try:
-            query = f"SELECT * FROM `{_BQ_DETAILS_VIEW_FULL}` ORDER BY calculation_date DESC LIMIT 2000"
+            query = f"SELECT * FROM `{_BQ_DETAILS_VIEW_FULL}` ORDER BY calculation_date DESC LIMIT 20000"
             job = bq_client.query(query)
             rows = [sanitize_for_json(dict(r.items())) for r in job.result()]
         except Exception:
-            query = f"SELECT * FROM `{_BQ_DETAILS_TABLE_FULL}` ORDER BY calculation_date DESC LIMIT 2000"
+            query = f"SELECT * FROM `{_BQ_DETAILS_TABLE_FULL}` ORDER BY calculation_date DESC LIMIT 20000"
             job = bq_client.query(query)
             rows = [sanitize_for_json(dict(r.items())) for r in job.result()]
         return jsonify({"items": rows}), 200
