@@ -33,7 +33,11 @@ export interface EmissionRow {
   assumed_uom?: string;
   review_required?: boolean;
   year?: number;
+  measurement_year?: number;
   calculation_date?: string;
+  scope?: string;
+  conversion_assumption?: string;
+  reliability_status?: string;
 }
 
 export interface ReviewRow {

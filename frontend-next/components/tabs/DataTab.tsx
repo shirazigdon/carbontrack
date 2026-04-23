@@ -6,27 +6,42 @@ import { fmt } from '../../lib/utils';
 interface Props { data: EmissionRow[]; }
 
 const COLS: { key: keyof EmissionRow; label: string }[] = [
-  { key: 'project_name',     label: 'פרויקט' },
-  { key: 'contractor',       label: 'קבלן' },
-  { key: 'region',           label: 'אזור' },
-  { key: 'year',             label: 'שנה' },
-  { key: 'category',         label: 'קטגוריה' },
-  { key: 'short_text',       label: 'תיאור' },
-  { key: 'weight_kg',        label: 'משקל (t)' },
-  { key: 'emission_co2e',    label: 'פליטות (t)' },
-  { key: 'reliability_score',label: 'אמינות' },
-  { key: 'matched_by',       label: 'שיטת התאמה' },
+  { key: 'project_name',      label: 'פרויקט' },
+  { key: 'contractor',        label: 'קבלן' },
+  { key: 'region',            label: 'אזור' },
+  { key: 'year',              label: 'שנה' },
+  { key: 'scope',             label: 'Scope' },
+  { key: 'category',          label: 'קטגוריה' },
+  { key: 'short_text',        label: 'תיאור' },
+  { key: 'weight_kg',         label: 'משקל (t)' },
+  { key: 'emission_co2e',     label: 'פליטות (t CO₂e)' },
+  { key: 'reliability_score', label: 'אמינות' },
+  { key: 'reliability_status',label: 'סטטוס' },
+  { key: 'matched_by',        label: 'שיטת התאמה' },
 ];
 
+// Extra columns included in CSV/Excel export but not shown in the table
+const EXPORT_EXTRA_COLS: { key: keyof EmissionRow; label: string }[] = [
+  { key: 'conversion_assumption', label: 'הנחת המרה' },
+  { key: 'measurement_year',      label: 'שנת מדידה' },
+];
+
+const ALL_EXPORT_COLS = [...COLS, ...EXPORT_EXTRA_COLS];
+
+function formatCell(c: { key: keyof EmissionRow }, r: EmissionRow): string {
+  const v = r[c.key];
+  if (v == null) return '';
+  if (c.key === 'weight_kg' || c.key === 'emission_co2e') return ((v as number) / 1000).toFixed(3);
+  if (c.key === 'reliability_score') return ((v as number) * 100).toFixed(1);
+  return String(v);
+}
+
 function exportCSV(rows: EmissionRow[]) {
-  const header = COLS.map(c => c.label).join(',');
+  const header = ALL_EXPORT_COLS.map(c => `"${c.label}"`).join(',');
   const body = rows.map(r =>
-    COLS.map(c => {
-      const v = r[c.key];
-      if (v == null) return '';
-      if (c.key === 'weight_kg' || c.key === 'emission_co2e') return ((v as number) / 1000).toFixed(3);
-      if (c.key === 'reliability_score') return ((v as number) * 100).toFixed(1);
-      return `"${String(v).replace(/"/g, '""')}"`;
+    ALL_EXPORT_COLS.map(c => {
+      const s = formatCell(c, r);
+      return s ? `"${s.replace(/"/g, '""')}"` : '';
     }).join(',')
   ).join('\n');
   const blob = new Blob(['﻿' + header + '\n' + body], { type: 'text/csv;charset=utf-8;' });
@@ -36,16 +51,9 @@ function exportCSV(rows: EmissionRow[]) {
 }
 
 function exportExcel(rows: EmissionRow[]) {
-  // Simple TSV with .xls extension — opens in Excel
-  const header = COLS.map(c => c.label).join('\t');
+  const header = ALL_EXPORT_COLS.map(c => c.label).join('\t');
   const body = rows.map(r =>
-    COLS.map(c => {
-      const v = r[c.key];
-      if (v == null) return '';
-      if (c.key === 'weight_kg' || c.key === 'emission_co2e') return ((v as number) / 1000).toFixed(3);
-      if (c.key === 'reliability_score') return ((v as number) * 100).toFixed(1);
-      return String(v);
-    }).join('\t')
+    ALL_EXPORT_COLS.map(c => formatCell(c, r)).join('\t')
   ).join('\n');
   const blob = new Blob(['﻿' + header + '\n' + body], { type: 'application/vnd.ms-excel;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -138,13 +146,19 @@ export function DataTab({ data }: Props) {
                 {COLS.map(c => {
                   const val = row[c.key];
                   let display: string;
+                  let extra = '';
                   if (val == null)                    display = '—';
                   else if (c.key === 'weight_kg')     display = fmt((val as number) / 1000, 1) + 't';
                   else if (c.key === 'emission_co2e') display = fmt((val as number) / 1000, 1) + 't';
                   else if (c.key === 'reliability_score') display = ((val as number) * 100).toFixed(0) + '%';
+                  else if (c.key === 'reliability_status') {
+                    const s = String(val);
+                    display = s === 'auto_approved' ? '✓ אושר' : s === 'review_required' ? '⚠ לבדיקה' : s === 'rejected' ? '✗ נדחה' : s;
+                    extra = s === 'auto_approved' ? 'text-green-700' : s === 'review_required' ? 'text-amber-700' : s === 'rejected' ? 'text-red-700' : '';
+                  }
                   else display = String(val);
                   return (
-                    <td key={c.key} className="px-3 py-2 whitespace-nowrap max-w-[200px] truncate text-gray-700">{display}</td>
+                    <td key={c.key} className={`px-3 py-2 whitespace-nowrap max-w-[200px] truncate text-gray-700 ${extra}`}>{display}</td>
                   );
                 })}
               </tr>

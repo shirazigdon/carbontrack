@@ -713,6 +713,8 @@ EMISSIONS_DETAILS_DEFAULTS: Dict[str, Any] = {
     "region": None,
     "reliability_score": None,   # computed per row — 0.0-1.0
     "reliability_status": None,  # auto_approved / review_required / rejected
+    "scope": "Scope 3",          # GHG Protocol — embodied carbon is always Scope 3
+    "measurement_year": None,
 }
 
 
@@ -2460,11 +2462,12 @@ def convert_quantity_to_kg(
                 return ConversionResult(quantity, "m2", assumed_uom, quantity * factor, factor,
                                         f"Asphalt default {cfg['kg_per_m2_per_cm']} kg/m2/cm * {thickness_cm}cm",
                                         thickness_cm)
-            # No thickness found anywhere — use 5cm as conservative default
+            # No thickness found anywhere — use 5cm as conservative default.
+            # Mark with LOW_CONFIDENCE flag so compute_reliability_score can penalise.
             default_thickness = 5.0
             factor = cfg["kg_per_m2_per_cm"] * default_thickness
             return ConversionResult(quantity, "m2", assumed_uom, quantity * factor, factor,
-                                    f"Asphalt m2 default thickness {default_thickness}cm assumed",
+                                    f"LOW_CONFIDENCE: Asphalt thickness not found in text or catalog — assumed {default_thickness}cm default; verify actual pavement design",
                                     default_thickness)
 
         if category == "Waterproofing":
@@ -2987,6 +2990,10 @@ def compute_reliability_score(material: str, category: Optional[str], assumed_uo
             score -= 0.20
             reasons.append(f"Climatiq factor spread above {max_factor_spread_pct}%")
 
+    if conversion and conversion.assumption and conversion.assumption.startswith("LOW_CONFIDENCE"):
+        score -= 0.20
+        reasons.append("Asphalt thickness assumed (5 cm default) — not found in text or catalog")
+
     if (has_catalog or has_boq) and category and assumed_uom and assumed_uom != "unknown" and conversion and conversion.weight_kg not in (None, 0):
         score = max(score, threshold + 0.05)
         reasons = [r for r in reasons if r not in {"Classification confidence below 0.50", "AI/classification confidence below 0.85"}]
@@ -3338,6 +3345,8 @@ def _process_single_row_task(row_tuple, metadata, regulator_catalog, threshold, 
         "ai_engineer_2_json": json.dumps(cls_meta.get("ai_engineer_2"), ensure_ascii=False) if cls_meta.get(
             "ai_engineer_2") else None,
         "source_mode": source_mode,
+        "scope": "Scope 3",
+        "measurement_year": int(metadata.get("measurement_year") or datetime.now(timezone.utc).year),
     }
     return detail_row, stats
 
