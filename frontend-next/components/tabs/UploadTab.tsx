@@ -48,7 +48,24 @@ export function UploadTab({ userEmail, settings }: Props) {
     if (!project || !file) return;
     setUploading(true);
     setResult(null);
+
+    // 20-minute timeout — processing a large Excel with Vertex AI can take many minutes
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 20 * 60 * 1000);
+
     try {
+      // Step 1: Upload file to GCS via backend /upload endpoint
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('bucket', GCS_BUCKET);
+      fd.append('project_name', project);
+      fd.append('contractor', contractor);
+      fd.append('region', region);
+      fd.append('source_mode', sourceMode);
+      const uploadRes = await fetch(`${BACKEND}/upload`, { method: 'POST', body: fd, signal: controller.signal });
+      if (!uploadRes.ok) throw new Error(await uploadRes.text());
+
+      // Step 2: Trigger processing (synchronous — backend returns when done)
       const payload = {
         bucket: GCS_BUCKET,
         file: file.name,
@@ -63,32 +80,44 @@ export function UploadTab({ userEmail, settings }: Props) {
         max_factor_spread_pct: settings.maxFactorSpreadPct,
         auto_write_ai_approved: settings.autoWriteAiApproved,
       };
-
-      // Upload file to GCS via backend /upload endpoint
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('bucket', GCS_BUCKET);
-      fd.append('project_name', project);
-      fd.append('contractor', contractor);
-      fd.append('region', region);
-      fd.append('source_mode', sourceMode);
-      const uploadRes = await fetch(`${BACKEND}/upload`, { method: 'POST', body: fd });
-      if (!uploadRes.ok) throw new Error(await uploadRes.text());
-
-      // Trigger backend processing
       const res = await fetch(`${BACKEND}/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'שגיאה בעיבוד');
-      setResult({ ok: true, msg: `עובדו ${(data.total_rows || 0).toLocaleString()} שורות · ${data.needs_review_rows || 0} דורשות review` });
+      if (!res.ok) {
+        if (data.error === 'duplicate_file') {
+          setResult({ ok: false, msg: 'הקובץ כבר עובד בעבר. כדי לעבד מחדש בחר "כן" בחלונית הבאה.' });
+          if (confirm('הקובץ כבר קיים במאגר. האם לעבד מחדש ולדרוס?')) {
+            const res2 = await fetch(`${BACKEND}/`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...payload, force_reprocess: true }),
+              signal: controller.signal,
+            });
+            const data2 = await res2.json();
+            if (!res2.ok) throw new Error(data2.error || 'שגיאה בעיבוד');
+            setResult({ ok: true, msg: `עובדו ${(data2.total_rows || 0).toLocaleString()} שורות · ${data2.needs_review_rows || 0} לסקירה` });
+          }
+        } else {
+          throw new Error(data.error || 'שגיאה בעיבוד');
+        }
+      } else {
+        setResult({ ok: true, msg: `עובדו ${(data.total_rows || 0).toLocaleString()} שורות · ${data.needs_review_rows || 0} לסקירה` });
+      }
       loadRun();
-    } catch (e) {
-      setResult({ ok: false, msg: `שגיאה: ${e}` });
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name === 'AbortError') {
+        setResult({ ok: false, msg: 'פסק זמן — העיבוד לוקח יותר מ-20 דקות. בדוק שהבאקנד פועל.' });
+      } else {
+        setResult({ ok: false, msg: `שגיאה: ${e}` });
+      }
+    } finally {
+      clearTimeout(tid);
+      setUploading(false);
     }
-    setUploading(false);
   };
 
   const statusLabel = (s: string) => {
