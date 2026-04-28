@@ -143,37 +143,36 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 
 /* ── S3 Problem ── */
 .s3 { align-items: center; text-align: center; }
-.s3 .big { font-size: 110px; font-weight: 900; line-height: 1; letter-spacing: -4px; margin: 12px 0 8px; background: linear-gradient(135deg, #c07a2a, #e07b7b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.s3 .stat-label { font-size: 22px; color: var(--sub); margin-bottom: 40px; max-width: 600px; }
+.s3 .big { font-size: 130px; font-weight: 900; line-height: 1; letter-spacing: -4px; margin: 8px 0 4px; background: linear-gradient(135deg, #c07a2a, #e07b7b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.s3 .stat-label { font-size: 20px; color: var(--sub); margin-bottom: 36px; max-width: 680px; }
 .s3 .facts { display: flex; gap: 16px; }
-.s3 .fact { background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 20px 24px; text-align: center; min-width: 160px; }
-.s3 .fn { font-size: 28px; font-weight: 800; color: var(--green9); }
-.s3 .ft { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+.s3 .fact { background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 20px 24px; text-align: center; min-width: 180px; flex: 1; }
+.s3 .fn { font-size: 26px; font-weight: 800; color: var(--green9); }
+.s3 .ft { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
 
 /* ── S4 GHG ── */
 .s4 .scopes { display: flex; gap: 16px; width: 100%; }
-.s4 .scope { border-radius: 18px; padding: 28px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
-.s4 .sn { font-size: 10px; font-weight: 800; letter-spacing: 3px; opacity: 0.7; }
-.s4 .st { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
-.s4 .sd { font-size: 13px; line-height: 1.6; opacity: 0.8; }
+.s4 .scope { border-radius: 18px; padding: 28px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.s4 .sn { font-size: 12px; font-weight: 800; letter-spacing: 3px; opacity: 0.7; }
+.s4 .st { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+.s4 .sd { font-size: 16px; line-height: 1.55; opacity: 0.85; }
 .s4 .sc1 { background: #edf4fb; color: #2a5a8c; }
 .s4 .sc2 { background: #fdf3e7; color: #8c5a2a; }
 .s4 .sc3 { background: var(--green9); color: white; flex: 2; }
 .s4 .bar-wrap { margin-top: 12px; }
 .s4 .bar-bg { height: 8px; background: rgba(255,255,255,0.15); border-radius: 99px; }
 .s4 .bar-fill { height: 100%; background: var(--green3); border-radius: 99px; width: 80%; }
-.s4 .pct-label { font-size: 22px; font-weight: 900; color: var(--green3); margin-top: 8px; }
+.s4 .pct-label { font-size: 28px; font-weight: 900; color: var(--green3); margin-top: 10px; }
 
 /* ── S5 Global ── */
-.s5 .cards { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; width: 100%; }
+.s5 .cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; width: 100%; }
 .s5 .card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 24px 28px; }
 .s5 .year { font-size: 40px; font-weight: 900; color: var(--green5); margin-bottom: 8px; line-height: 1; }
 .s5 .ct { font-size: 14px; color: var(--sub); line-height: 1.6; }
 .s5 .ct strong { color: var(--green9); }
-.s5 .paris { grid-column: span 2; background: var(--green9); color: white; border: none; display: flex; align-items: center; gap: 20px; padding: 20px 28px; }
+.s5 .paris { grid-column: span 3; background: var(--green9); color: white; border: none; display: flex; align-items: center; gap: 20px; padding: 20px 28px; }
 .s5 .paris .icon { font-size: 32px; flex-shrink: 0; }
-.s5 .paris .text { font-size: 14px; color: rgba(255,255,255,0.8); line-height: 1.6; }
-.s5 .paris .text strong { color: var(--green3); }
+.s5 .paris .text { font-size: 18px; font-weight: 800; color: var(--green3); line-height: 1.4; }
 
 /* ── S6 Before/After ── */
 .s6 { flex-direction: row; padding: 0; gap: 0; align-items: stretch; }
@@ -195,12 +194,8 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s6 .after .pi { background: rgba(149,213,178,0.2); color: var(--green3); }
 .s6 .vs { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; border-radius: 50%; background: var(--cream); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: var(--green9); z-index: 10; }
 
-/* ── S7 System ── */
-.s7 .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; width: 100%; }
-.s7 .card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 22px; }
-.s7 .icon { font-size: 28px; margin-bottom: 10px; }
-.s7 .ct { font-size: 15px; font-weight: 800; color: var(--green9); margin-bottom: 6px; }
-.s7 .cd { font-size: 12px; color: var(--sub); line-height: 1.6; }
+/* ── S7 How it works ── */
+.s7 { gap: 0; }
 
 /* ── S8 Tech ── */
 .s8 { background: var(--cream); }
@@ -221,8 +216,6 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 /* ── S9 Video ── */
 .s9 { align-items: center; text-align: center; }
 .s9 h2 { text-align: center; }
-
-
 .s9 video { width: min(900px,90vw); border-radius: 16px; box-shadow: 0 12px 48px rgba(27,67,50,0.18); margin-top: 8px; }
 
 /* ── S10 Roadmap ── */
@@ -284,7 +277,6 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
       </div>
       <div class="info">
         <div class="name">אסף שדה</div>
-        
         <div class="unit">לוחם יחידת אגוז · מילואים פעיל</div>
       </div>
     </div>
@@ -298,7 +290,6 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
       </div>
       <div class="info">
         <div class="name">גל הראל</div>
-        
         <div class="unit">יחידה 9900 · משרתת מילואים פעילה</div>
       </div>
     </div>
@@ -312,7 +303,6 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
       </div>
       <div class="info">
         <div class="name">מיקה הרפז</div>
-        
         <div class="unit">יחידה 8200 · מודיעין אותות · משרתת מילואים פעילה</div>
       </div>
     </div>
@@ -326,7 +316,6 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
       </div>
       <div class="info">
         <div class="name">שירה זיגדון</div>
-        
         <div class="unit">יחידה 8200 · חוקרת RF · משרתת מילואים פעילה</div>
       </div>
     </div>
@@ -337,13 +326,25 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 <!-- ═══ S3: PROBLEM ═══ -->
 <div class="slide s3">
   <div class="label">הבעיה</div>
-  <div class="big">37.4B</div>
-  <p class="stat-label">טון CO₂ מדי שנה — שיא כל הזמנים. ותשתיות אחראיות ל-<strong>~25%</strong> מהם.</p>
+  <div class="big">81M</div>
+  <p class="stat-label">טון CO₂ בשנה בישראל — <strong>6.2 טון לנפש</strong> לעומת ממוצע עולמי של <strong>4.2 טון</strong></p>
   <div class="facts">
-    <div class="fact"><div class="fn">421 ppm</div><div class="ft">ריכוז CO₂ — הגבוה ביותר ב-3M שנה</div></div>
-    <div class="fact"><div class="fn">70–90%</div><div class="ft">מפליטות בנייה הן Scope 3 — לא מחושב</div></div>
-    <div class="fact"><div class="fn">0</div><div class="ft">חברות תשתית ישראליות שמודדות Scope 3 כיום</div></div>
-    <div class="fact"><div class="fn">1.5°C</div><div class="ft">הגבול שהעולם עומד לחצות</div></div>
+    <div class="fact">
+      <div class="fn">2,500</div>
+      <div class="ft">ישראלים מתים מדי שנה ממחלות לב, שבץ ובעיות נשימה הנגרמות ישירות מזיהום אוויר</div>
+    </div>
+    <div class="fact">
+      <div class="fn">גלי חום</div>
+      <div class="ft">פוגעים במשק החשמל — לא איום עתידי, מציאות יומיומית שמסכנת חיים</div>
+    </div>
+    <div class="fact">
+      <div class="fn">הצפות</div>
+      <div class="ft">גשמים הרסניים גורמים לנזקים של מיליונים בכל חורף — ישירות עקב משבר האקלים</div>
+    </div>
+    <div class="fact">
+      <div class="fn">&gt;10%</div>
+      <div class="ft">מסך הפליטות הישראליות מגיע מענף התשתיות בלבד — מלט, פלדה וציוד כבד</div>
+    </div>
   </div>
 </div>
 
@@ -355,17 +356,17 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
     <div class="scope sc1">
       <div class="sn">SCOPE 1</div>
       <div class="st">פליטות ישירות</div>
-      <div class="sd">שריפת דלק בציוד הארגון. ניתן למדידה.</div>
+      <div class="sd">שריפת דלק ישירה בציוד הארגון.</div>
     </div>
     <div class="scope sc2">
       <div class="sn">SCOPE 2</div>
       <div class="st">אנרגיה נרכשת</div>
-      <div class="sd">חשמל מספקים. ניתן להערכה סבירה.</div>
+      <div class="sd">חשמל וחום נרכש מספקים.</div>
     </div>
     <div class="scope sc3">
       <div class="sn" style="color:var(--green3)">SCOPE 3 — הבעיה האמיתית</div>
-      <div class="st" style="color:white;font-size:22px">שרשרת האספקה</div>
-      <div class="sd" style="color:rgba(255,255,255,0.75)">ייצור חומרים, הובלה, קבלני משנה. קשה לחישוב — וזה בדיוק מה שאנחנו פותרים.</div>
+      <div class="st" style="color:white;font-size:26px">שרשרת האספקה</div>
+      <div class="sd" style="color:rgba(255,255,255,0.8)">ייצור חומרים, הובלה, קבלני משנה — וזה בדיוק מה שאנחנו פותרים.</div>
       <div class="bar-wrap">
         <div class="pct-label">70–90% מסך הפליטות</div>
         <div class="bar-bg"><div class="bar-fill"></div></div>
@@ -381,11 +382,10 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
   <div class="cards">
     <div class="card"><div class="year">2030</div><div class="ct">ישראל: צמצום פליטות ב-<strong>27%</strong> ביחס ל-2015</div></div>
     <div class="card"><div class="year">2050</div><div class="ct">יעד <strong>Net Zero</strong> — ניטרליות פחמנית מלאה</div></div>
-    <div class="card"><div class="year">2023</div><div class="ct"><strong>חוק האקלים</strong> מחייב דיווח פליטות מחברות ממשלתיות</div></div>
     <div class="card"><div class="year">היום</div><div class="ct">אין כלי מדידה מעשי — <strong>CarbonTrack ממלאת את הפער</strong></div></div>
     <div class="card paris">
       <div class="icon">🕊️</div>
-      <div class="text"><strong>הסכם פריז 2015</strong> — 195 מדינות מחויבות לשמור על פחות מ-1.5°C ולדווח שנתי על פליטות</div>
+      <div class="text">הסכם פריז 2015</div>
     </div>
   </div>
 </div>
@@ -394,13 +394,15 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 <div class="slide s6">
   <div class="half before">
     <div class="hl">❌ ללא CarbonTrack</div>
-    <div class="hh">איך נראה היום?</div>
+    <div class="hh">המצב היום</div>
+    <div style="text-align:center; margin:16px 0 24px;">
+      <div style="font-size:100px; font-weight:900; color:#e07b7b; line-height:1;">0</div>
+      <div style="font-size:15px; font-weight:700; color:var(--sub);">חברות תשתית ישראליות מחשבות Scope 3</div>
+    </div>
     <ul class="points">
-      <li class="pt"><div class="pi">✗</div>חישוב ידני — שגיאות, חוסר עקביות</li>
-      <li class="pt"><div class="pi">✗</div>Scope 3 לא מחושב כלל</li>
-      <li class="pt"><div class="pi">✗</div>הסתמכות על הצהרת מהנדס בלבד</li>
-      <li class="pt"><div class="pi">✗</div>עיבוד קובץ אחד לוקח שבועות</li>
-      <li class="pt"><div class="pi">✗</div>אי עמידה בדרישות רגולציה</li>
+      <li class="pt"><div class="pi">✗</div>Scope 3 פשוט לא מחושב כלל</li>
+      <li class="pt"><div class="pi">✗</div>אין נראות לפליטות שרשרת האספקה</li>
+      <li class="pt"><div class="pi">✗</div>אי עמידה ביעדי 2030</li>
     </ul>
   </div>
   <div class="vs">VS</div>
@@ -417,18 +419,44 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
   </div>
 </div>
 
-<!-- ═══ S7: SYSTEM ═══ -->
+<!-- ═══ S7: HOW IT WORKS ═══ -->
 <div class="slide s7">
   <div class="label">הפתרון</div>
-  <h2 class="title">מה עושה CarbonTrack?</h2>
-  <div class="grid">
-    <div class="card"><div class="icon">📂</div><div class="ct">קליטה אוטומטית</div><div class="cd">Excel/CSV → זיהוי חומרים בשפה הנדסית, חישוב אוטומטי ללא התערבות</div></div>
-    <div class="card"><div class="icon">🤖</div><div class="ct">AI מכונה לומדת</div><div class="cd">Human-in-the-Loop: כשהמערכת לא בטוחה — אישור אנושי + למידה לעתיד</div></div>
-    <div class="card"><div class="icon">📊</div><div class="ct">דאשבורד BI</div><div class="cd">פליטות לפי פרויקט, קבלן, חומר. סימולטור What-If לחלופות וחיסכון</div></div>
-    <div class="card" style="background:#edf4fb;border-color:#c0d8f0"><div class="icon">🔒</div><div class="ct">עמידה ברגולציה</div><div class="cd">מחושב לפי GHG Protocol — מוכן לחוק האקלים הישראלי 2023</div></div>
-    <div class="card" style="background:#fdf3e7;border-color:#f0d8b0"><div class="icon">☁️</div><div class="ct">Google Cloud</div><div class="cd">BigQuery, Vertex AI, Cloud Run — מדרגי לכל גודל</div></div>
-    <div class="card" style="background:var(--green9);border:none"><div class="icon">🌍</div><div class="ct" style="color:white">סקאלביליות</div><div class="cd" style="color:rgba(255,255,255,0.7)">מנתיבי ישראל → רכבת, מקורות, תחברות ועוד</div></div>
+  <h2 class="title" style="margin-bottom:40px">איך זה עובד?</h2>
+  <div style="display:flex; gap:20px; width:100%; align-items:stretch;">
+
+    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:24px; padding:44px 32px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:18px;">
+      <div style="font-size:64px; line-height:1;">📂</div>
+      <div style="font-size:22px; font-weight:800; color:var(--green9);">העלאת כתב כמויות</div>
+      <div style="font-size:15px; color:var(--muted); line-height:1.5;">Excel / CSV בעברית הנדסית</div>
+    </div>
+
+    <div style="display:flex; align-items:center; font-size:40px; color:var(--green5); flex-shrink:0; padding:0 4px;">←</div>
+
+    <div style="flex:1; background:var(--green9); border-radius:24px; padding:44px 32px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:18px;">
+      <div style="font-size:64px; line-height:1;">🔢</div>
+      <div style="font-size:22px; font-weight:800; color:white;">חישוב פליטה</div>
+      <div style="font-size:15px; color:rgba(255,255,255,0.65); line-height:1.5;">ע"י מקדמי המרה בינלאומיים</div>
+    </div>
+
+    <div style="display:flex; align-items:center; font-size:40px; color:var(--green5); flex-shrink:0; padding:0 4px;">←</div>
+
+    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:24px; padding:44px 32px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:18px;">
+      <div style="font-size:64px; line-height:1;">📊</div>
+      <div style="font-size:22px; font-weight:800; color:var(--green9);">דאשבורד נתונים</div>
+      <div style="font-size:15px; color:var(--muted); line-height:1.5;">BI חי · פרויקט · חומר · קבלן</div>
+    </div>
+
   </div>
+</div>
+
+<!-- ═══ S9: VIDEO (הוקדם לפני הטכנולוגיה) ═══ -->
+<div class="slide s9">
+  <div class="label">הדגמה</div>
+  <h2 class="title">ראו איך זה עובד</h2>
+  <video controls preload="metadata" style="width:min(900px,90vw);border-radius:16px;box-shadow:0 12px 48px rgba(27,67,50,0.18);margin-top:8px">
+    <source src="images/carbontrack.mp4" type="video/mp4">
+  </video>
 </div>
 
 <!-- ═══ S8: TECH ═══ -->
@@ -453,15 +481,6 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
   </div>
 </div>
 
-<!-- ═══ S9: VIDEO ═══ -->
-<div class="slide s9">
-  <div class="label">הדגמה</div>
-  <h2 class="title">ראו איך זה עובד</h2>
-  <video controls preload="metadata" style="width:min(900px,90vw);border-radius:16px;box-shadow:0 12px 48px rgba(27,67,50,0.18);margin-top:8px">
-    <source src="images/carbontrack.mp4" type="video/mp4">
-  </video>
-</div>
-
 <!-- ═══ S10: ROADMAP ═══ -->
 <div class="slide s10">
   <div class="label">מפת דרכים</div>
@@ -469,21 +488,21 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
   <div class="timeline">
     <div class="line"></div>
     <div class="milestones">
-      <div class="ms done"><div class="dot">✅</div><div class="md">ינו׳ 2025</div><div class="mt">PoC ראשוני</div><div class="ms-desc">אלגוריתם + Excel parser</div></div>
-      <div class="ms done"><div class="dot">✅</div><div class="md">מרץ 2025</div><div class="mt">AI Integration</div><div class="ms-desc">Vertex AI + BigQuery</div></div>
-      <div class="ms done"><div class="dot">✅</div><div class="md">אפר׳ 2025</div><div class="mt">Dashboard MVP</div><div class="ms-desc">Next.js + Review + What-If</div></div>
-      <div class="ms curr"><div class="dot">🔧</div><div class="md">Q3 2025</div><div class="mt">Pilot נתיבי ישראל</div><div class="ms-desc">נתונים אמיתיים</div></div>
-      <div class="ms future"><div class="dot" style="color:var(--muted)">🌍</div><div class="md">2026</div><div class="mt">Scale-Up</div><div class="ms-desc">רכבת ישראל, מקורות</div></div>
-      <div class="ms future"><div class="dot" style="color:var(--muted)">🚀</div><div class="md">2027</div><div class="mt">SaaS Platform</div><div class="ms-desc">כל חברות התשתית</div></div>
+      <div class="ms done"><div class="dot">✅</div><div class="md">ינו׳ 2026</div><div class="mt">PoC ראשוני</div><div class="ms-desc">אלגוריתם + Excel parser</div></div>
+      <div class="ms done"><div class="dot">✅</div><div class="md">מרץ 2026</div><div class="mt">AI Integration</div><div class="ms-desc">Vertex AI + BigQuery</div></div>
+      <div class="ms done"><div class="dot">✅</div><div class="md">אפר׳ 2026</div><div class="mt">Dashboard MVP</div><div class="ms-desc">Next.js + Review + What-If</div></div>
+      <div class="ms curr"><div class="dot">🔧</div><div class="md">מאי 2026</div><div class="mt">Pilot נתיבי ישראל</div><div class="ms-desc">נתונים אמיתיים</div></div>
+      <div class="ms future"><div class="dot" style="color:var(--muted)">🌍</div><div class="md">2027</div><div class="mt">Scale-Up</div><div class="ms-desc">רכבת ישראל, מקורות</div></div>
+      <div class="ms future"><div class="dot" style="color:var(--muted)">🚀</div><div class="md">2028</div><div class="mt">SaaS Platform</div><div class="ms-desc">כל חברות התשתית</div></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ S11: QR ═══ -->
+<!-- ═══ S11: PROOF OF CONCEPT ═══ -->
 <div class="slide s11">
   <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:60px;">
     <div style="flex:1">
-      <div class="label" style="margin-bottom:28px">סרקו אותנו</div>
+      <div class="label" style="margin-bottom:28px">Proof of Concept</div>
       <div style="font-size:64px;font-weight:900;color:var(--green9);line-height:1.15;margin-bottom:20px">
         אי אפשר לצמצם<br>את מה שלא מודדים
       </div>
@@ -492,9 +511,37 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
     </div>
     <div style="flex-shrink:0;background:white;border-radius:24px;padding:28px;border:2px solid var(--border);box-shadow:0 8px 32px rgba(27,67,50,0.10);text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px">
       <div style="font-size:13px;font-weight:800;letter-spacing:3px;color:var(--green9)">SCAN ME</div>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https%3A%2F%2Fshirazigdon.github.io%2Fcarbontrack%2Fpresentation.html&color=1b4332&bgcolor=ffffff&qzone=1" 
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https%3A%2F%2Fshirazigdon.github.io%2Fcarbontrack%2Fpresentation.html&color=1b4332&bgcolor=ffffff&qzone=1"
            style="width:280px;height:280px;border-radius:8px" alt="QR Code">
     </div>
+  </div>
+</div>
+
+<!-- ═══ S12: WHY US / WHY NOW ═══ -->
+<div class="slide s12" style="justify-content:flex-start; padding-top:52px;">
+  <div class="label">ההזדמנות</div>
+  <h2 class="title" style="margin-bottom:32px">למה אנחנו? למה עכשיו?</h2>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; width:100%;">
+
+    <div style="background:var(--green9); border-radius:22px; padding:36px 32px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:11px; font-weight:800; letter-spacing:3px; color:var(--green3); text-transform:uppercase;">למה אנחנו?</div>
+      <div style="font-size:22px; font-weight:800; color:white; line-height:1.2;">המערכת הכחול-לבן הראשונה מסוגה</div>
+      <div style="font-size:15px; color:rgba(255,255,255,0.75); line-height:1.75;">
+        חברות בינלאומיות לא יודעות להתמודד עם כתב כמויות בעברית של קבלנים ישראלים.<br><br>
+        CarbonTrack היא הפתרון הראשון שנכנס לשוק התשתיות הישראלי — ואנחנו יודעים לעשות את זה טוב.
+      </div>
+    </div>
+
+    <div style="background:white; border:2px solid var(--border); border-radius:22px; padding:36px 32px; display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:11px; font-weight:800; letter-spacing:3px; color:var(--green5); text-transform:uppercase;">למה עכשיו?</div>
+      <div style="font-size:22px; font-weight:800; color:var(--green9); line-height:1.2;">הדדליין 2030 דוחק</div>
+      <div style="font-size:15px; color:var(--sub); line-height:1.75;">
+        ישראל מחויבת להסכם פריז — צמצום של 27% עד 2030.<br><br>
+        לעמוד ביעדים נדרש כלי טכנולוגי מתקדם שהמדינה מחכה לו.<br><br>
+        אנחנו ניצלנו את ההזדמנות והגענו.
+      </div>
+    </div>
+
   </div>
 </div>
 
