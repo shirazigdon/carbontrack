@@ -37,10 +37,25 @@ body {
   justify-content: center; align-items: flex-start;
   padding: 56px 64px;
   background: var(--cream);
+  background-image:
+    radial-gradient(ellipse 65% 55% at 92% 8%, rgba(82,183,136,0.10) 0%, transparent 100%),
+    radial-gradient(ellipse 55% 55% at 6% 94%, rgba(149,213,178,0.07) 0%, transparent 100%),
+    radial-gradient(circle, rgba(27,67,50,0.032) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 30px 30px;
   opacity: 0; pointer-events: none;
   transition: opacity 0.4s ease;
 }
 .slide.active { opacity: 1; pointer-events: all; }
+
+/* ── animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 
 /* ── shared ── */
 .label {
@@ -54,14 +69,7 @@ body {
 h1.hero { font-size: 68px; font-weight: 900; line-height: 1.05; color: var(--green9); }
 h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--green9); margin-bottom: 32px; }
 .sub { font-size: 18px; color: var(--sub); font-weight: 400; }
-
 .green { color: var(--green5); }
-.pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 600; padding: 6px 16px;
-  border-radius: 99px; border: 1.5px solid var(--border);
-  color: var(--sub); background: white;
-}
 
 /* ── nav ── */
 .nav {
@@ -82,82 +90,53 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); cursor: pointer; transition: all 0.2s; }
 .dot.active { background: var(--green5); width: 18px; border-radius: 3px; }
 
-/* ═══════════════════════════════════════
-   SLIDES
-═══════════════════════════════════════ */
-
 /* ── S1 Title ── */
 .s1 { flex-direction: column; align-items: center; text-align: center; overflow: hidden; justify-content: center; gap: 40px; }
-
-.s1 .bg-ring {
-  position: absolute; width: 700px; height: 700px; border-radius: 50%;
-  border: 1.5px solid var(--border); opacity: 0.5;
-}
+.s1 .bg-ring { position: absolute; width: 700px; height: 700px; border-radius: 50%; border: 1.5px solid var(--border); opacity: 0.5; }
 .s1 .ring1 { top: -200px; right: -200px; }
 .s1 .ring2 { bottom: -300px; left: -250px; width: 600px; height: 600px; }
-
 .s1 .logo-area { position: relative; margin-bottom: 0; }
-.s1 .glow { position: absolute; inset: -20px; border-radius: 50%; background: radial-gradient(circle, rgba(82,183,136,0.15), transparent); filter: blur(18px); }
-.s1 img.logo { position: relative; width: 200px; height: 200px; object-fit: contain; mix-blend-mode: multiply; filter: drop-shadow(0 4px 16px rgba(27,67,50,0.10)); }
-
+.s1 .glow { position: absolute; inset: -20px; border-radius: 50%; background: radial-gradient(circle, rgba(82,183,136,0.18), transparent); filter: blur(18px); }
+.s1 img.logo { position: relative; width: 200px; height: 200px; object-fit: contain; filter: drop-shadow(0 4px 16px rgba(27,67,50,0.12)); }
 .s1 h1 { font-size: 96px; font-weight: 900; letter-spacing: -3px; color: var(--green9); margin: 0; }
 .s1 .tagline { font-size: 24px; color: var(--sub); max-width: 620px; line-height: 1.5; margin: 0; }
-
-.s1 .partners-bar {
-  display: flex; align-items: center; justify-content: center;
-  width: 100%;
-}
-.s1 .partner { display: flex; align-items: center; gap: 8px; }
-.s1 .partner-logo {
-  height: 28px; max-width: 100px; object-fit: contain;
-  filter: grayscale(1) opacity(0.55);
-  transition: filter 0.2s;
-}
-.s1 .partner-text {
-  font-size: 11px; font-weight: 700; color: var(--muted);
-  line-height: 1.3; white-space: nowrap;
-}
-.s1 .partner-sep { width: 1px; height: 24px; background: var(--border); }
+.s1 .partners-bar { display: flex; align-items: center; justify-content: center; width: 100%; }
 
 /* ── S2 Team ── */
-.s2 { gap: 0; }
-.s2 .top { margin-bottom: 36px; }
+.s2 { gap: 0; justify-content: flex-start; padding-top: 48px; }
+.s2 .top { margin-bottom: 28px; }
 .s2 .team-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; width: 100%; }
-.s2 .member {
-  background: white; border: 1.5px solid var(--border);
-  border-radius: 20px; overflow: hidden;
-  display: flex; flex-direction: column;
-}
+.s2 .member { background: white; border: 1.5px solid var(--border); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; }
 .s2 .photo-wrap { width: 100%; aspect-ratio: 4/5; overflow: hidden; background: var(--green1); position: relative; }
 .s2 .photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.s2 .photo-fallback {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 48px; font-weight: 900; color: var(--green5);
-  background: linear-gradient(160deg, var(--green1), white);
-}
-.s2 .info { padding: 16px 14px; }
+.s2 .photo-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 900; color: var(--green5); background: linear-gradient(160deg, var(--green1), white); }
+.s2 .info { padding: 14px; }
 .s2 .name { font-size: 18px; font-weight: 800; color: var(--green9); margin-bottom: 4px; }
-.s2 .role { display: inline-block; font-size: 13px; font-weight: 800; color: var(--green7); background: var(--green1); border: 1.5px solid var(--border); border-radius: 99px; padding: 3px 10px; margin-bottom: 8px; letter-spacing: 0.3px; direction: ltr; }
-.s2 .unit { font-size: 15px; color: var(--muted); line-height: 1.4; }
+.s2 .unit { font-size: 14px; color: var(--muted); line-height: 1.4; }
+.s2 .quote-bar { width: 100%; border-top: 1.5px solid var(--border); padding-top: 20px; margin-top: 20px; text-align: center; }
 
 /* ── S3 Problem ── */
-.s3 { align-items: center; text-align: center; }
-.s3 .big { font-size: 130px; font-weight: 900; line-height: 1; letter-spacing: -4px; margin: 8px 0 4px; background: linear-gradient(135deg, #c07a2a, #e07b7b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.s3 .stat-label { font-size: 20px; color: var(--sub); margin-bottom: 36px; max-width: 680px; }
-.s3 .facts { display: flex; gap: 16px; }
-.s3 .fact { background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 20px 24px; text-align: center; min-width: 180px; flex: 1; }
+.s3 { align-items: center; text-align: center; gap: 0; }
+.s3 .big { font-size: 120px; font-weight: 900; line-height: 1; letter-spacing: -4px; margin: 4px 0 0; background: linear-gradient(135deg, #c07a2a, #e07b7b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.s3 .stat-sub { font-size: 20px; color: var(--sub); margin: 6px 0 28px; font-weight: 500; }
+.s3 .facts-top { display: flex; gap: 16px; width: 100%; margin-bottom: 14px; }
+.s3 .fact { background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 18px 24px; text-align: center; flex: 1; }
 .s3 .fn { font-size: 30px; font-weight: 800; color: var(--green9); }
-.s3 .ft { font-size: 16px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+.s3 .ft { font-size: 15px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+.s3 .fact-infra { width: 100%; background: linear-gradient(135deg, var(--green9), #2d6a4f); border-radius: 16px; padding: 18px 28px; display: flex; align-items: center; justify-content: center; gap: 20px; opacity: 0; }
+.s3.active .fact-infra { animation: fadeUp 0.55s 0.75s both; }
 
 /* ── S4 GHG ── */
 .s4 .scopes { display: flex; gap: 16px; width: 100%; }
 .s4 .scope { border-radius: 18px; padding: 28px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
-.s4 .sn { font-size: 13px; font-weight: 800; letter-spacing: 3px; opacity: 0.7; }
-.s4 .st { font-size: 26px; font-weight: 800; margin-bottom: 4px; }
-.s4 .sd { font-size: 18px; line-height: 1.55; opacity: 0.85; }
-.s4 .sc1 { background: #edf4fb; color: #2a5a8c; }
-.s4 .sc2 { background: #fdf3e7; color: #8c5a2a; }
+.s4 .sn { font-size: 13px; font-weight: 800; letter-spacing: 3px; opacity: 0.75; }
+.s4 .st { font-size: 26px; font-weight: 800; margin-bottom: 2px; }
+.s4 .sd { font-size: 17px; line-height: 1.55; opacity: 0.88; }
+.s4 .diff { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 99px; display: inline-block; margin-top: 6px; width: fit-content; }
+.s4 .sc1 { background: #c8e6fa; color: #0d3b6e; }
+.s4 .sc1 .diff { background: rgba(13,59,110,0.12); color: #0d3b6e; }
+.s4 .sc2 { background: #fde8b8; color: #6b3a0d; }
+.s4 .sc2 .diff { background: rgba(107,58,13,0.12); color: #6b3a0d; }
 .s4 .sc3 { background: var(--green9); color: white; flex: 2; }
 .s4 .bar-wrap { margin-top: 12px; }
 .s4 .bar-bg { height: 8px; background: rgba(255,255,255,0.15); border-radius: 99px; }
@@ -166,13 +145,20 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 
 /* ── S5 Global ── */
 .s5 .cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; width: 100%; }
-.s5 .card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 24px 28px; }
+.s5 .card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 24px 28px; opacity: 0; }
+.s5.active .card:nth-child(1) { animation: fadeUp 0.45s 0.3s both; }
+.s5.active .card:nth-child(2) { animation: fadeUp 0.45s 0.6s both; }
+.s5.active .card:nth-child(3) { animation: fadeUp 0.45s 0.9s both; }
+.s5.active .card:nth-child(4) { animation: fadeUp 0.45s 1.2s both; }
 .s5 .year { font-size: 40px; font-weight: 900; color: var(--green5); margin-bottom: 8px; line-height: 1; }
 .s5 .ct { font-size: 18px; color: var(--sub); line-height: 1.6; }
 .s5 .ct strong { color: var(--green9); }
 .s5 .paris { grid-column: span 3; background: var(--green9); color: white; border: none; display: flex; align-items: center; gap: 20px; padding: 20px 28px; }
 .s5 .paris .icon { font-size: 32px; flex-shrink: 0; }
-.s5 .paris .text { font-size: 18px; font-weight: 800; color: var(--green3); line-height: 1.4; }
+.s5 .paris .text { font-size: 18px; font-weight: 800; color: var(--green3); }
+.s5 .today-card { background: #fef3c7; border-color: #f59e0b; }
+.s5 .today-card .year { color: #92400e; }
+.s5 .today-card .ct { color: #78350f; }
 
 /* ── S6 Before/After ── */
 .s6 { flex-direction: row; padding: 0; gap: 0; align-items: stretch; }
@@ -188,26 +174,34 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s6 .points { list-style: none; display: flex; flex-direction: column; gap: 14px; }
 .s6 .pt { display: flex; align-items: flex-start; gap: 12px; font-size: 18px; line-height: 1.5; }
 .s6 .before .pt { color: var(--sub); }
-.s6 .after .pt { color: rgba(255,255,255,0.8); }
-.s6 .pi { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; margin-top: 1px; font-weight: 700; }
+.s6 .after .pt { color: rgba(255,255,255,0.85); }
+.s6 .pi { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; margin-top: 2px; font-weight: 700; }
 .s6 .before .pi { background: #fde8e8; color: #c0392b; }
 .s6 .after .pi { background: rgba(149,213,178,0.2); color: var(--green3); }
 .s6 .vs { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; border-radius: 50%; background: var(--cream); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: var(--green9); z-index: 10; }
 
 /* ── S7 How it works ── */
-.s7 { gap: 0; }
+.s7 { gap: 0; justify-content: flex-start; padding-top: 48px; }
 
 /* ── S8 Tech ── */
 .s8 { background: var(--cream); }
-.s8 .label { color: var(--green5); }
-.s8 .label::before { background: var(--green5); }
-.s8 h2.title { color: var(--green9); }
-.s8 .flow { display: flex; align-items: center; gap: 0; width: 100%; margin-bottom: 24px; }
-.s8 .step { flex: 1; background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 20px 14px; text-align: center; }
+.s8 .flow { display: flex; align-items: center; gap: 0; width: 100%; margin-bottom: 20px; }
+.s8 .step { flex: 1; background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 18px 12px; text-align: center; opacity: 0; }
+.s8 .arr { font-size: 18px; color: var(--green5); padding: 0 6px; flex-shrink: 0; opacity: 0; }
+.s8.active .step { animation: fadeUp 0.35s both; }
+.s8.active .arr { animation: fadeIn 0.25s both; }
+.s8.active .step:nth-child(1) { animation-delay: 0.3s; }
+.s8.active .arr:nth-child(2)  { animation-delay: 0.5s; }
+.s8.active .step:nth-child(3) { animation-delay: 0.55s; }
+.s8.active .arr:nth-child(4)  { animation-delay: 0.75s; }
+.s8.active .step:nth-child(5) { animation-delay: 0.8s; }
+.s8.active .arr:nth-child(6)  { animation-delay: 1.0s; }
+.s8.active .step:nth-child(7) { animation-delay: 1.05s; }
+.s8.active .arr:nth-child(8)  { animation-delay: 1.25s; }
+.s8.active .step:nth-child(9) { animation-delay: 1.3s; }
 .s8 .si { font-size: 26px; margin-bottom: 8px; }
-.s8 .st { font-size: 16px; font-weight: 700; color: var(--green9); margin-bottom: 4px; }
-.s8 .sd { font-size: 14px; color: var(--muted); line-height: 1.4; }
-.s8 .arr { font-size: 18px; color: var(--green5); padding: 0 6px; flex-shrink: 0; }
+.s8 .st { font-size: 15px; font-weight: 700; color: var(--green9); margin-bottom: 4px; }
+.s8 .sd { font-size: 13px; color: var(--muted); line-height: 1.4; }
 .s8 .notes { display: flex; gap: 14px; width: 100%; }
 .s8 .note { flex: 1; background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 14px 16px; }
 .s8 .nt { font-size: 15px; font-weight: 700; color: var(--green7); margin-bottom: 4px; }
@@ -222,14 +216,14 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s10 .timeline { width: 100%; position: relative; padding-top: 60px; }
 .s10 .line { position: absolute; top: 26px; right: 0; left: 0; height: 3px; background: linear-gradient(to left, var(--border), var(--green5), var(--green9)); border-radius: 99px; }
 .s10 .milestones { display: flex; justify-content: space-between; }
-.s10 .ms { display: flex; flex-direction: column; align-items: center; gap: 12px; flex: 1; position: relative; }
-.s10 .dot { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; position: absolute; top: -60px; z-index: 1; }
+.s10 .ms { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 1; position: relative; }
+.s10 .dot { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 17px; position: absolute; top: -58px; z-index: 1; }
 .s10 .done .dot { background: var(--green9); box-shadow: 0 0 0 4px var(--green1); }
 .s10 .curr .dot { background: var(--green5); box-shadow: 0 0 0 4px rgba(82,183,136,0.25); }
 .s10 .future .dot { background: white; border: 2.5px solid var(--border); }
-.s10 .md { font-size: 14px; font-weight: 700; color: var(--green5); }
-.s10 .mt { font-size: 16px; font-weight: 800; color: var(--green9); text-align: center; }
-.s10 .ms-desc { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.4; }
+.s10 .md { font-size: 13px; font-weight: 700; color: var(--green5); }
+.s10 .mt { font-size: 15px; font-weight: 800; color: var(--green9); text-align: center; }
+.s10 .ms-desc { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -239,8 +233,6 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 <div class="slide s1 active">
   <div class="bg-ring ring1"></div>
   <div class="bg-ring ring2"></div>
-
-  <!-- top content group -->
   <div style="display:flex; flex-direction:column; align-items:center; gap:0;">
     <div class="logo-area">
       <div class="glow"></div>
@@ -250,12 +242,9 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
     <h1><span class="green">C</span>arb<span class="green">O</span><sub style="font-size:0.45em;color:var(--green5);">2</sub>nTrack</h1>
     <p class="tagline">מעקב חכם אחר פליטות CO₂ בתשתיות לאומיות — Scope 3</p>
   </div>
-
-  <!-- Partner logos pinned to bottom -->
   <div class="partners-bar">
-    <img src="images/partners.png"
-         alt="שיתופי פעולה"
-         style="height:70px; max-width:900px; object-fit:contain; mix-blend-mode:multiply; opacity:0.92; clip-path:inset(4px 10px);">
+    <img src="images/partners.png" alt="שיתופי פעולה"
+         style="height:80px; max-width:920px; object-fit:contain; opacity:0.9;">
   </div>
 </div>
 
@@ -267,12 +256,9 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
     <p class="sub" style="font-size:16px;max-width:760px;color:var(--sub);line-height:1.6">סטודנטים להנדסת חשמל ומחשבים · יוצאי יחידות מודיעין ולוחמה</p>
   </div>
   <div class="team-grid">
-
-    <!-- אסף -->
     <div class="member">
       <div class="photo-wrap">
-        <img src="images/asaf.jpg" alt="אסף שדה"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <img src="images/asaf.jpg" alt="אסף שדה" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="photo-fallback" style="display:none">א</div>
       </div>
       <div class="info">
@@ -280,12 +266,9 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
         <div class="unit">לוחם יחידת אגוז · מילואים פעיל</div>
       </div>
     </div>
-
-    <!-- גל -->
     <div class="member">
       <div class="photo-wrap">
-        <img src="images/gal.jpg" alt="גל הראל"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <img src="images/gal.jpg" alt="גל הראל" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="photo-fallback" style="display:none">ג</div>
       </div>
       <div class="info">
@@ -293,12 +276,9 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
         <div class="unit">יחידה 9900 · משרתת מילואים פעילה</div>
       </div>
     </div>
-
-    <!-- מיקה -->
     <div class="member">
       <div class="photo-wrap">
-        <img src="images/mika.jpg" alt="מיקה הרפז"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <img src="images/mika.jpg" alt="מיקה הרפז" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="photo-fallback" style="display:none">מ</div>
       </div>
       <div class="info">
@@ -306,12 +286,9 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
         <div class="unit">יחידה 8200 · מודיעין אותות · משרתת מילואים פעילה</div>
       </div>
     </div>
-
-    <!-- שירה -->
     <div class="member">
       <div class="photo-wrap">
-        <img src="images/shira.jpg" alt="שירה זיגדון"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <img src="images/shira.jpg" alt="שירה זיגדון" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="photo-fallback" style="display:none">ש</div>
       </div>
       <div class="info">
@@ -319,7 +296,11 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
         <div class="unit">יחידה 8200 · חוקרת RF · משרתת מילואים פעילה</div>
       </div>
     </div>
-
+  </div>
+  <div class="quote-bar">
+    <div style="font-size:19px; font-weight:600; color:var(--sub); font-style:italic; line-height:1.6;">
+      "מה שניתן למדוד — ניתן לנהל. מה שניתן לנהל — ניתן לשפר."
+    </div>
   </div>
 </div>
 
@@ -327,11 +308,8 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 <div class="slide s3">
   <div class="label">הבעיה</div>
   <div class="big">81M <span style="font-size:0.5em;letter-spacing:-1px;">CO₂</span></div>
-  <div class="facts">
-    <div class="fact">
-      <div class="fn" style="font-size:32px; direction:ltr;">10%-יותר מ</div>
-      <div class="ft">מסך הפליטות הישראליות מגיע מענף התשתיות בלבד — מלט, פלדה, ציוד כבד</div>
-    </div>
+  <p class="stat-sub">טון CO₂ נפלטים מדי שנה בישראל</p>
+  <div class="facts-top">
     <div class="fact">
       <div class="fn" style="font-size:24px;">שינויים קיצוניים</div>
       <div class="ft">במזג האוויר — גלי חום, הצפות ונזקים של מיליונים בכל חורף</div>
@@ -339,6 +317,14 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
     <div class="fact">
       <div class="fn">2,500</div>
       <div class="ft">ישראלים מתים מדי שנה כתוצאה ישירה מזיהום אוויר</div>
+    </div>
+  </div>
+  <div class="fact-infra">
+    <div style="font-size:44px; line-height:1; flex-shrink:0;">🏗️</div>
+    <div style="text-align:right;">
+      <div style="font-size:32px; font-weight:900; color:var(--green3); direction:ltr;">יותר מ-10%</div>
+      <div style="font-size:16px; color:rgba(255,255,255,0.8); margin-top:4px;">מסך הפליטות הישראליות מגיע מענף התשתיות בלבד — מלט, פלדה, ציוד כבד</div>
+      <div style="font-size:14px; color:var(--green3); margin-top:6px; font-weight:700;">← זה הנתח שאנחנו באים לטפל בו</div>
     </div>
   </div>
 </div>
@@ -352,16 +338,19 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
       <div class="sn">SCOPE 1</div>
       <div class="st">פליטות ישירות</div>
       <div class="sd">שריפת דלק ישירה בציוד הארגון.</div>
+      <div class="diff">✓ קל למדידה</div>
     </div>
     <div class="scope sc2">
       <div class="sn">SCOPE 2</div>
       <div class="st">אנרגיה נרכשת</div>
       <div class="sd">חשמל וחום נרכש מספקים.</div>
+      <div class="diff">~ ניתן להערכה</div>
     </div>
     <div class="scope sc3">
       <div class="sn" style="color:var(--green3)">SCOPE 3 — הבעיה האמיתית</div>
       <div class="st" style="color:white;font-size:26px">שרשרת האספקה</div>
       <div class="sd" style="color:rgba(255,255,255,0.8)">ייצור חומרים, הובלה, קבלני משנה — וזה בדיוק מה שאנחנו פותרים.</div>
+      <div style="font-size:12px; font-weight:700; padding:4px 10px; border-radius:99px; background:rgba(255,255,255,0.12); color:var(--green3); display:inline-block; margin-top:6px;">✗ קשה לחישוב</div>
       <div class="bar-wrap">
         <div class="pct-label">70–90% מסך הפליטות</div>
         <div class="bar-bg"><div class="bar-fill"></div></div>
@@ -379,9 +368,9 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
       <div class="icon">🕊️</div>
       <div class="text">הסכם פריז 2015</div>
     </div>
-    <div class="card"><div class="year">היום</div><div class="ct">אין כלי מדידה מעשי — <strong>CarbonTrack ממלאת את הפער</strong></div></div>
-    <div class="card"><div class="year">2030</div><div class="ct">ישראל: צמצום פליטות ב-<strong>27%</strong> ביחס ל-2015</div></div>
+    <div class="card"><div class="year">2030</div><div class="ct">ישראל: צמצום פליטות ב-<strong>כ-30%</strong> ביחס ל-2015</div></div>
     <div class="card"><div class="year">2050</div><div class="ct">יעד <strong>Net Zero</strong> — ניטרליות פחמנית מלאה</div></div>
+    <div class="card today-card"><div class="year">היום</div><div class="ct" style="color:#78350f">אין כלי מדידה מעשי — <strong>CarbonTrack ממלאת את הפער</strong></div></div>
   </div>
 </div>
 
@@ -398,13 +387,13 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
   <div class="vs">VS</div>
   <div class="half after">
     <div class="hl">✅ עם CarbonTrack</div>
-    <div class="hh" style="color:white">איך נראה המחר?</div>
+    <div class="hh" style="color:white">העתיד הקרוב</div>
     <ul class="points">
-      <li class="pt"><div class="pi">✓</div>חישוב אוטומטי מיידי מכתב כמויות</li>
+      <li class="pt"><div class="pi">✓</div>מדידת Scope 3 לראשונה — מדויק ואמין</li>
       <li class="pt"><div class="pi">✓</div>Scope 3 מלא לפי GHG Protocol</li>
-      <li class="pt"><div class="pi">✓</div>AI + פרוטוקול בינלאומי, לא הצהרה</li>
-      <li class="pt"><div class="pi">✓</div>עיבוד אלפי שורות בדקות</li>
-      <li class="pt"><div class="pi">✓</div>מוכן לדיווח רגולטורי</li>
+      <li class="pt"><div class="pi">✓</div>חישוב מבוסס AI, לא הצהרה בלבד</li>
+      <li class="pt"><div class="pi">✓</div>תוצאות בזמן אמת</li>
+      <li class="pt"><div class="pi">✓</div>מעקב רגולטורי מפוקח</li>
     </ul>
   </div>
 </div>
@@ -412,35 +401,52 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 <!-- ═══ S7: HOW IT WORKS ═══ -->
 <div class="slide s7">
   <div class="label">הפתרון</div>
-  <h2 class="title" style="margin-bottom:40px">איך זה עובד?</h2>
-  <div style="display:flex; gap:20px; width:100%; align-items:stretch;">
+  <h2 class="title" style="margin-bottom:28px">איך זה עובד?</h2>
+  <div style="display:flex; gap:18px; width:100%; align-items:stretch;">
 
-    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:24px; padding:44px 32px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:18px;">
-      <div style="font-size:64px; line-height:1;">📂</div>
-      <div style="font-size:24px; font-weight:800; color:var(--green9);">העלאת כתב כמויות</div>
-      <div style="font-size:18px; color:var(--muted); line-height:1.5;">Excel / CSV בעברית הנדסית</div>
+    <!-- Step 1: BoQ -->
+    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:28px 24px; display:flex; flex-direction:column; align-items:center; gap:14px;">
+      <div style="font-size:52px; line-height:1;">📂</div>
+      <div style="font-size:22px; font-weight:800; color:var(--green9); text-align:center;">העלאת כתב כמויות</div>
+      <div style="width:100%; background:#f8fdf9; border:1.5px solid var(--border); border-radius:10px; overflow:hidden; font-size:12px; direction:rtl;">
+        <div style="background:var(--green9); color:white; padding:5px 10px; font-weight:700; font-size:11px; display:grid; grid-template-columns:1fr 50px 44px; gap:4px;">
+          <span>תיאור</span><span>כמות</span><span>יחידה</span>
+        </div>
+        <div style="padding:4px 10px; display:grid; grid-template-columns:1fr 50px 44px; gap:4px; border-bottom:1px solid var(--border); color:var(--text);">
+          <span>בטון מזוין B30</span><span>120</span><span>מ"ק</span>
+        </div>
+        <div style="padding:4px 10px; display:grid; grid-template-columns:1fr 50px 44px; gap:4px; border-bottom:1px solid var(--border); background:rgba(82,183,136,0.05); color:var(--text);">
+          <span>פלדת זיון Ø16</span><span>8.5</span><span>טון</span>
+        </div>
+        <div style="padding:4px 10px; display:grid; grid-template-columns:1fr 50px 44px; gap:4px; color:var(--text);">
+          <span>בלוקים 20 ס"מ</span><span>2,400</span><span>יח'</span>
+        </div>
+      </div>
     </div>
 
-    <div style="display:flex; align-items:center; font-size:40px; color:var(--green5); flex-shrink:0; padding:0 4px;">←</div>
+    <div style="display:flex; align-items:center; font-size:36px; color:var(--green5); flex-shrink:0;">←</div>
 
-    <div style="flex:1; background:var(--green9); border-radius:24px; padding:44px 32px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:18px;">
-      <div style="font-size:64px; line-height:1;">🔢</div>
-      <div style="font-size:24px; font-weight:800; color:white;">חישוב פליטה</div>
-      <div style="font-size:18px; color:rgba(255,255,255,0.65); line-height:1.5;">ע"י מקדמי המרה בינלאומיים</div>
+    <!-- Step 2: Calculation -->
+    <div style="flex:1; background:var(--green9); border-radius:22px; padding:28px 24px; display:flex; flex-direction:column; align-items:center; gap:14px;">
+      <div style="font-size:52px; line-height:1;">🔢</div>
+      <div style="font-size:22px; font-weight:800; color:white; text-align:center;">חישוב פליטה</div>
+      <div style="font-size:16px; color:rgba(255,255,255,0.65); text-align:center; line-height:1.5;">ע"י מקדמי המרה בינלאומיים</div>
+      <div style="background:rgba(149,213,178,0.18); border:1.5px solid var(--green3); border-radius:8px; padding:5px 12px; font-size:13px; font-weight:700; color:var(--green3);">✓ GHG Protocol Approved</div>
     </div>
 
-    <div style="display:flex; align-items:center; font-size:40px; color:var(--green5); flex-shrink:0; padding:0 4px;">←</div>
+    <div style="display:flex; align-items:center; font-size:36px; color:var(--green5); flex-shrink:0;">←</div>
 
-    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:24px; padding:44px 32px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:18px;">
-      <div style="font-size:64px; line-height:1;">📊</div>
-      <div style="font-size:24px; font-weight:800; color:var(--green9);">דאשבורד נתונים</div>
-      <div style="font-size:18px; color:var(--muted); line-height:1.5;">BI חי · פרויקט · חומר · קבלן</div>
+    <!-- Step 3: Dashboard -->
+    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:28px 24px; display:flex; flex-direction:column; align-items:center; gap:14px;">
+      <div style="font-size:52px; line-height:1;">📊</div>
+      <div style="font-size:22px; font-weight:800; color:var(--green9); text-align:center;">דאשבורד נתונים</div>
+      <div style="font-size:16px; color:var(--muted); text-align:center; line-height:1.5;">ניתוח חי לפי פרויקט, חומר וקבלן</div>
     </div>
 
   </div>
 </div>
 
-<!-- ═══ S9: VIDEO (הוקדם לפני הטכנולוגיה) ═══ -->
+<!-- ═══ VIDEO (slide 8) ═══ -->
 <div class="slide s9">
   <div class="label">הדגמה</div>
   <h2 class="title">ראו איך זה עובד</h2>
@@ -449,7 +455,7 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
   </video>
 </div>
 
-<!-- ═══ S8: TECH ═══ -->
+<!-- ═══ TECH FLOW (slide 9) ═══ -->
 <div class="slide s8">
   <div class="label">הטכנולוגיה</div>
   <h2 class="title">מכתב כמויות לדוח פליטות — בדקות</h2>
@@ -465,7 +471,7 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
     <div class="step"><div class="si">📊</div><div class="st">דוח BI</div><div class="sd">דאשבורד חי</div></div>
   </div>
   <div class="notes">
-    <div class="note"><div class="nt">🔄 Human-in-the-Loop</div><div class="nd">אמינות נמוכה → אישור אנושי → למידה</div></div>
+    <div class="note"><div class="nt">🔄 Human-in-the-Loop</div><div class="nd">AI לא בטוח ← הפניה לאדם ← תיקון ← המערכת לומדת</div></div>
     <div class="note"><div class="nt">📈 Self-Learning</div><div class="nd">משתפרת בכל קובץ שנכנס</div></div>
     <div class="note"><div class="nt">⚡ ביצועים</div><div class="nd">אלפי שורות בדקות, progress בזמן אמת</div></div>
   </div>
@@ -480,13 +486,14 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
     <div class="milestones">
       <div class="ms done"><div class="dot">✅</div><div class="md">ינו׳ 2026</div><div class="mt">PoC ראשוני</div><div class="ms-desc">אלגוריתם + Excel parser</div></div>
       <div class="ms done"><div class="dot">✅</div><div class="md">מרץ 2026</div><div class="mt">AI Integration</div><div class="ms-desc">Vertex AI + BigQuery</div></div>
-      <div class="ms done"><div class="dot">✅</div><div class="md">אפר׳ 2026</div><div class="mt">Dashboard MVP</div><div class="ms-desc">Next.js + Review + What-If</div></div>
+      <div class="ms done"><div class="dot">✅</div><div class="md">אפר׳ 2026</div><div class="mt">Dashboard MVP</div><div class="ms-desc">ממשק · סקירה · סימולטור</div></div>
       <div class="ms curr">
-        <div style="position:absolute;top:-84px;left:50%;transform:translateX(-50%);background:var(--green5);color:white;font-size:9px;font-weight:900;padding:3px 10px;border-radius:99px;white-space:nowrap;letter-spacing:1px;z-index:2;">📍 היום</div>
+        <div style="position:absolute;top:-82px;left:50%;transform:translateX(-50%);background:var(--green5);color:white;font-size:9px;font-weight:900;padding:3px 10px;border-radius:99px;white-space:nowrap;letter-spacing:1px;z-index:2;">📍 היום</div>
         <div class="dot">🔧</div><div class="md">מאי 2026</div><div class="mt">Pilot נתיבי ישראל</div><div class="ms-desc">נתונים אמיתיים</div>
       </div>
       <div class="ms future"><div class="dot" style="color:var(--muted)">⚙️</div><div class="md">2026</div><div class="mt">הטמעה בנתיבי ישראל</div><div class="ms-desc">אינטגרציה מלאה</div></div>
-      <div class="ms future"><div class="dot" style="color:var(--muted)">🏗️</div><div class="md">2027</div><div class="mt">כל חברות התשתית</div><div class="ms-desc">רכבת, מקורות ועוד</div></div>
+      <div class="ms future"><div class="dot" style="color:var(--muted)">🏗️</div><div class="md">2027</div><div class="mt">כל חברות התשתית</div><div class="ms-desc">רכבת ישראל, מקורות ועוד</div></div>
+      <div class="ms future"><div class="dot" style="background:linear-gradient(135deg,#ff6b35,#ffa04d);box-shadow:0 0 0 4px rgba(255,107,53,0.2),0 0 18px rgba(255,107,53,0.45);color:white;border:none;">🚀</div><div class="md">2028</div><div class="mt">SaaS</div><div class="ms-desc">פלטפורמה ארצית</div></div>
     </div>
   </div>
 </div>
@@ -501,15 +508,15 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
       <div style="font-size:11px; font-weight:800; letter-spacing:3px; color:var(--green3); text-transform:uppercase;">למה אנחנו?</div>
       <div style="display:flex; align-items:center; gap:14px;">
         <div style="font-size:44px; flex-shrink:0;">🇮🇱</div>
-        <div style="font-size:20px; font-weight:800; color:white; line-height:1.25;">המערכת הכחול-לבן הראשונה מסוגה</div>
+        <div style="font-size:20px; font-weight:800; color:white; line-height:1.25;">מערכת כחולה-לבנה ראשונה מסוגה</div>
       </div>
       <div style="display:flex; align-items:flex-start; gap:12px;">
         <div style="font-size:28px; flex-shrink:0; margin-top:2px;">🔤</div>
-        <div style="font-size:17px; color:rgba(255,255,255,0.75); line-height:1.6;">חברות בינלאומיות לא מצליחות להתמודד עם כתב כמויות בעברית </div>
+        <div style="font-size:17px; color:rgba(255,255,255,0.75); line-height:1.6;">חברות בינלאומיות לא מצליחות להתמודד עם כתב כמויות בעברית</div>
       </div>
       <div style="display:flex; align-items:flex-start; gap:12px;">
         <div style="font-size:28px; flex-shrink:0; margin-top:2px;">🏆</div>
-        <div style="font-size:17px; color:rgba(255,255,255,0.75); line-height:1.6;">הפתרון הראשון לשוק התשתיות הישראלי</div>
+        <div style="font-size:17px; color:rgba(255,255,255,0.75); line-height:1.6;">הפתרון היחידי שנותן מענה לבעיה בשוק התשתיות</div>
       </div>
     </div>
 
@@ -517,26 +524,26 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
       <div style="font-size:11px; font-weight:800; letter-spacing:3px; color:var(--green5); text-transform:uppercase;">למה עכשיו?</div>
       <div style="display:flex; align-items:center; gap:14px;">
         <div style="font-size:44px; flex-shrink:0;">⏰</div>
-        <div style="font-size:20px; font-weight:800; color:var(--green9); line-height:1.25;">הדדליין 2030 דוחק</div>
+        <div style="font-size:20px; font-weight:800; color:var(--green9); line-height:1.25;">הדדליין דוחק</div>
       </div>
       <div style="display:flex; align-items:flex-start; gap:12px;">
         <div style="font-size:28px; flex-shrink:0; margin-top:2px;">🌍</div>
-        <div style="font-size:17px; color:var(--sub); line-height:1.6;">ישראל מחויבת להסכם פריז — צמצום 27% עד 2030</div>
+        <div style="font-size:17px; color:var(--sub); line-height:1.6;">ישראל מחויבת להסכם פריז — צמצום כ-30% עד 2030</div>
       </div>
       <div style="display:flex; align-items:flex-start; gap:12px;">
         <div style="font-size:28px; flex-shrink:0; margin-top:2px;">🚀</div>
-        <div style="font-size:17px; color:var(--sub); line-height:1.6;">המדינה צריכה כלי טכנולוגי — אנחנו ניצלנו את ההזדמנות והגענו</div>
+        <div style="font-size:17px; color:var(--sub); line-height:1.6;">המדינה צריכה מענה טכנולוגי לבעיה — אתמול!</div>
       </div>
     </div>
 
   </div>
 </div>
 
-<!-- ═══ S12: PROOF OF CONCEPT ═══ -->
+<!-- ═══ S12: CLOSING ═══ -->
 <div class="slide s12">
   <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:60px;">
     <div style="flex:1">
-      <div class="label" style="margin-bottom:28px">Proof of Concept</div>
+      <div class="label" style="margin-bottom:28px">מוזמנים להתרשם!</div>
       <div style="font-size:64px;font-weight:900;color:var(--green9);line-height:1.15;margin-bottom:20px">
         אי אפשר לצמצם<br>את מה שלא מודדים
       </div>
@@ -553,7 +560,6 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 
 </div><!-- /deck -->
 
-<!-- Navigation -->
 <div class="nav">
   <button onclick="go(-1)">←</button>
   <div class="dots" id="dots"></div>
