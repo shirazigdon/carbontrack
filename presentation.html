@@ -97,7 +97,7 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s1 .ring2 { bottom: -300px; left: -250px; width: 600px; height: 600px; }
 .s1 .logo-area { position: relative; margin-bottom: 0; }
 .s1 .glow { position: absolute; inset: -20px; border-radius: 50%; background: radial-gradient(circle, rgba(82,183,136,0.18), transparent); filter: blur(18px); }
-.s1 img.logo { position: relative; width: 200px; height: 200px; object-fit: contain; }
+.s1 img.logo { display: block; width: 200px; height: 200px; object-fit: contain; mix-blend-mode: multiply; }
 .s1 h1 { font-size: 96px; font-weight: 900; letter-spacing: -3px; color: var(--green9); margin: 0; }
 .s1 .tagline { font-size: 24px; color: var(--sub); max-width: 620px; line-height: 1.5; margin: 0; }
 .s1 .partners-bar { display: flex; align-items: center; justify-content: center; width: 100%; }
@@ -235,9 +235,10 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
   <div class="bg-ring ring2"></div>
   <div style="display:flex; flex-direction:column; align-items:center; gap:0;">
     <div class="logo-area">
-      <div class="glow"></div>
-      <img class="logo" src="https://storage.googleapis.com/green_excal/carbontrack-logo.png"
-           onerror="this.style.display='none'" alt="logo">
+      <div style="background:var(--cream); border-radius:28px; display:inline-flex; line-height:0; padding:4px;">
+        <img class="logo" src="https://storage.googleapis.com/green_excal/carbontrack-logo.png"
+             onerror="this.style.display='none'" alt="logo">
+      </div>
     </div>
     <h1><span class="green">C</span>arb<span class="green">O</span><sub style="font-size:0.45em;color:var(--green5);">2</sub>nTrack</h1>
     <p class="tagline">מעקב חכם אחר פליטות CO₂ בתשתיות לאומיות — Scope 3</p>
