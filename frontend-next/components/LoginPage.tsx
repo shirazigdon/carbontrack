@@ -75,7 +75,7 @@ export function LoginPage() {
         </div>
 
         <h1 style={{ fontSize: 48, fontWeight: 900, color: '#1b4332', marginBottom: 8, lineHeight: 1.1 }}>
-          <span style={{ color: '#40916c', fontWeight: 900 }}>C</span>arb<span style={{ color: '#40916c', fontWeight: 900 }}>O</span><span style={{ color: '#40916c', fontSize: '0.6em', verticalAlign: 'super', fontWeight: 900 }}>2</span>Track
+          <span style={{ color: '#40916c', fontWeight: 900 }}>C</span>arb<span style={{ color: '#40916c', fontWeight: 900 }}>O</span><sub style={{ color: '#40916c', fontSize: '0.6em', fontWeight: 900 }}>2</sub>nTrack
         </h1>
         <p style={{ fontSize: 18, color: '#2d6a4f', fontWeight: 600, marginBottom: 8 }}>מעקב פליטות פחמן לסביבה בריאה יותר</p>
         <p style={{ fontSize: 13, color: '#74c69d', marginBottom: 36, maxWidth: 360, lineHeight: 1.7 }}>
