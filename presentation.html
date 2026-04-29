@@ -124,7 +124,7 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s3 .fn { font-size: 30px; font-weight: 800; color: var(--green9); }
 .s3 .ft { font-size: 15px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
 .s3 .fact-infra { width: 100%; background: linear-gradient(135deg, var(--green9), #2d6a4f); border-radius: 16px; padding: 18px 28px; display: flex; align-items: center; justify-content: center; gap: 20px; opacity: 0; }
-.s3.active .fact-infra { animation: fadeUp 0.55s 0.75s both; }
+.s3 .fact-infra.revealed { animation: fadeUp 0.55s both; }
 
 /* ── S4 GHG ── */
 .s4 .scopes { display: flex; gap: 16px; width: 100%; }
@@ -146,10 +146,7 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 /* ── S5 Global ── */
 .s5 .cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; width: 100%; }
 .s5 .card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 24px 28px; opacity: 0; }
-.s5.active .card:nth-child(1) { animation: fadeUp 0.45s 0.3s both; }
-.s5.active .card:nth-child(2) { animation: fadeUp 0.45s 0.6s both; }
-.s5.active .card:nth-child(3) { animation: fadeUp 0.45s 0.9s both; }
-.s5.active .card:nth-child(4) { animation: fadeUp 0.45s 1.2s both; }
+.s5 .card.revealed { animation: fadeUp 0.45s both; }
 .s5 .year { font-size: 40px; font-weight: 900; color: var(--green5); margin-bottom: 8px; line-height: 1; }
 .s5 .ct { font-size: 18px; color: var(--sub); line-height: 1.6; }
 .s5 .ct strong { color: var(--green9); }
@@ -188,17 +185,8 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s8 .flow { display: flex; align-items: center; gap: 0; width: 100%; margin-bottom: 20px; }
 .s8 .step { flex: 1; background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 18px 12px; text-align: center; opacity: 0; }
 .s8 .arr { font-size: 18px; color: var(--green5); padding: 0 6px; flex-shrink: 0; opacity: 0; }
-.s8.active .step { animation: fadeUp 0.35s both; }
-.s8.active .arr { animation: fadeIn 0.25s both; }
-.s8.active .step:nth-child(1) { animation-delay: 0.3s; }
-.s8.active .arr:nth-child(2)  { animation-delay: 0.5s; }
-.s8.active .step:nth-child(3) { animation-delay: 0.55s; }
-.s8.active .arr:nth-child(4)  { animation-delay: 0.75s; }
-.s8.active .step:nth-child(5) { animation-delay: 0.8s; }
-.s8.active .arr:nth-child(6)  { animation-delay: 1.0s; }
-.s8.active .step:nth-child(7) { animation-delay: 1.05s; }
-.s8.active .arr:nth-child(8)  { animation-delay: 1.25s; }
-.s8.active .step:nth-child(9) { animation-delay: 1.3s; }
+.s8 .step.revealed { animation: fadeUp 0.35s both; }
+.s8 .arr.revealed  { animation: fadeIn 0.25s both; }
 .s8 .si { font-size: 26px; margin-bottom: 8px; }
 .s8 .st { font-size: 15px; font-weight: 700; color: var(--green9); margin-bottom: 4px; }
 .s8 .sd { font-size: 13px; color: var(--muted); line-height: 1.4; }
@@ -574,6 +562,14 @@ const counterEl = document.getElementById('counter');
 let cur = 0;
 const total = slides.length;
 
+// Selectors for click-through animation steps, keyed by slide index
+const animSteps = {
+  2: ['.fact-infra'],
+  4: ['.cards .card:nth-child(1)','.cards .card:nth-child(2)','.cards .card:nth-child(3)','.cards .card:nth-child(4)'],
+  8: ['.flow .step:nth-child(1)','.flow .arr:nth-child(2)','.flow .step:nth-child(3)','.flow .arr:nth-child(4)','.flow .step:nth-child(5)','.flow .arr:nth-child(6)','.flow .step:nth-child(7)','.flow .arr:nth-child(8)','.flow .step:nth-child(9)']
+};
+const stepCounts = {};
+
 for (let i = 0; i < total; i++) {
   const d = document.createElement('div');
   d.className = 'dot' + (i === 0 ? ' active' : '');
@@ -581,7 +577,27 @@ for (let i = 0; i < total; i++) {
   dotsEl.appendChild(d);
 }
 
+function resetAnims(idx) {
+  if (!animSteps[idx]) return;
+  animSteps[idx].forEach(sel => {
+    const el = slides[idx].querySelector(sel);
+    if (el) el.classList.remove('revealed');
+  });
+  stepCounts[idx] = 0;
+}
+
+function revealNext(idx) {
+  if (!animSteps[idx]) return false;
+  const step = stepCounts[idx] || 0;
+  if (step >= animSteps[idx].length) return false;
+  const el = slides[idx].querySelector(animSteps[idx][step]);
+  if (el) el.classList.add('revealed');
+  stepCounts[idx] = step + 1;
+  return true;
+}
+
 function goTo(n) {
+  resetAnims(cur);
   slides[cur].classList.remove('active');
   dotsEl.children[cur].classList.remove('active');
   cur = (n + total) % total;
@@ -589,7 +605,12 @@ function goTo(n) {
   dotsEl.children[cur].classList.add('active');
   counterEl.textContent = `${cur+1} / ${total}`;
 }
-function go(d) { goTo(cur + d); }
+
+function go(d) {
+  if (d > 0 && revealNext(cur)) return;
+  goTo(cur + d);
+}
+
 document.addEventListener('keydown', e => {
   if (e.key==='ArrowLeft'||e.key==='ArrowDown') go(1);
   if (e.key==='ArrowRight'||e.key==='ArrowUp') go(-1);
