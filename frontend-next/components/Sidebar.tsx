@@ -59,7 +59,7 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
           <div>
-            <div className="font-bold text-sm leading-tight" style={{ color: '#d8f3e3' }}>Carbon₂Track</div>
+            <div className="font-bold text-sm leading-tight" style={{ color: '#d8f3e3' }}>Carb<span style={{color:'#95d5b2'}}>O</span>₂nTrack</div>
             <div className="text-[10px]" style={{ color: 'rgba(183,228,199,0.5)' }}>נתיבי ישראל</div>
           </div>
         </div>
