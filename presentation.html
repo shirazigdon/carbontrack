@@ -43,7 +43,6 @@ body {
     radial-gradient(circle, rgba(27,67,50,0.032) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 30px 30px;
   opacity: 0; pointer-events: none;
-  transition: opacity 0.4s ease;
 }
 .slide.active { opacity: 1; pointer-events: all; }
 
@@ -71,24 +70,14 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .sub { font-size: 18px; color: var(--sub); font-weight: 400; }
 .green { color: var(--green5); }
 
-/* ── nav ── */
-.nav {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 14px; z-index: 100;
-  background: rgba(27,67,50,0.08); backdrop-filter: blur(12px);
-  border: 1px solid var(--border); border-radius: 99px;
-  padding: 8px 20px;
+/* ── slide badge ── */
+.slide-badge {
+  position: fixed; bottom: 18px; left: 20px; z-index: 100;
+  background: rgba(27,67,50,0.55); backdrop-filter: blur(8px);
+  color: rgba(255,255,255,0.9); font-size: 12px; font-weight: 700;
+  padding: 5px 12px; border-radius: 7px; letter-spacing: 1px;
+  pointer-events: none;
 }
-.nav button {
-  background: none; border: none; color: var(--green9);
-  font-size: 16px; cursor: pointer; padding: 4px 8px;
-  border-radius: 8px; transition: background 0.15s;
-}
-.nav button:hover { background: var(--green1); }
-.counter { font-size: 12px; color: var(--muted); min-width: 48px; text-align: center; font-weight: 600; }
-.dots { display: flex; gap: 5px; }
-.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); cursor: pointer; transition: all 0.2s; }
-.dot.active { background: var(--green5); width: 18px; border-radius: 3px; }
 
 /* ── S1 Title ── */
 .s1 { flex-direction: column; align-items: center; text-align: center; overflow: hidden; justify-content: center; gap: 40px; }
@@ -556,34 +545,20 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 
 </div><!-- /deck -->
 
-<div class="nav">
-  <button onclick="go(-1)">←</button>
-  <div class="dots" id="dots"></div>
-  <span class="counter" id="counter"></span>
-  <button onclick="go(1)">→</button>
-</div>
+<div class="slide-badge" id="badge"></div>
 
 <script>
 const slides = document.querySelectorAll('.slide');
-const dotsEl = document.getElementById('dots');
-const counterEl = document.getElementById('counter');
+const badgeEl = document.getElementById('badge');
 let cur = 0;
 const total = slides.length;
 
-// Selectors for click-through animation steps, keyed by slide index
 const animSteps = {
   2: ['.fact-infra'],
   4: ['.cards .card:nth-child(1)','.cards .card:nth-child(2)','.cards .card:nth-child(3)','.cards .card:nth-child(4)'],
   8: ['.flow .step:nth-child(1)','.flow .arr:nth-child(2)','.flow .step:nth-child(3)','.flow .arr:nth-child(4)','.flow .step:nth-child(5)','.flow .arr:nth-child(6)','.flow .step:nth-child(7)','.flow .arr:nth-child(8)','.flow .step:nth-child(9)']
 };
 const stepCounts = {};
-
-for (let i = 0; i < total; i++) {
-  const d = document.createElement('div');
-  d.className = 'dot' + (i === 0 ? ' active' : '');
-  d.onclick = () => goTo(i);
-  dotsEl.appendChild(d);
-}
 
 function resetAnims(idx) {
   if (!animSteps[idx]) return;
@@ -607,11 +582,9 @@ function revealNext(idx) {
 function goTo(n) {
   resetAnims(cur);
   slides[cur].classList.remove('active');
-  dotsEl.children[cur].classList.remove('active');
   cur = (n + total) % total;
   slides[cur].classList.add('active');
-  dotsEl.children[cur].classList.add('active');
-  counterEl.textContent = `${cur+1} / ${total}`;
+  badgeEl.textContent = `${cur+1} / ${total}`;
 }
 
 function go(d) {
