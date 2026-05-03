@@ -108,13 +108,14 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 
 /* ── S3 Problem ── */
 .s3 { align-items: center; text-align: center; gap: 0; }
-.s3 .big { font-size: 120px; font-weight: 900; line-height: 1; letter-spacing: -4px; margin: 4px 0 0; background: linear-gradient(135deg, #c07a2a, #e07b7b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.s3 .stat-sub { font-size: 20px; color: var(--sub); margin: 6px 0 28px; font-weight: 500; }
-.s3 .facts-top { display: flex; gap: 16px; width: 100%; margin-bottom: 14px; }
-.s3 .fact { background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 18px 24px; text-align: center; flex: 1; }
-.s3 .fn { font-size: 30px; font-weight: 800; color: var(--green9); }
-.s3 .ft { font-size: 15px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
-.s3 .fact-infra { width: 100%; background: linear-gradient(135deg, var(--green9), #2d6a4f); border-radius: 16px; padding: 18px 28px; display: flex; align-items: center; justify-content: center; gap: 20px; opacity: 0; }
+.s3 .problem-label { position: absolute; top: 44px; right: 60px; font-size: 72px; font-weight: 900; letter-spacing: -3px; color: var(--green5); direction: rtl; line-height: 1; pointer-events: none; }
+.s3 .big { font-size: 190px; font-weight: 900; line-height: 1; letter-spacing: -6px; margin: 0; background: linear-gradient(135deg, #c07a2a, #e07b7b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.s3 .stat-sub { font-size: 26px; color: var(--sub); margin: 6px 0 32px; font-weight: 600; letter-spacing: -0.5px; }
+.s3 .facts-top { display: flex; gap: 20px; width: 100%; margin-bottom: 18px; }
+.s3 .fact { background: white; border: 2px solid var(--border); border-radius: 20px; padding: 28px 32px; text-align: center; flex: 1; }
+.s3 .fn { font-size: 42px; font-weight: 900; color: var(--green9); }
+.s3 .ft { font-size: 17px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+.s3 .fact-infra { width: 100%; background: linear-gradient(135deg, var(--green9), #2d6a4f); border-radius: 20px; padding: 26px 36px; display: flex; align-items: center; justify-content: center; gap: 24px; opacity: 0; }
 .s3 .fact-infra.revealed { animation: fadeUp 0.55s both; }
 
 /* ── S4 GHG ── */
@@ -221,7 +222,7 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
       </div>
     </div>
     <h1><span class="green">C</span>arb<span class="green">O</span><sub style="font-size:0.45em;color:var(--green5);">2</sub>nTrack</h1>
-    <div class="partners-bar" style="margin-top:60px; padding: 18px 40px; border-top: 1.5px solid var(--border); width:100%;">
+    <div class="partners-bar" style="margin-top:60px; padding: 18px 40px; width:100%;">
       <img src="images/partners.png" alt="שיתופי פעולה"
            style="height:100px; max-width:1000px; object-fit:contain; mix-blend-mode:multiply;">
     </div>
@@ -286,12 +287,12 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 
 <!-- ═══ S3: PROBLEM ═══ -->
 <div class="slide s3">
-  <div class="label">הבעיה</div>
-  <div class="big">81M</div>
-  <p class="stat-sub">טון CO₂ נפלטים מדי שנה בישראל</p>
+  <div class="problem-label">הבעיה</div>
+  <div class="big">81M טון</div>
+  <p class="stat-sub">CO₂ נפלטים מדי שנה בישראל</p>
   <div class="facts-top">
     <div class="fact">
-      <div class="fn" style="font-size:24px;">שינויים קיצוניים במזג אוויר</div>
+      <div class="fn">שינויים קיצוניים</div>
       <div class="ft">גלי חום, הצפות ונזקים של מיליונים בכל חורף</div>
     </div>
     <div class="fact">
@@ -300,11 +301,11 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
     </div>
   </div>
   <div class="fact-infra">
-    <div style="font-size:44px; line-height:1; flex-shrink:0;">🏗️</div>
+    <div style="font-size:52px; line-height:1; flex-shrink:0;">🏗️</div>
     <div style="text-align:right;">
-      <div style="font-size:32px; font-weight:900; color:var(--green3); direction:ltr;">יותר מ-10%</div>
-      <div style="font-size:16px; color:rgba(255,255,255,0.8); margin-top:4px;">מסך הפליטות הישראליות מגיע מענף התשתיות בלבד</div>
-      <div style="font-size:14px; color:var(--green3); margin-top:6px; font-weight:700;">← זה הנתח שאנחנו באים לטפל בו</div>
+      <div style="font-size:40px; font-weight:900; color:var(--green3); direction:ltr;">יותר מ-10%</div>
+      <div style="font-size:18px; color:rgba(255,255,255,0.85); margin-top:6px;">מסך הפליטות הישראליות מגיע מענף התשתיות בלבד</div>
+      <div style="font-size:15px; color:var(--green3); margin-top:8px; font-weight:700;">← זה הנתח שאנחנו באים לטפל בו</div>
     </div>
   </div>
 </div>
