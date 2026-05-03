@@ -94,17 +94,17 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s1 .partners-bar { display: flex; align-items: center; justify-content: center; width: 100%; }
 
 /* ── S2 Team ── */
-.s2 { gap: 0; justify-content: flex-start; padding-top: 36px; }
-.s2 .top { margin-bottom: 28px; }
-.s2 .team-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; width: 100%; }
-.s2 .member { background: white; border: 1.5px solid var(--border); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; }
-.s2 .photo-wrap { width: 100%; aspect-ratio: 4/5; overflow: hidden; background: var(--green1); position: relative; }
+.s2 { gap: 0; justify-content: flex-start; padding-top: 18px; }
+.s2 .top { margin-bottom: 14px; }
+.s2 .team-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; width: 100%; }
+.s2 .member { background: white; border: 1.5px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+.s2 .photo-wrap { width: 100%; aspect-ratio: 5/4; overflow: hidden; background: var(--green1); position: relative; }
 .s2 .photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.s2 .photo-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 900; color: var(--green5); background: linear-gradient(160deg, var(--green1), white); }
-.s2 .info { padding: 14px; }
-.s2 .name { font-size: 24px; font-weight: 800; color: var(--green9); margin-bottom: 4px; }
-.s2 .unit { font-size: 17px; color: var(--muted); line-height: 1.4; }
-.s2 .quote-bar { width: 100%; border-top: 1.5px solid var(--border); padding-top: 20px; margin-top: 20px; text-align: center; }
+.s2 .photo-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 900; color: var(--green5); background: linear-gradient(160deg, var(--green1), white); }
+.s2 .info { padding: 10px 12px; }
+.s2 .name { font-size: 20px; font-weight: 800; color: var(--green9); margin-bottom: 2px; }
+.s2 .unit { font-size: 14px; color: var(--muted); line-height: 1.4; }
+.s2 .quote-bar { width: 100%; border-top: 1.5px solid var(--border); padding-top: 12px; margin-top: 12px; text-align: center; }
 
 /* ── S3 Problem ── */
 .s3 { align-items: center; text-align: center; gap: 0; }
@@ -194,38 +194,31 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s9 h2 { text-align: center; }
 .s9 video { width: min(900px,90vw); border-radius: 16px; box-shadow: 0 12px 48px rgba(27,67,50,0.18); margin-top: 8px; }
 
-/* ── S10 Roadmap (two-row snake) ── */
+/* ── S10 Roadmap (single centre-line, alternating up/down) ── */
 .s10 .road-wrap { width: 100%; }
-.s10 .road-row { display: flex; position: relative; padding-bottom: 20px; }
-.s10 .road-row-2 { flex-direction: row-reverse; }
-/* Horizontal line centered on the dots (dot = 76px → center at 38px) */
-.s10 .road-row::before {
+.s10 .road-items {
+  display: flex; height: 280px; align-items: stretch; position: relative;
+}
+/* Single horizontal line through all dot centres */
+.s10 .road-items::before {
   content: ''; position: absolute;
-  top: 38px; left: calc(100% / 6); right: calc(100% / 6);
+  left: calc(100% / 12); right: calc(100% / 12);
+  top: 50%; transform: translateY(-50%);
   height: 4px; border-radius: 99px;
   background: linear-gradient(to left, var(--border), var(--green5), var(--green9));
 }
-.s10 .road-row-2::before {
-  background: linear-gradient(to right, var(--border), var(--green5) 60%, var(--green9));
-}
-/* Arc connector between rows — C-bracket on the left */
-.s10 .arc-row { position: relative; height: 44px; }
-.s10 .arc-row::before {
-  content: ''; position: absolute;
-  left: calc(100% / 6 - 76px); width: 76px;
-  top: 0; bottom: 0;
-  border: 4px solid var(--green5); border-right: none;
-  border-radius: 38px 0 0 38px;
-}
-.s10 .ms { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; z-index: 1; }
-/* Dots get cream bg so they sit visibly on top of the line */
-.s10 .dot { width: 76px; height: 76px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 42px; background: var(--cream); }
-.s10 .done .dot  { }
-.s10 .curr .dot  { background: var(--green5); box-shadow: 0 0 0 8px rgba(82,183,136,0.2); }
-.s10 .future .dot { }
-.s10 .md { font-size: 22px; font-weight: 700; color: var(--green5); }
-.s10 .mt { font-size: 26px; font-weight: 800; color: var(--green9); text-align: center; }
-.s10 .ms-desc { font-size: 18px; color: var(--muted); text-align: center; line-height: 1.4; }
+.s10 .ms { flex: 1; display: flex; flex-direction: column; align-items: center; z-index: 1; }
+.s10 .ms-top { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; padding: 6px 4px 0; text-align: center; }
+.s10 .ms-bot { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 3px; padding: 0 4px 6px; text-align: center; }
+/* Vertical stems connecting text to the line */
+.s10 .up .ms-top::after  { content: ''; display: block; width: 2px; height: 20px; background: var(--green5); align-self: center; flex-shrink: 0; }
+.s10 .dn .ms-bot::before { content: ''; display: block; width: 2px; height: 20px; background: var(--green5); align-self: center; flex-shrink: 0; }
+.s10 .dot { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; background: var(--cream); flex-shrink: 0; }
+.s10 .curr .dot { background: var(--green5); box-shadow: 0 0 0 6px rgba(82,183,136,0.2); }
+.s10 .md { font-size: 15px; font-weight: 700; color: var(--green5); }
+.s10 .mt { font-size: 17px; font-weight: 800; color: var(--green9); }
+.s10 .ms-desc { font-size: 13px; color: var(--muted); line-height: 1.3; }
+.s10 .today-badge { background: var(--green5); color: white; font-size: 12px; font-weight: 900; padding: 2px 10px; border-radius: 99px; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -233,8 +226,7 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 
 <!-- ═══ S1: TITLE ═══ -->
 <div class="slide s1 active">
-  <div class="bg-ring ring1"></div>
-  <div class="bg-ring ring2"></div>
+
   <div style="display:flex; flex-direction:column; align-items:center; gap:0; width:100%;">
     <div class="logo-area">
       <div style="width:220px; height:220px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; background:white; box-shadow:0 4px 32px rgba(27,67,50,0.15); border:3px solid var(--green3);">
@@ -338,7 +330,7 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
     </div>
   </div>
   <div class="quote-bar">
-    <div style="font-size:19px; font-weight:600; color:var(--sub); font-style:italic; line-height:1.6;">
+    <div style="font-size:15px; font-weight:600; color:var(--sub); font-style:italic; line-height:1.6;">
       "מה שניתן למדוד — ניתן לנהל. מה שניתן לנהל — ניתן לשפר."
     </div>
   </div>
@@ -593,29 +585,51 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
   <div class="label">מפת דרכים</div>
   <h2 class="title">מה עשינו ולאן אנחנו הולכים</h2>
   <div class="road-wrap">
+    <div class="road-items">
 
-    <!-- Row 1: RTL order → PoC (right) | AI (center) | Dashboard (left) -->
-    <div class="road-row">
-      <div class="ms done"><div class="dot">✅</div><div class="md">ינו׳ 2026</div><div class="mt">PoC ראשוני</div><div class="ms-desc">אלגוריתם + Excel parser</div></div>
-      <div class="ms done"><div class="dot">✅</div><div class="md">מרץ 2026</div><div class="mt">AI Integration</div><div class="ms-desc">Vertex AI + BigQuery</div></div>
-      <div class="ms done"><div class="dot">✅</div><div class="md">אפר׳ 2026</div><div class="mt">Dashboard MVP</div><div class="ms-desc">ממשק · סקירה · סימולטור</div></div>
-    </div>
-
-    <!-- Arc: C-bracket on the left -->
-    <div class="arc-row"></div>
-
-    <!-- Row 2: row-reverse → Pilot (left) | הטמעה (center) | חברות (right) -->
-    <div class="road-row road-row-2">
-      <div class="ms curr">
-        <div class="dot" style="position:relative;">🔧
-          <span style="position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--green5);color:white;font-size:13px;font-weight:900;padding:3px 14px;border-radius:99px;white-space:nowrap;letter-spacing:1px;">📍 היום</span>
-        </div>
-        <div class="md">מאי 2026</div><div class="mt">Pilot נתיבי ישראל</div><div class="ms-desc">נתונים אמיתיים</div>
+      <!-- PoC: UP (rightmost in RTL) -->
+      <div class="ms done up">
+        <div class="ms-top"><div class="md">ינו׳ 2026</div><div class="mt">PoC ראשוני</div><div class="ms-desc">אלגוריתם + Excel parser</div></div>
+        <div class="dot">✅</div>
+        <div class="ms-bot"></div>
       </div>
-      <div class="ms future"><div class="dot">⚙️</div><div class="md">2026</div><div class="mt">הטמעה בנתיבי ישראל</div><div class="ms-desc">אינטגרציה מלאה</div></div>
-      <div class="ms future"><div class="dot">🏗️</div><div class="md">2027</div><div class="mt">חברות תשתית נוספות</div><div class="ms-desc">רכבת ישראל, מקורות ועוד</div></div>
-    </div>
 
+      <!-- AI: DOWN -->
+      <div class="ms done dn">
+        <div class="ms-top"></div>
+        <div class="dot">✅</div>
+        <div class="ms-bot"><div class="md">מרץ 2026</div><div class="mt">AI Integration</div><div class="ms-desc">Vertex AI + BigQuery</div></div>
+      </div>
+
+      <!-- Dashboard: UP -->
+      <div class="ms done up">
+        <div class="ms-top"><div class="md">אפר׳ 2026</div><div class="mt">Dashboard MVP</div><div class="ms-desc">ממשק · סקירה · סימולטור</div></div>
+        <div class="dot">✅</div>
+        <div class="ms-bot"></div>
+      </div>
+
+      <!-- Pilot: DOWN (current) — badge in ms-top -->
+      <div class="ms curr dn">
+        <div class="ms-top"><div class="today-badge">📍 היום</div></div>
+        <div class="dot">🔧</div>
+        <div class="ms-bot"><div class="md">מאי 2026</div><div class="mt">Pilot נתיבי ישראל</div><div class="ms-desc">נתונים אמיתיים</div></div>
+      </div>
+
+      <!-- הטמעה: UP -->
+      <div class="ms future up">
+        <div class="ms-top"><div class="md">2026</div><div class="mt">הטמעה בנתיבי ישראל</div><div class="ms-desc">אינטגרציה מלאה</div></div>
+        <div class="dot">⚙️</div>
+        <div class="ms-bot"></div>
+      </div>
+
+      <!-- חברות: DOWN -->
+      <div class="ms future dn">
+        <div class="ms-top"></div>
+        <div class="dot">🏗️</div>
+        <div class="ms-bot"><div class="md">2027</div><div class="mt">חברות תשתית נוספות</div><div class="ms-desc">רכבת ישראל, מקורות ועוד</div></div>
+      </div>
+
+    </div>
   </div>
 </div>
 
