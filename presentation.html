@@ -194,18 +194,21 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s9 h2 { text-align: center; }
 .s9 video { width: min(900px,90vw); border-radius: 16px; box-shadow: 0 12px 48px rgba(27,67,50,0.18); margin-top: 8px; }
 
-/* ── S10 Roadmap ── */
-.s10 .timeline { width: 100%; position: relative; padding-top: 60px; }
-.s10 .line { position: absolute; top: 26px; right: 0; left: 0; height: 3px; background: linear-gradient(to left, var(--border), var(--green5), var(--green9)); border-radius: 99px; }
-.s10 .milestones { display: flex; justify-content: space-between; }
-.s10 .ms { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 1; position: relative; }
-.s10 .dot { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 17px; position: absolute; top: -58px; z-index: 1; }
-.s10 .done .dot { background: var(--green9); box-shadow: 0 0 0 4px var(--green1); }
-.s10 .curr .dot { background: var(--green5); box-shadow: 0 0 0 4px rgba(82,183,136,0.25); }
-.s10 .future .dot { background: white; border: 2.5px solid var(--border); }
-.s10 .md { font-size: 18px; font-weight: 700; color: var(--green5); }
-.s10 .mt { font-size: 21px; font-weight: 800; color: var(--green9); text-align: center; }
-.s10 .ms-desc { font-size: 16px; color: var(--muted); text-align: center; line-height: 1.4; }
+/* ── S10 Roadmap (two-row snake) ── */
+.s10 .road-wrap { width: 100%; position: relative; }
+.s10 .road-row { display: flex; justify-content: space-around; align-items: flex-start; position: relative; padding: 50px 0 20px; }
+.s10 .road-row-2 { flex-direction: row-reverse; }
+.s10 .road-line { position: absolute; top: 38px; right: 8%; left: 8%; height: 4px; background: linear-gradient(to left, var(--border), var(--green5), var(--green9)); border-radius: 99px; }
+.s10 .road-row-2 .road-line { background: linear-gradient(to right, var(--border), var(--green5) 60%, var(--green9)); }
+.s10 .ms { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; position: relative; padding-top: 70px; }
+.s10 .dot { width: 76px; height: 76px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; position: absolute; top: 0; z-index: 1; }
+.s10 .done .dot { background: var(--green9); box-shadow: 0 0 0 6px var(--green1); }
+.s10 .curr .dot { background: var(--green5); box-shadow: 0 0 0 6px rgba(82,183,136,0.25); }
+.s10 .future .dot { background: white; border: 3px solid var(--border); }
+.s10 .md { font-size: 26px; font-weight: 700; color: var(--green5); }
+.s10 .mt { font-size: 30px; font-weight: 800; color: var(--green9); text-align: center; }
+.s10 .ms-desc { font-size: 22px; color: var(--muted); text-align: center; line-height: 1.4; }
+.s10 .road-arc { position: absolute; left: 6%; width: 80px; height: 140px; border: 4px solid var(--green5); border-right: none; border-radius: 60px 0 0 60px; pointer-events: none; z-index: 2; }
 </style>
 </head>
 <body>
@@ -223,9 +226,12 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
       </div>
     </div>
     <h1><span class="green">C</span>arb<span class="green">O</span><sub style="font-size:0.45em;color:var(--green5);">2</sub>nTrack</h1>
-    <div class="partners-bar" style="margin-top:60px; padding: 18px 40px; width:100%;">
-      <img src="images/partners.png" alt="שיתופי פעולה"
-           style="height:100px; max-width:1000px; object-fit:contain; mix-blend-mode:multiply;">
+    <div class="partners-bar" style="margin-top:50px; padding: 18px 40px; width:100%; display:flex; align-items:center; justify-content:center; gap:48px; flex-wrap:wrap;">
+      <img src="images/NetiviIsrael.svg.png" alt="נתיבי ישראל" style="height:80px; max-width:180px; object-fit:contain; mix-blend-mode:multiply;">
+      <img src="images/Google_2015_logo.svg.png" alt="Google" style="height:60px; max-width:160px; object-fit:contain; mix-blend-mode:multiply;">
+      <img src="images/Israel_National_Digital_Agency_logo.png" alt="רשות הדיגיטל" style="height:80px; max-width:180px; object-fit:contain; mix-blend-mode:multiply;">
+      <img src="images/sti-logo.webp" alt="STI" style="height:70px; max-width:160px; object-fit:contain; mix-blend-mode:multiply;">
+      <img src="images/yazamut_logo_white.webp" alt="יזמות" style="height:70px; max-width:160px; object-fit:contain; background:var(--green9); padding:8px 16px; border-radius:10px;">
     </div>
   </div>
 </div>
@@ -432,7 +438,7 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
   <div class="label">הדגמה</div>
   <h2 class="title">ראו איך זה עובד</h2>
   <video id="demo-video" controls preload="metadata" style="width:min(900px,90vw);border-radius:16px;box-shadow:0 12px 48px rgba(27,67,50,0.18);margin-top:8px">
-    <source src="images/carbontrack.mp4?v=9" type="video/mp4">
+    <source src="images/carbontrack_cut.mp4?v=10" type="video/mp4">
   </video>
 </div>
 
@@ -569,19 +575,32 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 <div class="slide s10">
   <div class="label">מפת דרכים</div>
   <h2 class="title">מה עשינו ולאן אנחנו הולכים</h2>
-  <div class="timeline">
-    <div class="line"></div>
-    <div class="milestones">
+  <div class="road-wrap">
+
+    <!-- Row 1: PoC → AI → Dashboard (RTL: right=first) -->
+    <div class="road-row">
+      <div class="road-line"></div>
       <div class="ms done"><div class="dot">✅</div><div class="md">ינו׳ 2026</div><div class="mt">PoC ראשוני</div><div class="ms-desc">אלגוריתם + Excel parser</div></div>
       <div class="ms done"><div class="dot">✅</div><div class="md">מרץ 2026</div><div class="mt">AI Integration</div><div class="ms-desc">Vertex AI + BigQuery</div></div>
       <div class="ms done"><div class="dot">✅</div><div class="md">אפר׳ 2026</div><div class="mt">Dashboard MVP</div><div class="ms-desc">ממשק · סקירה · סימולטור</div></div>
-      <div class="ms curr">
-        <div style="position:absolute;top:-82px;left:50%;transform:translateX(-50%);background:var(--green5);color:white;font-size:9px;font-weight:900;padding:3px 10px;border-radius:99px;white-space:nowrap;letter-spacing:1px;z-index:2;">📍 היום</div>
+    </div>
+
+    <!-- Arc connector — left side bracket -->
+    <div style="position:relative;height:80px;">
+      <div class="road-arc" style="top:-30px;"></div>
+    </div>
+
+    <!-- Row 2: reversed so snake continues left→right visually -->
+    <div class="road-row road-row-2">
+      <div class="road-line"></div>
+      <div class="ms curr" style="position:relative;">
+        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--green5);color:white;font-size:14px;font-weight:900;padding:4px 16px;border-radius:99px;white-space:nowrap;letter-spacing:1px;z-index:3;">📍 היום</div>
         <div class="dot">🔧</div><div class="md">מאי 2026</div><div class="mt">Pilot נתיבי ישראל</div><div class="ms-desc">נתונים אמיתיים</div>
       </div>
-      <div class="ms future"><div class="dot" style="color:var(--muted)">⚙️</div><div class="md">2026</div><div class="mt">הטמעה בנתיבי ישראל</div><div class="ms-desc">אינטגרציה מלאה</div></div>
-      <div class="ms future"><div class="dot" style="color:var(--muted)">🏗️</div><div class="md">2027</div><div class="mt">חברות תשתית נוספות</div><div class="ms-desc">רכבת ישראל, מקורות ועוד</div></div>
+      <div class="ms future"><div class="dot">⚙️</div><div class="md">2026</div><div class="mt">הטמעה בנתיבי ישראל</div><div class="ms-desc">אינטגרציה מלאה</div></div>
+      <div class="ms future"><div class="dot">🏗️</div><div class="md">2027</div><div class="mt">חברות תשתית נוספות</div><div class="ms-desc">רכבת ישראל, מקורות ועוד</div></div>
     </div>
+
   </div>
 </div>
 
