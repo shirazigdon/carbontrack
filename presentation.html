@@ -351,27 +351,33 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
   <div class="label">המדידה</div>
   <h2 class="title">פרוטוקול GHG — כיצד מודדים?</h2>
   <div class="scopes">
-    <div class="scope sc1">
-      <div class="sn">SCOPE 1</div>
-      <div class="st">פליטות ישירות</div>
-      <div class="sd">שריפת דלק ישירה בציוד הארגון.</div>
-      <div class="diff">✓ קל למדידה</div>
-    </div>
-    <div class="scope sc2">
-      <div class="sn">SCOPE 2</div>
-      <div class="st">אנרגיה נרכשת</div>
-      <div class="sd">חשמל וחום נרכש מספקים.</div>
-      <div class="diff">~ ניתן להערכה</div>
-    </div>
-    <div class="scope sc3">
-      <div class="sn" style="color:var(--green3)">SCOPE 3 — הבעיה האמיתית</div>
-      <div class="st" style="color:white;font-size:26px">שרשרת האספקה</div>
-      <div class="sd" style="color:rgba(255,255,255,0.8)">ייצור חומרים, הובלה, קבלני משנה — וזה בדיוק מה שאנחנו פותרים.</div>
-      <div style="font-size:12px; font-weight:700; padding:4px 10px; border-radius:99px; background:rgba(255,255,255,0.12); color:var(--green3); display:inline-block; margin-top:6px;">✗ קשה לחישוב</div>
-      <div class="bar-wrap">
-        <div class="pct-label">70–90% מסך הפליטות</div>
-        <div class="bar-bg"><div class="bar-fill"></div></div>
+    <div style="display:flex; flex-direction:column; gap:14px; flex:1;">
+      <div class="scope sc1" style="flex:1;">
+        <div class="sn">SCOPE 1</div>
+        <div class="st">פליטות ישירות</div>
+        <div class="sd">שריפת דלק ישירה בציוד הארגון.</div>
       </div>
+      <div style="font-size:26px; font-weight:800; color:#0d3b6e; text-align:center;">✓ קל למדידה</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:14px; flex:1;">
+      <div class="scope sc2" style="flex:1;">
+        <div class="sn">SCOPE 2</div>
+        <div class="st">אנרגיה נרכשת</div>
+        <div class="sd">חשמל וחום נרכש מספקים.</div>
+      </div>
+      <div style="font-size:26px; font-weight:800; color:#6b3a0d; text-align:center;">~ ניתן להערכה</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:14px; flex:2;">
+      <div class="scope sc3" style="flex:1;">
+        <div class="sn" style="color:var(--green3)">SCOPE 3 — הבעיה האמיתית</div>
+        <div class="st" style="color:white;font-size:26px">שרשרת האספקה</div>
+        <div class="sd" style="color:rgba(255,255,255,0.8)">ייצור חומרים, הובלה, קבלני משנה — וזה בדיוק מה שאנחנו פותרים.</div>
+        <div class="bar-wrap">
+          <div class="pct-label">70–90% מסך הפליטות</div>
+          <div class="bar-bg"><div class="bar-fill"></div></div>
+        </div>
+      </div>
+      <div style="font-size:26px; font-weight:800; color:var(--green9); text-align:center;">✗ קשה למדידה</div>
     </div>
   </div>
 </div>
