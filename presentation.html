@@ -179,7 +179,8 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s8 .si { font-size: 26px; margin-bottom: 8px; }
 .s8 .st { font-size: 15px; font-weight: 700; color: var(--green9); margin-bottom: 4px; }
 .s8 .sd { font-size: 13px; color: var(--muted); line-height: 1.4; }
-.s8 .notes { display: flex; gap: 14px; width: 100%; }
+.s8 .notes { display: flex; gap: 14px; width: 100%; opacity: 0; }
+.s8 .notes.revealed { animation: fadeUp 0.45s both; }
 .s8 .note { flex: 1; background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 14px 16px; }
 .s8 .nt { font-size: 15px; font-weight: 700; color: var(--green7); margin-bottom: 4px; }
 .s8 .nd { font-size: 14px; color: var(--muted); line-height: 1.4; }
@@ -218,7 +219,6 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
       </div>
     </div>
     <h1><span class="green">C</span>arb<span class="green">O</span><sub style="font-size:0.45em;color:var(--green5);">2</sub>nTrack</h1>
-    <p class="tagline">מעקב חכם אחר פליטות CO₂ בתשתיות לאומיות — Scope 3</p>
     <div class="partners-bar" style="margin-top:28px;">
       <img src="images/partners.png" alt="שיתופי פעולה"
            style="height:72px; max-width:900px; object-fit:contain; mix-blend-mode:multiply;">
@@ -429,7 +429,7 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
   <div class="label">הדגמה</div>
   <h2 class="title">ראו איך זה עובד</h2>
   <video controls preload="metadata" style="width:min(900px,90vw);border-radius:16px;box-shadow:0 12px 48px rgba(27,67,50,0.18);margin-top:8px">
-    <source src="images/carbontrack.mp4?v=4" type="video/mp4">
+    <source src="images/carbontrack.mp4?v=5" type="video/mp4">
   </video>
 </div>
 
@@ -455,27 +455,7 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
   </div>
 </div>
 
-<!-- ═══ S10: ROADMAP ═══ -->
-<div class="slide s10">
-  <div class="label">מפת דרכים</div>
-  <h2 class="title">מה עשינו ולאן אנחנו הולכים</h2>
-  <div class="timeline">
-    <div class="line"></div>
-    <div class="milestones">
-      <div class="ms done"><div class="dot">✅</div><div class="md">ינו׳ 2026</div><div class="mt">PoC ראשוני</div><div class="ms-desc">אלגוריתם + Excel parser</div></div>
-      <div class="ms done"><div class="dot">✅</div><div class="md">מרץ 2026</div><div class="mt">AI Integration</div><div class="ms-desc">Vertex AI + BigQuery</div></div>
-      <div class="ms done"><div class="dot">✅</div><div class="md">אפר׳ 2026</div><div class="mt">Dashboard MVP</div><div class="ms-desc">ממשק · סקירה · סימולטור</div></div>
-      <div class="ms curr">
-        <div style="position:absolute;top:-82px;left:50%;transform:translateX(-50%);background:var(--green5);color:white;font-size:9px;font-weight:900;padding:3px 10px;border-radius:99px;white-space:nowrap;letter-spacing:1px;z-index:2;">📍 היום</div>
-        <div class="dot">🔧</div><div class="md">מאי 2026</div><div class="mt">Pilot נתיבי ישראל</div><div class="ms-desc">נתונים אמיתיים</div>
-      </div>
-      <div class="ms future"><div class="dot" style="color:var(--muted)">⚙️</div><div class="md">2026</div><div class="mt">הטמעה בנתיבי ישראל</div><div class="ms-desc">אינטגרציה מלאה</div></div>
-      <div class="ms future"><div class="dot" style="color:var(--muted)">🏗️</div><div class="md">2027</div><div class="mt">כל חברות התשתית</div><div class="ms-desc">רכבת ישראל, מקורות ועוד</div></div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ S11: WHY US / WHY NOW ═══ -->
+<!-- ═══ S10: WHY US / WHY NOW ═══ -->
 <div class="slide s11" style="justify-content:flex-start; padding-top:52px;">
   <div class="label">ההזדמנות</div>
   <h2 class="title" style="margin-bottom:32px">למה אנחנו? למה עכשיו?</h2>
@@ -524,6 +504,26 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
   </div>
 </div>
 
+<!-- ═══ S11: ROADMAP ═══ -->
+<div class="slide s10">
+  <div class="label">מפת דרכים</div>
+  <h2 class="title">מה עשינו ולאן אנחנו הולכים</h2>
+  <div class="timeline">
+    <div class="line"></div>
+    <div class="milestones">
+      <div class="ms done"><div class="dot">✅</div><div class="md">ינו׳ 2026</div><div class="mt">PoC ראשוני</div><div class="ms-desc">אלגוריתם + Excel parser</div></div>
+      <div class="ms done"><div class="dot">✅</div><div class="md">מרץ 2026</div><div class="mt">AI Integration</div><div class="ms-desc">Vertex AI + BigQuery</div></div>
+      <div class="ms done"><div class="dot">✅</div><div class="md">אפר׳ 2026</div><div class="mt">Dashboard MVP</div><div class="ms-desc">ממשק · סקירה · סימולטור</div></div>
+      <div class="ms curr">
+        <div style="position:absolute;top:-82px;left:50%;transform:translateX(-50%);background:var(--green5);color:white;font-size:9px;font-weight:900;padding:3px 10px;border-radius:99px;white-space:nowrap;letter-spacing:1px;z-index:2;">📍 היום</div>
+        <div class="dot">🔧</div><div class="md">מאי 2026</div><div class="mt">Pilot נתיבי ישראל</div><div class="ms-desc">נתונים אמיתיים</div>
+      </div>
+      <div class="ms future"><div class="dot" style="color:var(--muted)">⚙️</div><div class="md">2026</div><div class="mt">הטמעה בנתיבי ישראל</div><div class="ms-desc">אינטגרציה מלאה</div></div>
+      <div class="ms future"><div class="dot" style="color:var(--muted)">🏗️</div><div class="md">2027</div><div class="mt">כל חברות התשתית</div><div class="ms-desc">רכבת ישראל, מקורות ועוד</div></div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ S12: CLOSING ═══ -->
 <div class="slide s12">
   <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:60px;">
@@ -537,7 +537,7 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
     </div>
     <div style="flex-shrink:0;background:white;border-radius:24px;padding:28px;border:2px solid var(--border);box-shadow:0 8px 32px rgba(27,67,50,0.10);text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px">
       <div style="font-size:13px;font-weight:800;letter-spacing:3px;color:var(--green9)">SCAN ME</div>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https%3A%2F%2Fshirazigdon.github.io%2Fcarbontrack%2Fpresentation.html&color=1b4332&bgcolor=ffffff&qzone=1"
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https%3A%2F%2Fdashboard-140293665526.europe-west1.run.app&color=1b4332&bgcolor=ffffff&qzone=1"
            style="width:280px;height:280px;border-radius:8px" alt="QR Code">
     </div>
   </div>
@@ -556,15 +556,21 @@ const total = slides.length;
 const animSteps = {
   2: ['.fact-infra'],
   4: ['.cards .card:nth-child(1)','.cards .card:nth-child(2)','.cards .card:nth-child(3)','.cards .card:nth-child(4)'],
-  8: ['.flow .step:nth-child(1)','.flow .arr:nth-child(2)','.flow .step:nth-child(3)','.flow .arr:nth-child(4)','.flow .step:nth-child(5)','.flow .arr:nth-child(6)','.flow .step:nth-child(7)','.flow .arr:nth-child(8)','.flow .step:nth-child(9)']
+  8: [
+    ['.flow .step:nth-child(1)','.flow .arr:nth-child(2)','.flow .step:nth-child(3)','.flow .arr:nth-child(4)','.flow .step:nth-child(5)','.flow .arr:nth-child(6)','.flow .step:nth-child(7)','.flow .arr:nth-child(8)','.flow .step:nth-child(9)'],
+    '.notes'
+  ]
 };
 const stepCounts = {};
 
 function resetAnims(idx) {
   if (!animSteps[idx]) return;
-  animSteps[idx].forEach(sel => {
-    const el = slides[idx].querySelector(sel);
-    if (el) el.classList.remove('revealed');
+  animSteps[idx].forEach(item => {
+    const sels = Array.isArray(item) ? item : [item];
+    sels.forEach(sel => {
+      const el = slides[idx].querySelector(sel);
+      if (el) el.classList.remove('revealed');
+    });
   });
   stepCounts[idx] = 0;
 }
@@ -573,8 +579,12 @@ function revealNext(idx) {
   if (!animSteps[idx]) return false;
   const step = stepCounts[idx] || 0;
   if (step >= animSteps[idx].length) return false;
-  const el = slides[idx].querySelector(animSteps[idx][step]);
-  if (el) el.classList.add('revealed');
+  const item = animSteps[idx][step];
+  const sels = Array.isArray(item) ? item : [item];
+  sels.forEach(sel => {
+    const el = slides[idx].querySelector(sel);
+    if (el) el.classList.add('revealed');
+  });
   stepCounts[idx] = step + 1;
   return true;
 }
