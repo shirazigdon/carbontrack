@@ -110,7 +110,7 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s3 { align-items: center; text-align: center; gap: 0; }
 .s3 .problem-label { position: absolute; top: 44px; right: 60px; font-size: 84px; font-weight: 900; letter-spacing: -3px; color: var(--green5); direction: rtl; line-height: 1; pointer-events: none; display: flex; align-items: center; gap: 16px; }
 .s3 .problem-label::before { content: ''; display: block; width: 44px; height: 5px; background: var(--green5); border-radius: 2px; flex-shrink: 0; }
-.s3 .big { font-size: 190px; font-weight: 900; line-height: 1; letter-spacing: -6px; margin: 0; background: linear-gradient(135deg, #c07a2a, #e07b7b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.s3 .big { font-size: 148px; font-weight: 900; line-height: 1; letter-spacing: -3px; margin: 0; background: linear-gradient(135deg, #c07a2a, #e07b7b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .s3 .stat-sub { font-size: 26px; color: var(--sub); margin: 6px 0 32px; font-weight: 600; letter-spacing: -0.5px; }
 .s3 .facts-top { display: flex; gap: 20px; width: 100%; margin-bottom: 18px; }
 .s3 .fact { background: white; border: 2px solid var(--border); border-radius: 20px; padding: 28px 32px; text-align: center; flex: 1; }
@@ -196,20 +196,36 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 
 /* ── S10 Roadmap (two-row snake) ── */
 .s10 .road-wrap { width: 100%; }
-.s10 .road-row { display: flex; align-items: flex-start; position: relative; padding: 0 20px 28px; }
+.s10 .road-row { display: flex; position: relative; padding-bottom: 20px; }
 .s10 .road-row-2 { flex-direction: row-reverse; }
-.s10 .road-line { position: absolute; top: 38px; right: 9%; left: 9%; height: 4px; background: linear-gradient(to left, var(--border), var(--green5), var(--green9)); border-radius: 99px; z-index: 0; }
-.s10 .road-row-2 .road-line { background: linear-gradient(to right, var(--border), var(--green5) 60%, var(--green9)); }
+/* Horizontal line centered on the dots (dot = 76px → center at 38px) */
+.s10 .road-row::before {
+  content: ''; position: absolute;
+  top: 38px; left: calc(100% / 6); right: calc(100% / 6);
+  height: 4px; border-radius: 99px;
+  background: linear-gradient(to left, var(--border), var(--green5), var(--green9));
+}
+.s10 .road-row-2::before {
+  background: linear-gradient(to right, var(--border), var(--green5) 60%, var(--green9));
+}
+/* Arc connector between rows — C-bracket on the left */
+.s10 .arc-row { position: relative; height: 44px; }
+.s10 .arc-row::before {
+  content: ''; position: absolute;
+  left: calc(100% / 6 - 76px); width: 76px;
+  top: 0; bottom: 0;
+  border: 4px solid var(--green5); border-right: none;
+  border-radius: 38px 0 0 38px;
+}
 .s10 .ms { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; z-index: 1; }
-.s10 .dot { width: 76px; height: 76px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 42px; }
-.s10 .done .dot { background: transparent; }
-.s10 .curr .dot { background: var(--green5); box-shadow: 0 0 0 8px rgba(82,183,136,0.2); }
-.s10 .future .dot { background: transparent; }
+/* Dots get cream bg so they sit visibly on top of the line */
+.s10 .dot { width: 76px; height: 76px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 42px; background: var(--cream); }
+.s10 .done .dot  { }
+.s10 .curr .dot  { background: var(--green5); box-shadow: 0 0 0 8px rgba(82,183,136,0.2); }
+.s10 .future .dot { }
 .s10 .md { font-size: 22px; font-weight: 700; color: var(--green5); }
 .s10 .mt { font-size: 26px; font-weight: 800; color: var(--green9); text-align: center; }
 .s10 .ms-desc { font-size: 18px; color: var(--muted); text-align: center; line-height: 1.4; }
-.s10 .arc-row { position: relative; height: 48px; }
-.s10 .arc-shape { position: absolute; left: 9%; width: 64px; top: -4px; bottom: -4px; border: 4px solid var(--green5); border-right: none; border-radius: 40px 0 0 40px; }
 </style>
 </head>
 <body>
@@ -578,26 +594,23 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
   <h2 class="title">מה עשינו ולאן אנחנו הולכים</h2>
   <div class="road-wrap">
 
-    <!-- Row 1: right→left in RTL: PoC | AI | Dashboard -->
+    <!-- Row 1: RTL order → PoC (right) | AI (center) | Dashboard (left) -->
     <div class="road-row">
-      <div class="road-line"></div>
       <div class="ms done"><div class="dot">✅</div><div class="md">ינו׳ 2026</div><div class="mt">PoC ראשוני</div><div class="ms-desc">אלגוריתם + Excel parser</div></div>
       <div class="ms done"><div class="dot">✅</div><div class="md">מרץ 2026</div><div class="mt">AI Integration</div><div class="ms-desc">Vertex AI + BigQuery</div></div>
       <div class="ms done"><div class="dot">✅</div><div class="md">אפר׳ 2026</div><div class="mt">Dashboard MVP</div><div class="ms-desc">ממשק · סקירה · סימולטור</div></div>
     </div>
 
-    <!-- Arc: C-bracket on the left connecting the two rows -->
-    <div class="arc-row"><div class="arc-shape"></div></div>
+    <!-- Arc: C-bracket on the left -->
+    <div class="arc-row"></div>
 
-    <!-- Row 2: row-reverse so snake reads left→right: Pilot | הטמעה | חברות -->
+    <!-- Row 2: row-reverse → Pilot (left) | הטמעה (center) | חברות (right) -->
     <div class="road-row road-row-2">
-      <div class="road-line"></div>
       <div class="ms curr">
-        <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;">
-          <div style="position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:var(--green5);color:white;font-size:13px;font-weight:900;padding:3px 14px;border-radius:99px;white-space:nowrap;letter-spacing:1px;">📍 היום</div>
-          <div class="dot">🔧</div>
+        <div class="dot" style="position:relative;">🔧
+          <span style="position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--green5);color:white;font-size:13px;font-weight:900;padding:3px 14px;border-radius:99px;white-space:nowrap;letter-spacing:1px;">📍 היום</span>
         </div>
-        <div class="md" style="margin-top:10px;">מאי 2026</div><div class="mt">Pilot נתיבי ישראל</div><div class="ms-desc">נתונים אמיתיים</div>
+        <div class="md">מאי 2026</div><div class="mt">Pilot נתיבי ישראל</div><div class="ms-desc">נתונים אמיתיים</div>
       </div>
       <div class="ms future"><div class="dot">⚙️</div><div class="md">2026</div><div class="mt">הטמעה בנתיבי ישראל</div><div class="ms-desc">אינטגרציה מלאה</div></div>
       <div class="ms future"><div class="dot">🏗️</div><div class="md">2027</div><div class="mt">חברות תשתית נוספות</div><div class="ms-desc">רכבת ישראל, מקורות ועוד</div></div>
