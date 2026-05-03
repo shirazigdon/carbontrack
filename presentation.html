@@ -108,7 +108,8 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 
 /* ── S3 Problem ── */
 .s3 { align-items: center; text-align: center; gap: 0; }
-.s3 .problem-label { position: absolute; top: 44px; right: 60px; font-size: 72px; font-weight: 900; letter-spacing: -3px; color: var(--green5); direction: rtl; line-height: 1; pointer-events: none; }
+.s3 .problem-label { position: absolute; top: 44px; right: 60px; font-size: 84px; font-weight: 900; letter-spacing: -3px; color: var(--green5); direction: rtl; line-height: 1; pointer-events: none; display: flex; align-items: center; gap: 16px; }
+.s3 .problem-label::before { content: ''; display: block; width: 44px; height: 5px; background: var(--green5); border-radius: 2px; flex-shrink: 0; }
 .s3 .big { font-size: 190px; font-weight: 900; line-height: 1; letter-spacing: -6px; margin: 0; background: linear-gradient(135deg, #c07a2a, #e07b7b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .s3 .stat-sub { font-size: 26px; color: var(--sub); margin: 6px 0 32px; font-weight: 600; letter-spacing: -0.5px; }
 .s3 .facts-top { display: flex; gap: 20px; width: 100%; margin-bottom: 18px; }
