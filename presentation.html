@@ -60,16 +60,16 @@ body {
 
 /* ── shared ── */
 .label {
-  font-size: 11px; font-weight: 700; letter-spacing: 3px;
+  font-size: 18px; font-weight: 700; letter-spacing: 3px;
   text-transform: uppercase; color: var(--green5);
-  margin-bottom: 14px;
-  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
 }
-.label::before { content: ''; display: block; width: 24px; height: 2px; background: var(--green5); border-radius: 2px; }
+.label::before { content: ''; display: block; width: 28px; height: 3px; background: var(--green5); border-radius: 2px; }
 
 h1.hero { font-size: 68px; font-weight: 900; line-height: 1.05; color: var(--green9); }
-h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--green9); margin-bottom: 32px; }
-.sub { font-size: 18px; color: var(--sub); font-weight: 400; }
+h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--green9); margin-bottom: 28px; }
+.sub { font-size: 22px; color: var(--sub); font-weight: 400; }
 .green { color: var(--green5); }
 
 /* ── slide badge ── */
@@ -102,8 +102,8 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s2 .photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .s2 .photo-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 900; color: var(--green5); background: linear-gradient(160deg, var(--green1), white); }
 .s2 .info { padding: 14px; }
-.s2 .name { font-size: 18px; font-weight: 800; color: var(--green9); margin-bottom: 4px; }
-.s2 .unit { font-size: 14px; color: var(--muted); line-height: 1.4; }
+.s2 .name { font-size: 24px; font-weight: 800; color: var(--green9); margin-bottom: 4px; }
+.s2 .unit { font-size: 17px; color: var(--muted); line-height: 1.4; }
 .s2 .quote-bar { width: 100%; border-top: 1.5px solid var(--border); padding-top: 20px; margin-top: 20px; text-align: center; }
 
 /* ── S3 Problem ── */
@@ -121,10 +121,10 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 /* ── S4 GHG ── */
 .s4 .scopes { display: flex; gap: 16px; width: 100%; }
 .s4 .scope { border-radius: 18px; padding: 28px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
-.s4 .sn { font-size: 13px; font-weight: 800; letter-spacing: 3px; opacity: 0.75; }
-.s4 .st { font-size: 26px; font-weight: 800; margin-bottom: 2px; }
-.s4 .sd { font-size: 17px; line-height: 1.55; opacity: 0.88; }
-.s4 .diff { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 99px; display: inline-block; margin-top: 6px; width: fit-content; }
+.s4 .sn { font-size: 17px; font-weight: 800; letter-spacing: 3px; opacity: 0.75; }
+.s4 .st { font-size: 32px; font-weight: 800; margin-bottom: 2px; }
+.s4 .sd { font-size: 21px; line-height: 1.55; opacity: 0.88; }
+.s4 .diff { font-size: 15px; font-weight: 700; padding: 5px 12px; border-radius: 99px; display: inline-block; margin-top: 6px; width: fit-content; }
 .s4 .sc1 { background: #c8e6fa; color: #0d3b6e; }
 .s4 .sc1 .diff { background: rgba(13,59,110,0.12); color: #0d3b6e; }
 .s4 .sc2 { background: #fde8b8; color: #6b3a0d; }
@@ -133,18 +133,18 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s4 .bar-wrap { margin-top: 12px; }
 .s4 .bar-bg { height: 8px; background: rgba(255,255,255,0.15); border-radius: 99px; }
 .s4 .bar-fill { height: 100%; background: var(--green3); border-radius: 99px; width: 80%; }
-.s4 .pct-label { font-size: 28px; font-weight: 900; color: var(--green3); margin-top: 10px; }
+.s4 .pct-label { font-size: 38px; font-weight: 900; color: var(--green3); margin-top: 10px; }
 
 /* ── S5 Global ── */
 .s5 .cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; width: 100%; }
 .s5 .card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 24px 28px; opacity: 0; }
 .s5 .card.revealed { animation: fadeUp 0.45s both; }
-.s5 .year { font-size: 40px; font-weight: 900; color: var(--green5); margin-bottom: 8px; line-height: 1; }
-.s5 .ct { font-size: 18px; color: var(--sub); line-height: 1.6; }
+.s5 .year { font-size: 52px; font-weight: 900; color: var(--green5); margin-bottom: 8px; line-height: 1; }
+.s5 .ct { font-size: 22px; color: var(--sub); line-height: 1.6; }
 .s5 .ct strong { color: var(--green9); }
-.s5 .paris { grid-column: span 3; background: var(--green9); color: white; border: none; display: flex; align-items: center; gap: 20px; padding: 20px 28px; }
-.s5 .paris .icon { font-size: 32px; flex-shrink: 0; }
-.s5 .paris .text { font-size: 18px; font-weight: 800; color: var(--green3); }
+.s5 .paris { grid-column: span 3; background: var(--green9); color: white; border: none; display: flex; align-items: center; gap: 20px; padding: 22px 32px; }
+.s5 .paris .icon { font-size: 40px; flex-shrink: 0; }
+.s5 .paris .text { font-size: 24px; font-weight: 800; color: var(--green3); }
 .s5 .today-card { background: #fef3c7; border-color: #f59e0b; }
 .s5 .today-card .year { color: #92400e; }
 .s5 .today-card .ct { color: #78350f; }
@@ -154,14 +154,14 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s6 .half { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 56px 52px; }
 .s6 .before { background: white; border-left: 1px solid var(--border); }
 .s6 .after { background: var(--green9); }
-.s6 .hl { font-size: 13px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px; }
+.s6 .hl { font-size: 18px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
 .s6 .before .hl { color: #c0392b; }
 .s6 .after .hl { color: var(--green3); }
-.s6 .hh { font-size: 26px; font-weight: 800; margin-bottom: 28px; }
+.s6 .hh { font-size: 34px; font-weight: 800; margin-bottom: 28px; }
 .s6 .before .hh { color: var(--green9); }
 .s6 .after .hh { color: white; }
-.s6 .points { list-style: none; display: flex; flex-direction: column; gap: 14px; }
-.s6 .pt { display: flex; align-items: flex-start; gap: 12px; font-size: 18px; line-height: 1.5; }
+.s6 .points { list-style: none; display: flex; flex-direction: column; gap: 16px; }
+.s6 .pt { display: flex; align-items: flex-start; gap: 14px; font-size: 22px; line-height: 1.5; }
 .s6 .before .pt { color: var(--sub); }
 .s6 .after .pt { color: rgba(255,255,255,0.85); }
 .s6 .pi { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; margin-top: 2px; font-weight: 700; }
@@ -179,14 +179,14 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s8 .arr { font-size: 18px; color: var(--green5); padding: 0 6px; flex-shrink: 0; opacity: 0; }
 .s8 .step.revealed { animation: fadeUp 0.35s both; }
 .s8 .arr.revealed  { animation: fadeIn 0.25s both; }
-.s8 .si { font-size: 26px; margin-bottom: 8px; }
-.s8 .st { font-size: 15px; font-weight: 700; color: var(--green9); margin-bottom: 4px; }
-.s8 .sd { font-size: 13px; color: var(--muted); line-height: 1.4; }
+.s8 .si { font-size: 34px; margin-bottom: 8px; }
+.s8 .st { font-size: 20px; font-weight: 700; color: var(--green9); margin-bottom: 4px; }
+.s8 .sd { font-size: 17px; color: var(--muted); line-height: 1.4; }
 .s8 .notes { display: flex; gap: 14px; width: 100%; opacity: 0; }
 .s8 .notes.revealed { animation: fadeUp 0.45s both; }
-.s8 .note { flex: 1; background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 14px 16px; }
-.s8 .nt { font-size: 15px; font-weight: 700; color: var(--green7); margin-bottom: 4px; }
-.s8 .nd { font-size: 14px; color: var(--muted); line-height: 1.4; }
+.s8 .note { flex: 1; background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+.s8 .nt { font-size: 20px; font-weight: 700; color: var(--green7); margin-bottom: 6px; }
+.s8 .nd { font-size: 17px; color: var(--muted); line-height: 1.4; }
 
 /* ── S9 Video ── */
 .s9 { align-items: center; text-align: center; }
@@ -202,9 +202,9 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s10 .done .dot { background: var(--green9); box-shadow: 0 0 0 4px var(--green1); }
 .s10 .curr .dot { background: var(--green5); box-shadow: 0 0 0 4px rgba(82,183,136,0.25); }
 .s10 .future .dot { background: white; border: 2.5px solid var(--border); }
-.s10 .md { font-size: 13px; font-weight: 700; color: var(--green5); }
-.s10 .mt { font-size: 15px; font-weight: 800; color: var(--green9); text-align: center; }
-.s10 .ms-desc { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.4; }
+.s10 .md { font-size: 18px; font-weight: 700; color: var(--green5); }
+.s10 .mt { font-size: 21px; font-weight: 800; color: var(--green9); text-align: center; }
+.s10 .ms-desc { font-size: 16px; color: var(--muted); text-align: center; line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -385,42 +385,42 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
   <div style="display:flex; gap:18px; width:100%; align-items:stretch;">
 
     <!-- Step 1: BoQ -->
-    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:28px 24px; display:flex; flex-direction:column; align-items:center; gap:14px;">
-      <div style="font-size:52px; line-height:1;">📂</div>
-      <div style="font-size:22px; font-weight:800; color:var(--green9); text-align:center;">העלאת כתב כמויות</div>
-      <div style="width:100%; background:#f8fdf9; border:1.5px solid var(--border); border-radius:10px; overflow:hidden; font-size:12px; direction:rtl;">
-        <div style="background:var(--green9); color:white; padding:5px 10px; font-weight:700; font-size:11px; display:grid; grid-template-columns:1fr 50px 44px; gap:4px;">
+    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 28px; display:flex; flex-direction:column; align-items:center; gap:16px;">
+      <div style="font-size:60px; line-height:1;">📂</div>
+      <div style="font-size:28px; font-weight:800; color:var(--green9); text-align:center;">העלאת כתב כמויות</div>
+      <div style="width:100%; background:#f8fdf9; border:1.5px solid var(--border); border-radius:10px; overflow:hidden; font-size:16px; direction:rtl;">
+        <div style="background:var(--green9); color:white; padding:7px 12px; font-weight:700; font-size:15px; display:grid; grid-template-columns:1fr 60px 52px; gap:4px;">
           <span>תיאור</span><span>כמות</span><span>יחידה</span>
         </div>
-        <div style="padding:4px 10px; display:grid; grid-template-columns:1fr 50px 44px; gap:4px; border-bottom:1px solid var(--border); color:var(--text);">
+        <div style="padding:6px 12px; display:grid; grid-template-columns:1fr 60px 52px; gap:4px; border-bottom:1px solid var(--border); color:var(--text);">
           <span>בטון מזוין B30</span><span>120</span><span>מ"ק</span>
         </div>
-        <div style="padding:4px 10px; display:grid; grid-template-columns:1fr 50px 44px; gap:4px; border-bottom:1px solid var(--border); background:rgba(82,183,136,0.05); color:var(--text);">
+        <div style="padding:6px 12px; display:grid; grid-template-columns:1fr 60px 52px; gap:4px; border-bottom:1px solid var(--border); background:rgba(82,183,136,0.05); color:var(--text);">
           <span>פלדת זיון Ø16</span><span>8.5</span><span>טון</span>
         </div>
-        <div style="padding:4px 10px; display:grid; grid-template-columns:1fr 50px 44px; gap:4px; color:var(--text);">
+        <div style="padding:6px 12px; display:grid; grid-template-columns:1fr 60px 52px; gap:4px; color:var(--text);">
           <span>בלוקים 20 ס"מ</span><span>2,400</span><span>יח'</span>
         </div>
       </div>
     </div>
 
-    <div style="display:flex; align-items:center; font-size:36px; color:var(--green5); flex-shrink:0;">←</div>
+    <div style="display:flex; align-items:center; font-size:44px; color:var(--green5); flex-shrink:0;">←</div>
 
     <!-- Step 2: Calculation -->
-    <div style="flex:1; background:var(--green9); border-radius:22px; padding:28px 24px; display:flex; flex-direction:column; align-items:center; gap:14px;">
-      <div style="font-size:52px; line-height:1;">🔢</div>
-      <div style="font-size:22px; font-weight:800; color:white; text-align:center;">חישוב פליטה</div>
-      <div style="font-size:16px; color:rgba(255,255,255,0.65); text-align:center; line-height:1.5;">ע"י מקדמי המרה בינלאומיים</div>
-      <div style="background:rgba(149,213,178,0.18); border:1.5px solid var(--green3); border-radius:8px; padding:5px 12px; font-size:13px; font-weight:700; color:var(--green3);">✓ GHG Protocol Approved</div>
+    <div style="flex:1; background:var(--green9); border-radius:22px; padding:32px 28px; display:flex; flex-direction:column; align-items:center; gap:16px;">
+      <div style="font-size:60px; line-height:1;">🔢</div>
+      <div style="font-size:28px; font-weight:800; color:white; text-align:center;">חישוב פליטה</div>
+      <div style="font-size:21px; color:rgba(255,255,255,0.75); text-align:center; line-height:1.5;">ע"י מקדמי המרה בינלאומיים</div>
+      <div style="background:rgba(149,213,178,0.18); border:1.5px solid var(--green3); border-radius:8px; padding:8px 16px; font-size:17px; font-weight:700; color:var(--green3);">✓ GHG Protocol Approved</div>
     </div>
 
-    <div style="display:flex; align-items:center; font-size:36px; color:var(--green5); flex-shrink:0;">←</div>
+    <div style="display:flex; align-items:center; font-size:44px; color:var(--green5); flex-shrink:0;">←</div>
 
     <!-- Step 3: Dashboard -->
-    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:28px 24px; display:flex; flex-direction:column; align-items:center; gap:14px;">
-      <div style="font-size:52px; line-height:1;">📊</div>
-      <div style="font-size:22px; font-weight:800; color:var(--green9); text-align:center;">דאשבורד נתונים</div>
-      <div style="font-size:16px; color:var(--muted); text-align:center; line-height:1.5;">ניתוח חי לפי פרויקט, חומר וקבלן</div>
+    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 28px; display:flex; flex-direction:column; align-items:center; gap:16px;">
+      <div style="font-size:60px; line-height:1;">📊</div>
+      <div style="font-size:28px; font-weight:800; color:var(--green9); text-align:center;">דאשבורד נתונים</div>
+      <div style="font-size:21px; color:var(--muted); text-align:center; line-height:1.5;">ניתוח חי לפי פרויקט, חומר וקבלן</div>
     </div>
 
   </div>
