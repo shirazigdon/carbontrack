@@ -35,7 +35,7 @@ body {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
   justify-content: center; align-items: flex-start;
-  padding: 56px 64px;
+  padding: 48px 60px;
   background: var(--cream);
   background-image:
     radial-gradient(ellipse 65% 55% at 92% 8%, rgba(82,183,136,0.10) 0%, transparent 100%),
@@ -43,6 +43,8 @@ body {
     radial-gradient(circle, rgba(27,67,50,0.032) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 30px 30px;
   opacity: 0; pointer-events: none;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 .slide.active { opacity: 1; pointer-events: all; }
 
@@ -92,7 +94,7 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s1 .partners-bar { display: flex; align-items: center; justify-content: center; width: 100%; }
 
 /* ── S2 Team ── */
-.s2 { gap: 0; justify-content: flex-start; padding-top: 48px; }
+.s2 { gap: 0; justify-content: flex-start; padding-top: 36px; }
 .s2 .top { margin-bottom: 28px; }
 .s2 .team-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; width: 100%; }
 .s2 .member { background: white; border: 1.5px solid var(--border); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; }
@@ -167,7 +169,7 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s6 .vs { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; border-radius: 50%; background: var(--cream); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: var(--green9); z-index: 10; }
 
 /* ── S7 How it works ── */
-.s7 { gap: 0; justify-content: flex-start; padding-top: 48px; }
+.s7 { gap: 0; justify-content: flex-start; padding-top: 40px; }
 
 /* ── S8 Tech ── */
 .s8 { background: var(--cream); }
@@ -456,48 +458,53 @@ h2.title { font-size: 44px; font-weight: 800; line-height: 1.1; color: var(--gre
 </div>
 
 <!-- ═══ S10: WHY US / WHY NOW ═══ -->
-<div class="slide s11" style="justify-content:flex-start; padding-top:52px;">
+<div class="slide s11" style="justify-content:flex-start; padding-top:40px;">
   <div class="label">ההזדמנות</div>
-  <h2 class="title" style="margin-bottom:32px">למה אנחנו? למה עכשיו?</h2>
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; width:100%;">
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:28px; width:100%; flex:1; min-height:0;">
 
-    <div style="background:var(--green9); border-radius:22px; padding:28px 28px; display:flex; flex-direction:column; gap:13px;">
-      <div style="font-size:11px; font-weight:800; letter-spacing:3px; color:var(--green3); text-transform:uppercase;">למה אנחנו?</div>
-      <div style="display:flex; align-items:center; gap:12px;">
-        <div style="font-size:36px; flex-shrink:0;">🏆</div>
-        <div style="font-size:18px; font-weight:800; color:white; line-height:1.25;">הפתרון היחיד שנותן מענה טכנולוגי לשוק התשתיות</div>
-      </div>
-      <div style="display:flex; align-items:flex-start; gap:10px;">
-        <div style="font-size:22px; flex-shrink:0; margin-top:2px;">⚡</div>
-        <div style="font-size:15px; color:rgba(255,255,255,0.82); line-height:1.5;">מ-Excel לדוח פליטות בדקות — הלבשה על תהליכים קיימים</div>
-      </div>
-      <div style="display:flex; align-items:flex-start; gap:10px;">
-        <div style="font-size:22px; flex-shrink:0; margin-top:2px;">🌿</div>
-        <div style="font-size:15px; color:rgba(255,255,255,0.82); line-height:1.5;">כלי תומך החלטה — מציע חלופות ירוקות ומחזיר שליטה לחברה</div>
-      </div>
-      <div style="display:flex; align-items:flex-start; gap:10px;">
-        <div style="font-size:22px; flex-shrink:0; margin-top:2px;">🧠</div>
-        <div style="font-size:15px; color:rgba(255,255,255,0.82); line-height:1.5;">AI + GHG Protocol + מקדמי המרה מפוקחים — דיוק מקסימלי</div>
-      </div>
-      <div style="display:flex; align-items:flex-start; gap:10px;">
-        <div style="font-size:22px; flex-shrink:0; margin-top:2px;">📍</div>
-        <div style="font-size:15px; color:rgba(255,255,255,0.82); line-height:1.5;">פיילוט חי עם נתיבי ישראל — לא רק הבטחה</div>
+    <!-- למה אנחנו -->
+    <div style="display:flex; flex-direction:column; gap:12px; min-height:0;">
+      <div style="text-align:center; font-size:26px; font-weight:900; color:var(--green9); letter-spacing:-0.5px;">למה אנחנו?</div>
+      <div style="background:var(--green9); border-radius:22px; padding:22px 24px; display:flex; flex-direction:column; gap:11px; flex:1; min-height:0;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="font-size:28px; flex-shrink:0;">🏆</div>
+          <div style="font-size:15px; font-weight:800; color:white; line-height:1.3;">הפתרון היחיד שנותן מענה טכנולוגי לשוק התשתיות</div>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:10px;">
+          <div style="font-size:20px; flex-shrink:0; margin-top:1px;">⚡</div>
+          <div style="font-size:14px; color:rgba(255,255,255,0.85); line-height:1.5;">המוצר מותאם לצורת העבודה הקיימת בחברה</div>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:10px;">
+          <div style="font-size:20px; flex-shrink:0; margin-top:1px;">🌿</div>
+          <div style="font-size:14px; color:rgba(255,255,255,0.85); line-height:1.5;">העברת השליטה לחברה והצעת חלופות ירוקות</div>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:10px;">
+          <div style="font-size:20px; flex-shrink:0; margin-top:1px;">🧠</div>
+          <div style="font-size:14px; color:rgba(255,255,255,0.85); line-height:1.5;">תוצאות מדוייקות לא מתבססות על הצהרת צרכן</div>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:10px;">
+          <div style="font-size:20px; flex-shrink:0; margin-top:1px;">📍</div>
+          <div style="font-size:14px; color:rgba(255,255,255,0.85); line-height:1.5;">פיילוט חי עם נתיבי ישראל</div>
+        </div>
       </div>
     </div>
 
-    <div style="background:white; border:2px solid var(--border); border-radius:22px; padding:36px 32px; display:flex; flex-direction:column; gap:16px;">
-      <div style="font-size:11px; font-weight:800; letter-spacing:3px; color:var(--green5); text-transform:uppercase;">למה עכשיו?</div>
-      <div style="display:flex; align-items:center; gap:14px;">
-        <div style="font-size:44px; flex-shrink:0;">⏰</div>
-        <div style="font-size:20px; font-weight:800; color:var(--green9); line-height:1.25;">הדדליין דוחק</div>
-      </div>
-      <div style="display:flex; align-items:flex-start; gap:12px;">
-        <div style="font-size:28px; flex-shrink:0; margin-top:2px;">🌍</div>
-        <div style="font-size:17px; color:var(--sub); line-height:1.6;">ישראל מחויבת להסכם פריז — צמצום כ-30% עד 2030</div>
-      </div>
-      <div style="display:flex; align-items:flex-start; gap:12px;">
-        <div style="font-size:28px; flex-shrink:0; margin-top:2px;">🚀</div>
-        <div style="font-size:17px; color:var(--sub); line-height:1.6;">המדינה צריכה מענה טכנולוגי לבעיה — אתמול!</div>
+    <!-- למה עכשיו -->
+    <div style="display:flex; flex-direction:column; gap:12px; min-height:0;">
+      <div style="text-align:center; font-size:26px; font-weight:900; color:var(--green9); letter-spacing:-0.5px;">למה עכשיו?</div>
+      <div style="background:white; border:2px solid var(--border); border-radius:22px; padding:22px 28px; display:flex; flex-direction:column; gap:16px; flex:1; min-height:0;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div style="font-size:40px; flex-shrink:0;">⏰</div>
+          <div style="font-size:20px; font-weight:800; color:var(--green9); line-height:1.25;">הדדליין דוחק</div>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:12px;">
+          <div style="font-size:26px; flex-shrink:0; margin-top:2px;">🌍</div>
+          <div style="font-size:16px; color:var(--sub); line-height:1.6;">ישראל מחויבת להסכם פריז — צמצום כ-30% עד 2030</div>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:12px;">
+          <div style="font-size:26px; flex-shrink:0; margin-top:2px;">🚀</div>
+          <div style="font-size:16px; color:var(--sub); line-height:1.6;">המדינה צריכה מענה טכנולוגי לבעיה — אתמול!</div>
+        </div>
       </div>
     </div>
 
