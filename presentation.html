@@ -352,22 +352,25 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
   <div class="label">המדידה</div>
   <h2 class="title">פרוטוקול GHG — כיצד מודדים?</h2>
   <div class="scopes">
-    <div style="display:flex; flex-direction:column; gap:14px; flex:1;">
-      <div class="scope sc1" style="flex:1;">
-        <div class="sn">SCOPE 1</div>
-        <div class="st">פליטות ישירות</div>
-        <div class="sd">שריפת דלק ישירה בציוד הארגון.</div>
+
+    <!-- Scope 1 + 2 grouped under one label -->
+    <div style="display:flex; flex-direction:column; gap:14px; flex:2;">
+      <div style="display:flex; gap:16px; flex:1;">
+        <div class="scope sc1" style="flex:1;">
+          <div class="sn">SCOPE 1</div>
+          <div class="st">פליטות ישירות</div>
+          <div class="sd">שריפת דלק ישירה בציוד הארגון.</div>
+        </div>
+        <div class="scope sc2" style="flex:1;">
+          <div class="sn">SCOPE 2</div>
+          <div class="st">אנרגיה נרכשת</div>
+          <div class="sd">חשמל וחום נרכש מספקים.</div>
+        </div>
       </div>
-      <div style="font-size:26px; font-weight:800; color:#0d3b6e; text-align:center;">✓ קל למדידה</div>
+      <div style="font-size:26px; font-weight:800; color:#111; text-align:center;">✓ קל למדידה</div>
     </div>
-    <div style="display:flex; flex-direction:column; gap:14px; flex:1;">
-      <div class="scope sc2" style="flex:1;">
-        <div class="sn">SCOPE 2</div>
-        <div class="st">אנרגיה נרכשת</div>
-        <div class="sd">חשמל וחום נרכש מספקים.</div>
-      </div>
-      <div style="font-size:26px; font-weight:800; color:#6b3a0d; text-align:center;">~ ניתן להערכה</div>
-    </div>
+
+    <!-- Scope 3 -->
     <div style="display:flex; flex-direction:column; gap:14px; flex:2;">
       <div class="scope sc3" style="flex:1;">
         <div class="sn" style="color:var(--green3)">SCOPE 3 — הבעיה האמיתית</div>
@@ -378,8 +381,9 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
           <div class="bar-bg"><div class="bar-fill"></div></div>
         </div>
       </div>
-      <div style="font-size:26px; font-weight:800; color:var(--green9); text-align:center;">✗ קשה למדידה</div>
+      <div style="font-size:26px; font-weight:800; color:#111; text-align:center;">✗ קשה למדידה</div>
     </div>
+
   </div>
 </div>
 
