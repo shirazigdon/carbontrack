@@ -229,7 +229,32 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
   </div>
 </div>
 
-<!-- ═══ S2: TEAM ═══ -->
+<!-- ═══ S2: HOOK ═══ -->
+<div class="slide" style="background:var(--green9); justify-content:center; align-items:center; text-align:center;">
+  <div style="display:flex; flex-direction:column; align-items:center; gap:44px; max-width:960px;">
+
+    <div style="font-size:28px; font-weight:500; color:rgba(255,255,255,0.72); line-height:1.6;">
+      כל פרויקט תשתית בישראל גובה מחיר סביבתי כבד
+    </div>
+
+    <div style="display:flex; align-items:center; gap:24px; font-size:24px; font-weight:600; color:var(--green3); flex-wrap:wrap; justify-content:center;">
+      <span>🏗️ בטון ואספלט</span>
+      <span style="color:rgba(255,255,255,0.35); font-size:28px;">→</span>
+      <span>☁️ מסות אדירות של CO₂</span>
+      <span style="color:rgba(255,255,255,0.35); font-size:28px;">→</span>
+      <span>🌍 ישירות לאטמוספירה</span>
+    </div>
+
+    <div style="width:120px; height:2px; background:rgba(255,255,255,0.18); border-radius:2px;"></div>
+
+    <div style="font-size:56px; font-weight:900; color:white; line-height:1.2; letter-spacing:-1px;">
+      אי אפשר לצמצם<br>את מה שלא מודדים
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ S3: TEAM ═══ -->
 <div class="slide s2">
   <div class="top">
     <div class="label">הצוות</div>
@@ -565,9 +590,9 @@ let cur = 0;
 const total = slides.length;
 
 const animSteps = {
-  2: ['.fact-infra'],
-  4: ['.cards .card:nth-child(1)','.cards .card:nth-child(2)','.cards .card:nth-child(3)','.cards .card:nth-child(4)'],
-  8: [
+  3: ['.fact-infra'],
+  5: ['.cards .card:nth-child(1)','.cards .card:nth-child(2)','.cards .card:nth-child(3)','.cards .card:nth-child(4)'],
+  9: [
     ['.flow .step:nth-child(1)','.flow .arr:nth-child(2)','.flow .step:nth-child(3)','.flow .arr:nth-child(4)','.flow .step:nth-child(5)','.flow .arr:nth-child(6)','.flow .step:nth-child(7)','.flow .arr:nth-child(8)','.flow .step:nth-child(9)'],
     '.notes'
   ]
