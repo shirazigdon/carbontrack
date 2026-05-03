@@ -94,17 +94,17 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s1 .partners-bar { display: flex; align-items: center; justify-content: center; width: 100%; }
 
 /* ── S2 Team ── */
-.s2 { gap: 0; justify-content: flex-start; padding-top: 18px; }
-.s2 .top { margin-bottom: 14px; }
-.s2 .team-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; width: 100%; }
-.s2 .member { background: white; border: 1.5px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
-.s2 .photo-wrap { width: 100%; aspect-ratio: 5/4; overflow: hidden; background: var(--green1); position: relative; }
+.s2 { gap: 0; justify-content: flex-start; padding-top: 16px; }
+.s2 .top { margin-bottom: 16px; }
+.s2 .team-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; width: 100%; }
+.s2 .member { background: white; border: 1.5px solid var(--border); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; }
+.s2 .photo-wrap { width: 100%; aspect-ratio: 4/5; overflow: hidden; background: var(--green1); position: relative; }
 .s2 .photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.s2 .photo-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 900; color: var(--green5); background: linear-gradient(160deg, var(--green1), white); }
-.s2 .info { padding: 10px 12px; }
-.s2 .name { font-size: 20px; font-weight: 800; color: var(--green9); margin-bottom: 2px; }
-.s2 .unit { font-size: 14px; color: var(--muted); line-height: 1.4; }
-.s2 .quote-bar { width: 100%; border-top: 1.5px solid var(--border); padding-top: 12px; margin-top: 12px; text-align: center; }
+.s2 .photo-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 52px; font-weight: 900; color: var(--green5); background: linear-gradient(160deg, var(--green1), white); }
+.s2 .info { padding: 14px 18px; }
+.s2 .name { font-size: 30px; font-weight: 800; color: var(--green9); margin-bottom: 4px; }
+.s2 .unit { font-size: 20px; color: var(--muted); line-height: 1.4; }
+.s2 .quote-bar { width: 100%; border-top: 1.5px solid var(--border); padding-top: 14px; margin-top: 14px; text-align: center; }
 
 /* ── S3 Problem ── */
 .s3 { align-items: center; text-align: center; gap: 0; }
@@ -197,7 +197,7 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 /* ── S10 Roadmap (single centre-line, alternating up/down) ── */
 .s10 .road-wrap { width: 100%; }
 .s10 .road-items {
-  display: flex; height: 280px; align-items: stretch; position: relative;
+  display: flex; height: 340px; align-items: stretch; position: relative;
 }
 /* Single horizontal line through all dot centres */
 .s10 .road-items::before {
@@ -208,17 +208,17 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
   background: linear-gradient(to left, var(--border), var(--green5), var(--green9));
 }
 .s10 .ms { flex: 1; display: flex; flex-direction: column; align-items: center; z-index: 1; }
-.s10 .ms-top { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; padding: 6px 4px 0; text-align: center; }
-.s10 .ms-bot { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 3px; padding: 0 4px 6px; text-align: center; }
+.s10 .ms-top { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; padding: 8px 6px 0; text-align: center; }
+.s10 .ms-bot { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; padding: 0 6px 8px; text-align: center; }
 /* Vertical stems connecting text to the line */
-.s10 .up .ms-top::after  { content: ''; display: block; width: 2px; height: 20px; background: var(--green5); align-self: center; flex-shrink: 0; }
-.s10 .dn .ms-bot::before { content: ''; display: block; width: 2px; height: 20px; background: var(--green5); align-self: center; flex-shrink: 0; }
-.s10 .dot { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; background: var(--cream); flex-shrink: 0; }
-.s10 .curr .dot { background: var(--green5); box-shadow: 0 0 0 6px rgba(82,183,136,0.2); }
-.s10 .md { font-size: 15px; font-weight: 700; color: var(--green5); }
-.s10 .mt { font-size: 17px; font-weight: 800; color: var(--green9); }
-.s10 .ms-desc { font-size: 13px; color: var(--muted); line-height: 1.3; }
-.s10 .today-badge { background: var(--green5); color: white; font-size: 12px; font-weight: 900; padding: 2px 10px; border-radius: 99px; white-space: nowrap; }
+.s10 .up .ms-top::after  { content: ''; display: block; width: 2px; height: 22px; background: var(--green5); align-self: center; flex-shrink: 0; }
+.s10 .dn .ms-bot::before { content: ''; display: block; width: 2px; height: 22px; background: var(--green5); align-self: center; flex-shrink: 0; }
+.s10 .dot { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; background: var(--cream); flex-shrink: 0; }
+.s10 .curr .dot { background: var(--green5); box-shadow: 0 0 0 7px rgba(82,183,136,0.2); }
+.s10 .md { font-size: 18px; font-weight: 700; color: var(--green5); }
+.s10 .mt { font-size: 20px; font-weight: 800; color: var(--green9); }
+.s10 .ms-desc { font-size: 15px; color: var(--muted); line-height: 1.3; }
+.s10 .today-badge { background: var(--green5); color: white; font-size: 14px; font-weight: 900; padding: 3px 12px; border-radius: 99px; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -330,7 +330,7 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
     </div>
   </div>
   <div class="quote-bar">
-    <div style="font-size:15px; font-weight:600; color:var(--sub); font-style:italic; line-height:1.6;">
+    <div style="font-size:20px; font-weight:600; color:var(--sub); font-style:italic; line-height:1.6;">
       "מה שניתן למדוד — ניתן לנהל. מה שניתן לנהל — ניתן לשפר."
     </div>
   </div>
