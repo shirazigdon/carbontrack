@@ -382,7 +382,7 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 <div class="slide s9">
   <div class="label">הדגמה</div>
   <h2 class="title">ראו איך זה עובד</h2>
-  <video controls preload="metadata" style="width:min(900px,90vw);border-radius:16px;box-shadow:0 12px 48px rgba(27,67,50,0.18);margin-top:8px">
+  <video id="demo-video" controls preload="metadata" style="width:min(900px,90vw);border-radius:16px;box-shadow:0 12px 48px rgba(27,67,50,0.18);margin-top:8px">
     <source src="images/carbontrack.mp4?v=8" type="video/mp4">
   </video>
 </div>
@@ -600,12 +600,37 @@ function revealNext(idx) {
   return true;
 }
 
+const demoVideo = document.getElementById('demo-video');
+const videoSlideIdx = demoVideo ? Array.from(slides).findIndex(s => s.contains(demoVideo)) : -1;
+
+if (demoVideo) {
+  demoVideo.addEventListener('ended', () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    goTo(cur + 1);
+  });
+}
+
 function goTo(n) {
+  // Leave video slide: pause and reset
+  if (cur === videoSlideIdx && demoVideo) {
+    demoVideo.pause();
+    demoVideo.currentTime = 0;
+    if (document.fullscreenElement) document.exitFullscreen();
+  }
+
   resetAnims(cur);
   slides[cur].classList.remove('active');
   cur = (n + total) % total;
   slides[cur].classList.add('active');
   badgeEl.textContent = `${cur+1} / ${total}`;
+
+  // Enter video slide: fullscreen + play
+  if (cur === videoSlideIdx && demoVideo) {
+    demoVideo.currentTime = 0;
+    demoVideo.requestFullscreen()
+      .then(() => demoVideo.play())
+      .catch(() => demoVideo.play());
+  }
 }
 
 function go(d) {
