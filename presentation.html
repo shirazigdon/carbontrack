@@ -23,7 +23,7 @@
 
 body {
   font-family: 'Rubik', sans-serif;
-  background: #111;
+  background: #222;
   color: var(--text);
   overflow: hidden;
   direction: rtl;
@@ -33,13 +33,12 @@ body {
 }
 
 .deck {
-  width: 1920px;
-  height: 1080px;
+  width: 1600px;
+  height: 900px;
   position: absolute;
   top: 50%;
   left: 50%;
   transform-origin: center center;
-  background: var(--cream);
   overflow: hidden;
 }
 
@@ -47,7 +46,7 @@ body {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
   justify-content: center; align-items: flex-start;
-  padding: 48px 60px;
+  padding: 36px 48px;
   background: var(--cream);
   background-image:
     radial-gradient(ellipse 65% 55% at 92% 8%, rgba(82,183,136,0.10) 0%, transparent 100%),
@@ -100,9 +99,9 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s1 .ring2 { bottom: -300px; left: -250px; width: 600px; height: 600px; }
 .s1 .logo-area { position: relative; margin-bottom: 0; }
 .s1 .glow { position: absolute; inset: -20px; border-radius: 50%; background: radial-gradient(circle, rgba(82,183,136,0.18), transparent); filter: blur(18px); }
-.s1 img.logo { display: block; width: 200px; height: 200px; object-fit: contain; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; filter: contrast(1.08) saturate(1.1); }
-.s1 h1 { font-size: 96px; font-weight: 900; letter-spacing: -3px; color: var(--green9); margin: 0; }
-.s1 .tagline { font-size: 24px; color: var(--sub); max-width: 620px; line-height: 1.5; margin: 0; }
+.s1 img.logo { display: block; width: 260px; height: 260px; object-fit: contain; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; filter: contrast(1.08) saturate(1.1); }
+.s1 h1 { font-size: 130px; font-weight: 900; letter-spacing: -3px; color: var(--green9); margin: 0; }
+.s1 .tagline { font-size: 34px; color: var(--sub); max-width: 800px; line-height: 1.5; margin: 0; }
 .s1 .partners-bar { display: flex; align-items: center; justify-content: center; width: 100%; }
 
 /* ── S2 Team ── */
@@ -114,8 +113,8 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s2 .photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .s2 .photo-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 52px; font-weight: 900; color: var(--green5); background: linear-gradient(160deg, var(--green1), white); }
 .s2 .info { padding: 14px 18px; }
-.s2 .name { font-size: 30px; font-weight: 800; color: var(--green9); margin-bottom: 4px; }
-.s2 .unit { font-size: 20px; color: var(--muted); line-height: 1.4; }
+.s2 .name { font-size: 42px; font-weight: 800; color: var(--green9); margin-bottom: 6px; }
+.s2 .unit { font-size: 28px; color: var(--muted); line-height: 1.4; }
 .s2 .quote-bar { width: 100%; border-top: 1.5px solid var(--border); padding-top: 14px; margin-top: 14px; text-align: center; }
 
 /* ── S3 Problem ── */
@@ -134,9 +133,9 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 /* ── S4 GHG ── */
 .s4 .scopes { display: flex; gap: 16px; width: 100%; }
 .s4 .scope { border-radius: 18px; padding: 28px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
-.s4 .sn { font-size: 17px; font-weight: 800; letter-spacing: 3px; opacity: 0.75; }
-.s4 .st { font-size: 32px; font-weight: 800; margin-bottom: 2px; }
-.s4 .sd { font-size: 21px; line-height: 1.55; opacity: 0.88; }
+.s4 .sn { font-size: 24px; font-weight: 800; letter-spacing: 3px; opacity: 0.75; }
+.s4 .st { font-size: 44px; font-weight: 800; margin-bottom: 2px; }
+.s4 .sd { font-size: 28px; line-height: 1.55; opacity: 0.88; }
 .s4 .diff { font-size: 15px; font-weight: 700; padding: 5px 12px; border-radius: 99px; display: inline-block; margin-top: 6px; width: fit-content; }
 .s4 .sc1 { background: #c8e6fa; color: #0d3b6e; }
 .s4 .sc1 .diff { background: rgba(13,59,110,0.12); color: #0d3b6e; }
@@ -146,35 +145,35 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s4 .bar-wrap { margin-top: 12px; }
 .s4 .bar-bg { height: 8px; background: rgba(255,255,255,0.15); border-radius: 99px; }
 .s4 .bar-fill { height: 100%; background: var(--green3); border-radius: 99px; width: 80%; }
-.s4 .pct-label { font-size: 38px; font-weight: 900; color: var(--green3); margin-top: 10px; }
+.s4 .pct-label { font-size: 50px; font-weight: 900; color: var(--green3); margin-top: 10px; }
 
 /* ── S5 Global ── */
 .s5 .cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; width: 100%; }
-.s5 .card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 24px 28px; opacity: 0; }
+.s5 .card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 36px 40px; opacity: 0; }
 .s5 .card.revealed { animation: fadeUp 0.45s both; }
-.s5 .year { font-size: 52px; font-weight: 900; color: var(--green5); margin-bottom: 8px; line-height: 1; }
-.s5 .ct { font-size: 22px; color: var(--sub); line-height: 1.6; }
+.s5 .year { font-size: 72px; font-weight: 900; color: var(--green5); margin-bottom: 12px; line-height: 1; }
+.s5 .ct { font-size: 32px; color: var(--sub); line-height: 1.6; }
 .s5 .ct strong { color: var(--green9); }
-.s5 .paris { grid-column: span 3; background: var(--green9); color: white; border: none; display: flex; align-items: center; gap: 20px; padding: 22px 32px; }
-.s5 .paris .icon { font-size: 40px; flex-shrink: 0; }
-.s5 .paris .text { font-size: 24px; font-weight: 800; color: var(--green3); }
+.s5 .paris { grid-column: span 3; background: var(--green9); color: white; border: none; display: flex; align-items: center; gap: 28px; padding: 32px 44px; }
+.s5 .paris .icon { font-size: 56px; flex-shrink: 0; }
+.s5 .paris .text { font-size: 36px; font-weight: 800; color: var(--green3); }
 .s5 .today-card { background: #fef3c7; border-color: #f59e0b; }
 .s5 .today-card .year { color: #92400e; }
 .s5 .today-card .ct { color: #78350f; }
 
 /* ── S6 Before/After ── */
 .s6 { flex-direction: row; padding: 0; gap: 0; align-items: stretch; }
-.s6 .half { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; padding: 80px 52px; }
+.s6 .half { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; padding: 130px 60px 60px; }
 .s6 .before { background: white; border-left: 1px solid var(--border); }
 .s6 .after { background: var(--green9); }
-.s6 .hl { font-size: 26px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 48px; }
+.s6 .hl { font-size: 34px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 48px; }
 .s6 .before .hl { color: #c0392b; }
 .s6 .after .hl { color: var(--green3); }
-.s6 .hh { font-size: 48px; font-weight: 800; margin-bottom: 32px; }
+.s6 .hh { font-size: 62px; font-weight: 800; margin-bottom: 36px; }
 .s6 .before .hh { color: var(--green9); }
 .s6 .after .hh { color: white; }
-.s6 .points { list-style: none; display: flex; flex-direction: column; gap: 20px; }
-.s6 .pt { display: flex; align-items: flex-start; gap: 16px; font-size: 28px; line-height: 1.5; }
+.s6 .points { list-style: none; display: flex; flex-direction: column; gap: 24px; }
+.s6 .pt { display: flex; align-items: flex-start; gap: 16px; font-size: 36px; line-height: 1.5; }
 .s6 .before .pt { color: var(--sub); }
 .s6 .after .pt { color: rgba(255,255,255,0.85); }
 .s6 .pi { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; margin-top: 4px; font-weight: 700; }
@@ -241,52 +240,52 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 
   <div style="display:flex; flex-direction:column; align-items:center; gap:0; width:100%; margin-top:100px;">
     <div class="logo-area">
-      <div style="width:220px; height:220px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; background:white; box-shadow:0 4px 32px rgba(27,67,50,0.15); border:3px solid var(--green3);">
+      <div style="width:280px; height:280px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; background:white; box-shadow:0 4px 32px rgba(27,67,50,0.15); border:3px solid var(--green3);">
         <img class="logo" src="images/logo.png"
              onerror="this.src='https://storage.googleapis.com/green_excal/carbontrack-logo.png'" alt="logo">
       </div>
     </div>
     <h1><span class="green">C</span>arb<span class="green">O</span><sub style="font-size:0.45em;color:var(--green5);">2</sub>nTrack</h1>
-    <div class="partners-bar" style="margin-top:140px; padding: 18px 40px; width:100%; display:flex; align-items:center; justify-content:center; gap:48px; flex-wrap:wrap;">
-      <img src="images/NetiviIsrael.svg.png" alt="נתיבי ישראל" style="height:80px; max-width:180px; object-fit:contain; mix-blend-mode:multiply;">
-      <img src="images/Google_2015_logo.svg.png" alt="Google" style="height:60px; max-width:160px; object-fit:contain; mix-blend-mode:multiply;">
-      <img src="images/Israel_National_Digital_Agency_logo.png" alt="רשות הדיגיטל" style="height:80px; max-width:180px; object-fit:contain; mix-blend-mode:multiply;">
-      <img src="images/sti-logo.webp" alt="STI" style="height:70px; max-width:160px; object-fit:contain; mix-blend-mode:multiply;">
-      <img src="images/yazamut_logo_white.webp" alt="יזמות" style="height:70px; max-width:160px; object-fit:contain; filter: drop-shadow(0 0 2px rgba(160,60,0,0.85)) drop-shadow(0 0 2px rgba(160,60,0,0.85));">
+    <div class="partners-bar" style="margin-top:80px; padding: 18px 40px; width:100%; display:flex; align-items:center; justify-content:center; gap:56px; flex-wrap:wrap;">
+      <img src="images/NetiviIsrael.svg.png" alt="נתיבי ישראל" style="height:100px; max-width:220px; object-fit:contain; mix-blend-mode:multiply;">
+      <img src="images/Google_2015_logo.svg.png" alt="Google" style="height:80px; max-width:200px; object-fit:contain; mix-blend-mode:multiply;">
+      <img src="images/Israel_National_Digital_Agency_logo.png" alt="רשות הדיגיטל" style="height:100px; max-width:220px; object-fit:contain; mix-blend-mode:multiply;">
+      <img src="images/sti-logo.webp" alt="STI" style="height:90px; max-width:200px; object-fit:contain; mix-blend-mode:multiply;">
+      <img src="images/yazamut_logo_white.webp" alt="יזמות" style="height:90px; max-width:200px; object-fit:contain; filter: drop-shadow(0 0 2px rgba(160,60,0,0.85)) drop-shadow(0 0 2px rgba(160,60,0,0.85));">
     </div>
   </div>
 </div>
 
 <!-- ═══ S2: HOOK ═══ -->
 <div class="slide" style="justify-content:center; align-items:center; text-align:center;">
-  <div style="display:flex; flex-direction:column; align-items:center; gap:52px; max-width:1100px; width:100%;">
+  <div style="display:flex; flex-direction:column; align-items:center; gap:64px; max-width:1400px; width:100%;">
 
     <div style="display:flex; align-items:center; justify-content:center; gap:0; width:100%;">
 
-      <div style="display:flex; flex-direction:column; align-items:center; gap:16px; flex:1;">
-        <div style="font-size:72px; line-height:1;">🏗️</div>
-        <div style="font-size:32px; font-weight:800; color:var(--green9);">חומרי בנייה</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:20px; flex:1;">
+        <div style="font-size:100px; line-height:1;">🏗️</div>
+        <div style="font-size:46px; font-weight:800; color:var(--green9);">חומרי בנייה</div>
       </div>
 
-      <div style="font-size:52px; color:var(--green5); font-weight:300; flex-shrink:0; padding:0 8px;">←</div>
+      <div style="font-size:72px; color:var(--green5); font-weight:300; flex-shrink:0; padding:0 8px;">←</div>
 
-      <div style="display:flex; flex-direction:column; align-items:center; gap:16px; flex:1;">
-        <div style="font-size:72px; line-height:1;">☁️</div>
-        <div style="font-size:32px; font-weight:800; color:var(--green9);">פליטות CO₂</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:20px; flex:1;">
+        <div style="font-size:100px; line-height:1;">☁️</div>
+        <div style="font-size:46px; font-weight:800; color:var(--green9);">פליטות CO₂</div>
       </div>
 
-      <div style="font-size:52px; color:var(--green5); font-weight:300; flex-shrink:0; padding:0 8px;">←</div>
+      <div style="font-size:72px; color:var(--green5); font-weight:300; flex-shrink:0; padding:0 8px;">←</div>
 
-      <div style="display:flex; flex-direction:column; align-items:center; gap:16px; flex:1;">
-        <div style="font-size:72px; line-height:1;">🌍</div>
-        <div style="font-size:32px; font-weight:800; color:var(--green9);">פגיעה באטמוספירה</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:20px; flex:1;">
+        <div style="font-size:100px; line-height:1;">🌍</div>
+        <div style="font-size:46px; font-weight:800; color:var(--green9);">פגיעה באטמוספירה</div>
       </div>
 
     </div>
 
-    <div style="width:120px; height:2px; background:var(--border); border-radius:2px;"></div>
+    <div style="width:140px; height:2px; background:var(--border); border-radius:2px;"></div>
 
-    <div style="font-size:72px; font-weight:900; color:var(--green9); line-height:1.2; letter-spacing:-1px;">
+    <div style="font-size:100px; font-weight:900; color:var(--green9); line-height:1.2; letter-spacing:-1px;">
       אי אפשר לצמצם<br>את מה שלא מודדים
     </div>
 
@@ -362,9 +361,9 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
   <div class="fact-infra">
     <div style="font-size:52px; line-height:1; flex-shrink:0;">🏗️</div>
     <div style="text-align:right;">
-      <div style="font-size:40px; font-weight:900; color:var(--green3); direction:ltr;">יותר מ-10%</div>
-      <div style="font-size:18px; color:rgba(255,255,255,0.85); margin-top:6px;">מסך הפליטות הישראליות מגיע מענף התשתיות בלבד</div>
-      <div style="font-size:15px; color:var(--green3); margin-top:8px; font-weight:700;">← זה הנתח שאנחנו באים לטפל בו</div>
+      <div style="font-size:80px; font-weight:900; color:var(--green3); direction:ltr;">יותר מ-10%</div>
+      <div style="font-size:32px; color:rgba(255,255,255,0.85); margin-top:10px;">מסך הפליטות הישראליות מגיע מענף התשתיות בלבד</div>
+      <div style="font-size:26px; color:var(--green3); margin-top:10px; font-weight:700;">← זה הנתח שאנחנו באים לטפל בו</div>
     </div>
   </div>
 </div>
@@ -389,21 +388,21 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
           <div class="sd">חשמל וחום נרכש מספקים.</div>
         </div>
       </div>
-      <div style="font-size:26px; font-weight:800; color:#111; text-align:center;">✓ קל למדידה</div>
+      <div style="font-size:34px; font-weight:800; color:#111; text-align:center;">✓ קל למדידה</div>
     </div>
 
     <!-- Scope 3 -->
     <div style="display:flex; flex-direction:column; gap:14px; flex:2;">
       <div class="scope sc3" style="flex:1;">
         <div class="sn" style="color:var(--green3)">SCOPE 3 — הבעיה האמיתית</div>
-        <div class="st" style="color:white;font-size:32px">שרשרת האספקה</div>
+        <div class="st" style="color:white;font-size:44px">שרשרת האספקה</div>
         <div class="sd" style="color:rgba(255,255,255,0.8)">ייצור חומרים, הובלה, קבלני משנה — וזה בדיוק מה שאנחנו פותרים.</div>
         <div class="bar-wrap">
           <div class="pct-label">70–90% מסך הפליטות</div>
           <div class="bar-bg"><div class="bar-fill"></div></div>
         </div>
       </div>
-      <div style="font-size:26px; font-weight:800; color:#111; text-align:center;">✗ קשה למדידה</div>
+      <div style="font-size:34px; font-weight:800; color:#111; text-align:center;">✗ קשה למדידה</div>
     </div>
 
   </div>
@@ -430,8 +429,8 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
     <div class="hl">❌ ללא CarbonTrack</div>
     <div class="hh">המצב היום</div>
     <div style="text-align:center; margin:0 0 32px;">
-      <div style="font-size:150px; font-weight:900; color:#e07b7b; line-height:1;">0</div>
-      <div style="font-size:22px; font-weight:700; color:var(--sub);">חברות תשתית ישראליות מחשבות Scope 3</div>
+      <div style="font-size:200px; font-weight:900; color:#e07b7b; line-height:1;">0</div>
+      <div style="font-size:30px; font-weight:700; color:var(--sub);">חברות תשתית ישראליות מחשבות Scope 3</div>
     </div>
     <ul class="points">
       <li class="pt"><div class="pi">✗</div>חברות בינלאומיות — לא מותאמות לשוק התשתיות הישראלי</li>
@@ -460,15 +459,15 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 </div>
 
 <!-- ═══ WHAT IF ═══ -->
-<div class="slide" style="padding:40px;justify-content:center;align-items:center;background:var(--cream);">
-  <div class="label" style="align-self:flex-start; margin-bottom:10px;">סימולטור What-If</div>
-  <img src="images/WHAT-IF.png" style="width:100%;height:auto;max-height:80vh;object-fit:contain;border-radius:16px;box-shadow:0 12px 48px rgba(27,67,50,0.18);">
+<div class="slide" style="padding:16px 20px;justify-content:center;align-items:center;background:var(--cream);">
+  <div class="label" style="align-self:flex-start; margin-bottom:6px;">סימולטור What-If</div>
+  <img src="images/WHAT-IF.png" style="width:100%;height:auto;max-height:95vh;object-fit:contain;border-radius:16px;box-shadow:0 12px 48px rgba(27,67,50,0.18);">
 </div>
 
 <!-- ═══ AI HELPER ═══ -->
-<div class="slide" style="padding:40px;justify-content:center;align-items:center;background:var(--cream);">
-  <div class="label" style="align-self:flex-start; margin-bottom:10px;">עוזר AI</div>
-  <img src="images/AI.png" style="width:100%;height:auto;max-height:80vh;object-fit:contain;border-radius:16px;box-shadow:0 12px 48px rgba(27,67,50,0.18);">
+<div class="slide" style="padding:16px 20px;justify-content:center;align-items:center;background:var(--cream);">
+  <div class="label" style="align-self:flex-start; margin-bottom:6px;">עוזר AI</div>
+  <img src="images/AI.png" style="width:100%;height:auto;max-height:95vh;object-fit:contain;border-radius:16px;box-shadow:0 12px 48px rgba(27,67,50,0.18);">
 </div>
 
 <!-- ═══ S8: HOW IT WORKS ═══ -->
@@ -705,10 +704,10 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
     </div>
     <div style="flex-shrink:0;background:white;border-radius:24px;padding:28px;border:2px solid var(--border);box-shadow:0 8px 32px rgba(27,67,50,0.10);text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px">
       <div style="font-size:13px;font-weight:800;letter-spacing:3px;color:var(--green9)">SCAN ME</div>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https%3A%2F%2Fdashboard-140293665526.europe-west1.run.app&color=1b4332&bgcolor=ffffff&qzone=1"
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https%3A%2F%2Fshirazigdon.github.io%2Fcarbontrack%2Fpresentation.html&color=1b4332&bgcolor=ffffff&qzone=1"
            style="width:280px;height:280px;border-radius:8px" alt="QR Code">
-      <div style="margin-top:10px; font-size:20px; color:var(--green9); font-weight:700; text-align:center;">
-        שם משתמש: example@netivei.co.il<br>סיסמה: 123456
+      <div style="margin-top:10px; font-size:18px; color:var(--green9); font-weight:700; text-align:center; direction:ltr;">
+        shirazigdon.github.io/carbontrack
       </div>
     </div>
   </div>
@@ -798,31 +797,25 @@ function go(d) {
   goTo(cur + d);
 }
 
-document.addEventListener('keydown', e => {
-  if (e.key==='ArrowLeft'||e.key==='ArrowDown') go(1);
-  if (e.key==='ArrowRight'||e.key==='ArrowUp') go(-1);
-});
-goTo(0);
+let zoomFactor = 1.0;
 
-// Scale presentation to fit any screen
 function resizeDeck() {
   const deck = document.querySelector('.deck');
-  const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-  deck.style.transform = `translate(-50%, -50%) scale(${scale})`;
+  const base = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+  deck.style.transform = `translate(-50%, -50%) scale(${base * zoomFactor})`;
 }
 window.addEventListener('resize', resizeDeck);
 resizeDeck();
 
-// Mobile Swipe Support
-let touchStartX = 0;
-document.addEventListener('touchstart', e => {
-  touchStartX = e.changedTouches[0].screenX;
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowLeft'||e.key==='ArrowDown') go(1);
+  if (e.key==='ArrowRight'||e.key==='ArrowUp') go(-1);
+  // Zoom in/out with + / -
+  if (e.key==='+' || e.key==='=') { zoomFactor = Math.min(zoomFactor + 0.05, 2.0); resizeDeck(); }
+  if (e.key==='-') { zoomFactor = Math.max(zoomFactor - 0.05, 0.4); resizeDeck(); }
+  if (e.key==='0') { zoomFactor = 1.0; resizeDeck(); }
 });
-document.addEventListener('touchend', e => {
-  const touchEndX = e.changedTouches[0].screenX;
-  if (touchEndX < touchStartX - 50) go(1); // Swipe left -> Next
-  if (touchEndX > touchStartX + 50) go(-1); // Swipe right -> Prev
-});
+goTo(0);
 </script>
 </body>
 </html>
