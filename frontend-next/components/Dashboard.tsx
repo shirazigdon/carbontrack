@@ -34,6 +34,7 @@ interface Settings {
 export function Dashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [emissions, setEmissions] = useState<EmissionRow[]>([]);
   const [review, setReview] = useState<ReviewRow[]>([]);
   const [projects, setProjects] = useState<string[]>([]);
@@ -108,49 +109,72 @@ export function Dashboard() {
   const meta = TAB_META[activeTab];
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#f7fbf7' }}>
-      <Sidebar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        reviewCount={review.length}
-        filters={{
-          projects: allProjects,
-          selectedProject,
-          contractors: allContractors,
-          selectedContractor,
-          regions,
-          selectedRegions,
-          years,
-          selectedYear,
-          reliabilityThreshold,
-          onProjectChange: setSelectedProject,
-          onContractorChange: setSelectedContractor,
-          onRegionsChange: setSelectedRegions,
-          onYearChange: setSelectedYear,
-          onReliabilityChange: setReliabilityThreshold,
-        }}
-      />
+    <div className="flex h-screen overflow-hidden relative" style={{ background: '#f7fbf7' }}>
+      
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar wrapper */}
+      <div className={`
+        fixed inset-y-0 right-0 z-50 transform transition-transform duration-300 ease-in-out
+        md:relative md:translate-x-0
+        ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}
+      `}>
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={(tab) => { setActiveTab(tab); setIsSidebarOpen(false); }}
+          reviewCount={review.length}
+          filters={{
+            projects: allProjects,
+            selectedProject,
+            contractors: allContractors,
+            selectedContractor,
+            regions,
+            selectedRegions,
+            years,
+            selectedYear,
+            reliabilityThreshold,
+            onProjectChange: setSelectedProject,
+            onContractorChange: setSelectedContractor,
+            onRegionsChange: setSelectedRegions,
+            onYearChange: setSelectedYear,
+            onReliabilityChange: setReliabilityThreshold,
+          }}
+        />
+      </div>
 
       <main className="flex-1 overflow-y-auto flex flex-col min-w-0">
         {/* Top header */}
-        <header className="sticky top-0 z-10 border-b px-6 py-0 flex-shrink-0" style={{ background: 'rgba(247,251,247,0.9)', backdropFilter: 'blur(14px)', borderColor: '#b7e4c7' }}>
+        <header className="sticky top-0 z-10 border-b px-4 md:px-6 py-0 flex-shrink-0" style={{ background: 'rgba(247,251,247,0.9)', backdropFilter: 'blur(14px)', borderColor: '#b7e4c7' }}>
           <div className="flex items-center justify-between h-14">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
+              <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="md:hidden p-1.5 -mr-1.5 text-slate-600 rounded-lg hover:bg-slate-100"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+              </button>
               <div>
                 <div className="font-semibold text-sm" style={{ color: '#1b4332' }}>{meta.label}</div>
                 <div className="text-[11px] text-slate-400 leading-tight">{meta.desc}</div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
               {loading && (
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-400">
                   <div className="w-3 h-3 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin" />
                   טוען...
                 </div>
               )}
-              <div className="flex items-center gap-1.5 text-xs rounded-full px-3 py-1" style={{ color: '#4a7c59', background: '#d8f3e3', border: '1px solid #b7e4c7' }}>
+              <div className="flex items-center gap-1.5 text-xs rounded-full px-2 md:px-3 py-1" style={{ color: '#4a7c59', background: '#d8f3e3', border: '1px solid #b7e4c7' }}>
                 <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: '#52b788' }} />
-                {emissions.length.toLocaleString()} רשומות
+                <span className="hidden md:inline">{emissions.length.toLocaleString()} רשומות</span>
+                <span className="md:hidden">{emissions.length}</span>
               </div>
               <button onClick={loadData}
                 className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all text-sm">
