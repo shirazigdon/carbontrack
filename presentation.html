@@ -768,7 +768,7 @@ const videoSlideIdx = demoVideo ? Array.from(slides).findIndex(s => s.contains(d
 
 if (demoVideo) {
   demoVideo.addEventListener('ended', () => {
-    if (document.fullscreenElement) document.exitFullscreen();
+    // if (document.fullscreenElement) document.exitFullscreen();
     // goTo(cur + 1);
   });
 }
