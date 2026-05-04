@@ -23,13 +23,25 @@
 
 body {
   font-family: 'Rubik', sans-serif;
-  background: var(--cream);
+  background: #111;
   color: var(--text);
   overflow: hidden;
   direction: rtl;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
 }
 
-.deck { width: 100vw; height: 100vh; position: relative; }
+.deck {
+  width: 1920px;
+  height: 1080px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: center center;
+  background: var(--cream);
+  overflow: hidden;
+}
 
 .slide {
   position: absolute; inset: 0;
@@ -791,6 +803,26 @@ document.addEventListener('keydown', e => {
   if (e.key==='ArrowRight'||e.key==='ArrowUp') go(-1);
 });
 goTo(0);
+
+// Scale presentation to fit any screen
+function resizeDeck() {
+  const deck = document.querySelector('.deck');
+  const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  deck.style.transform = `translate(-50%, -50%) scale(${scale})`;
+}
+window.addEventListener('resize', resizeDeck);
+resizeDeck();
+
+// Mobile Swipe Support
+let touchStartX = 0;
+document.addEventListener('touchstart', e => {
+  touchStartX = e.changedTouches[0].screenX;
+});
+document.addEventListener('touchend', e => {
+  const touchEndX = e.changedTouches[0].screenX;
+  if (touchEndX < touchStartX - 50) go(1); // Swipe left -> Next
+  if (touchEndX > touchStartX + 50) go(-1); // Swipe right -> Prev
+});
 </script>
 </body>
 </html>
