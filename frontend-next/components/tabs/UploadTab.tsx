@@ -164,7 +164,7 @@ export function UploadTab({ userEmail, settings }: Props) {
           <div>
             <label className="text-xs text-muted-fg uppercase tracking-wide mb-1 block">שם הפרויקט *</label>
             <input value={project} onChange={e => setProject(e.target.value)}
-              placeholder="לדוגמה: כביש 6 - מקטע צפון"
+              placeholder="לדוגמה: כביש 65 - מקטע צפון"
               className="w-full text-sm border border-border rounded-lg px-3 py-2.5 bg-muted focus:outline-none focus:ring-2 focus:ring-primary/40" />
           </div>
           <div>
