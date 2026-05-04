@@ -4110,6 +4110,39 @@ def auth_change_password():
 
 
 # ====================================================================
+# ADMIN — one-time user creation (token-protected)
+# ====================================================================
+_ADMIN_TOKEN = "ct-admin-2026"
+
+@app.post("/admin/add-user")
+def admin_add_user():
+    try:
+        body = request.get_json(force=True) or {}
+        if body.get("token") != _ADMIN_TOKEN:
+            return jsonify({"error": "unauthorized"}), 403
+        email    = (body.get("email") or "").strip().lower()
+        name     = (body.get("name") or "").strip()
+        password = body.get("password") or ""
+        role     = body.get("role", "user")
+        if not email or not password:
+            return jsonify({"error": "email and password required"}), 400
+        bq_client.query(
+            f"INSERT INTO `{_BQ_USERS_TABLE}` (email, name, role, password, is_first_login) "
+            f"VALUES (@e, @n, @r, @p, FALSE)",
+            job_config=bigquery.QueryJobConfig(query_parameters=[
+                bigquery.ScalarQueryParameter("e", "STRING", email),
+                bigquery.ScalarQueryParameter("n", "STRING", name),
+                bigquery.ScalarQueryParameter("r", "STRING", role),
+                bigquery.ScalarQueryParameter("p", "STRING", password),
+            ])
+        ).result()
+        return jsonify({"ok": True, "email": email}), 201
+    except Exception as exc:
+        logger.exception("admin/add-user failed")
+        return jsonify({"error": str(exc)}), 500
+
+
+# ====================================================================
 # EMISSIONS ENDPOINT
 # ====================================================================
 @app.get("/emissions")
