@@ -122,7 +122,7 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 .s3 .problem-label { position: absolute; top: 44px; right: 60px; font-size: 84px; font-weight: 900; letter-spacing: -3px; color: var(--green5); direction: rtl; line-height: 1; pointer-events: none; display: flex; align-items: center; gap: 16px; }
 .s3 .problem-label::before { content: ''; display: block; width: 44px; height: 5px; background: var(--green5); border-radius: 2px; flex-shrink: 0; }
 .s3 .big { font-size: 148px; font-weight: 900; line-height: 1; letter-spacing: -3px; margin: 0; background: linear-gradient(135deg, #c07a2a, #e07b7b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.s3 .stat-sub { font-size: 26px; color: var(--sub); margin: 6px 0 32px; font-weight: 600; letter-spacing: -0.5px; }
+.s3 .stat-sub { font-size: 46px; color: var(--sub); margin: 6px 0 32px; font-weight: 600; letter-spacing: -0.5px; }
 .s3 .facts-top { display: flex; gap: 20px; width: 100%; margin-bottom: 18px; }
 .s3 .fact { background: white; border: 2px solid var(--border); border-radius: 20px; padding: 28px 32px; text-align: center; flex: 1; }
 .s3 .fn { font-size: 42px; font-weight: 900; color: var(--green9); }
@@ -359,7 +359,7 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
     </div>
   </div>
   <div class="fact-infra">
-    <div style="font-size:52px; line-height:1; flex-shrink:0;">🏗️</div>
+    <div style="font-size:90px; line-height:1; flex-shrink:0;">🏗️</div>
     <div style="text-align:right;">
       <div style="font-size:80px; font-weight:900; color:var(--green3); direction:ltr;">יותר מ-10%</div>
       <div style="font-size:32px; color:rgba(255,255,255,0.85); margin-top:10px;">מסך הפליטות הישראליות מגיע מענף התשתיות בלבד</div>
@@ -477,31 +477,35 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
   <div style="display:flex; gap:24px; width:100%; align-items:center; justify-content:center;">
 
     <!-- Step 1: BoQ -->
-    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 28px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; aspect-ratio:1/1;">
-      <div style="font-size:60px; line-height:1;">📂</div>
-      <div style="font-size:28px; font-weight:800; color:var(--green9); text-align:center;">העלאת כתב כמויות</div>
-      <div style="flex:1; display:flex; justify-content:center; align-items:center; margin-top:10px;">
-        <img src="images/papers.jpg" style="max-height:140px; width:auto; mix-blend-mode:multiply; object-fit:contain;" alt="Stack of papers">
+    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 28px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:16px; aspect-ratio:1/1;">
+      <div style="height:120px; display:flex; align-items:center; justify-content:center;">
+        <img src="images/papers.jpg" style="max-height:120px; width:auto; mix-blend-mode:multiply; object-fit:contain;" alt="Stack of papers">
       </div>
+      <div style="font-size:38px; font-weight:900; color:#000; text-align:center;">העלאת כתב כמויות</div>
+      <div style="font-size:26px; font-weight:600; color:#000; text-align:center; line-height:1.5;">מסמך המפרט את כלל העבודות והחומרים הנדרשים למיזם.</div>
     </div>
 
     <div style="display:flex; align-items:center; font-size:44px; color:var(--green5); flex-shrink:0;">←</div>
 
     <!-- Step 2: Calculation -->
-    <div style="flex:1; background:var(--green9); border-radius:22px; padding:32px 28px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; aspect-ratio:1/1;">
-      <div style="font-size:60px; line-height:1;">🔢</div>
-      <div style="font-size:28px; font-weight:800; color:white; text-align:center;">חישוב פליטה</div>
-      <div style="font-size:21px; color:rgba(255,255,255,0.75); text-align:center; line-height:1.5;">ע"י מקדמי המרה בינלאומיים</div>
+    <div style="flex:1; background:var(--green9); border-radius:22px; padding:32px 28px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:16px; aspect-ratio:1/1;">
+      <div style="height:120px; display:flex; align-items:center; justify-content:center;">
+        <div style="font-size:80px; line-height:1;">🔢</div>
+      </div>
+      <div style="font-size:38px; font-weight:900; color:white; text-align:center;">חישוב פליטה</div>
+      <div style="font-size:26px; font-weight:600; color:rgba(255,255,255,0.85); text-align:center; line-height:1.5;">ע"י מקדמי המרה בינלאומיים</div>
       <div style="background:rgba(149,213,178,0.18); border:1.5px solid var(--green3); border-radius:8px; padding:8px 16px; font-size:17px; font-weight:700; color:var(--green3);">✓ GHG Protocol Approved</div>
     </div>
 
     <div style="display:flex; align-items:center; font-size:44px; color:var(--green5); flex-shrink:0;">←</div>
 
     <!-- Step 3: Dashboard -->
-    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 28px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; aspect-ratio:1/1;">
-      <div style="font-size:60px; line-height:1;">📊</div>
-      <div style="font-size:28px; font-weight:800; color:var(--green9); text-align:center;">דאשבורד נתונים</div>
-      <div style="font-size:21px; color:var(--muted); text-align:center; line-height:1.5;">ניתוח חי לפי פרויקט, חומר וקבלן</div>
+    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 28px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:16px; aspect-ratio:1/1;">
+      <div style="height:120px; display:flex; align-items:center; justify-content:center;">
+        <div style="font-size:80px; line-height:1;">📊</div>
+      </div>
+      <div style="font-size:38px; font-weight:900; color:#000; text-align:center;">דאשבורד נתונים</div>
+      <div style="font-size:26px; font-weight:600; color:#000; text-align:center; line-height:1.5;">ניתוח חי לפי פרויקט, חומר וקבלן</div>
     </div>
 
   </div>
@@ -518,13 +522,12 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
     <div class="arr">←</div>
     <div class="step"><div class="si">⚖️</div><div class="st">המרת משקל</div><div class="sd">קטלוג חומרים</div></div>
     <div class="arr">←</div>
-    <div class="step"><div class="si">🔢</div><div class="st">מקדמי פליטה</div><div class="sd">Climatiq API</div></div>
+    <div class="step"><div class="si">🔢</div><div class="st">חישוב פליטה</div><div class="sd" style="visibility:hidden;">placeholder</div></div>
     <div class="arr">←</div>
     <div class="step"><div class="si">📊</div><div class="st">דוח BI</div><div class="sd">דאשבורד חי</div></div>
   </div>
   <div class="notes">
-    <div class="note"><div class="nt">🔄 Human-in-the-Loop</div><div class="nd">AI לא בטוח ← הפניה לאדם ← תיקון ← המערכת לומדת</div></div>
-    <div class="note"><div class="nt">📈 Self-Learning</div><div class="nd">משתפרת בכל קובץ שנכנס</div></div>
+<div class="note"><div class="nt">📈 Self-Learning</div><div class="nd">משתפרת בכל קובץ שנכנס</div></div>
     <div class="note"><div class="nt">⚡ ביצועים</div><div class="nd">אלפי שורות בדקות, progress בזמן אמת</div></div>
   </div>
 </div>
@@ -597,7 +600,7 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 
       <!-- PoC: UP (rightmost in RTL) -->
       <div class="ms done up">
-        <div class="ms-top"><div class="md">ינו׳ 2026</div><div class="mt">PoC ראשוני</div><div class="ms-desc">אלגוריתם + Excel parser</div></div>
+        <div class="ms-top"><div class="md">ינו׳ 2026</div><div class="mt">PoC ראשוני</div></div>
         <div class="dot">✅</div>
         <div class="ms-bot"></div>
       </div>
@@ -606,12 +609,12 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
       <div class="ms done dn">
         <div class="ms-top"></div>
         <div class="dot">✅</div>
-        <div class="ms-bot"><div class="md">מרץ 2026</div><div class="mt">AI Integration</div><div class="ms-desc">Vertex AI + BigQuery</div></div>
+        <div class="ms-bot"><div class="md">מרץ 2026</div><div class="mt">AI Integration</div></div>
       </div>
 
       <!-- Dashboard: UP -->
       <div class="ms done up">
-        <div class="ms-top"><div class="md">אפר׳ 2026</div><div class="mt">Dashboard MVP</div><div class="ms-desc">ממשק · סקירה · סימולטור</div></div>
+        <div class="ms-top"><div class="md">אפר׳ 2026</div><div class="mt">Dashboard MVP</div></div>
         <div class="dot">✅</div>
         <div class="ms-bot"></div>
       </div>
@@ -620,12 +623,12 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
       <div class="ms curr dn">
         <div class="ms-top"><div class="today-badge">📍 היום</div></div>
         <div class="dot">🔧</div>
-        <div class="ms-bot"><div class="md">מאי 2026</div><div class="mt">Pilot נתיבי ישראל</div><div class="ms-desc">נתונים אמיתיים</div></div>
+        <div class="ms-bot"><div class="md">מאי 2026</div><div class="mt">Pilot נתיבי ישראל</div></div>
       </div>
 
       <!-- הטמעה: UP -->
       <div class="ms future up">
-        <div class="ms-top"><div class="md">2026</div><div class="mt">הטמעה בנתיבי ישראל</div><div class="ms-desc">אינטגרציה מלאה</div></div>
+        <div class="ms-top"><div class="md">2026</div><div class="mt">הטמעה בנתיבי ישראל</div></div>
         <div class="dot">⚙️</div>
         <div class="ms-bot"></div>
       </div>
@@ -706,8 +709,8 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
       <div style="font-size:13px;font-weight:800;letter-spacing:3px;color:var(--green9)">SCAN ME</div>
       <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https%3A%2F%2Fshirazigdon.github.io%2Fcarbontrack%2Fpresentation.html&color=1b4332&bgcolor=ffffff&qzone=1"
            style="width:280px;height:280px;border-radius:8px" alt="QR Code">
-      <div style="margin-top:10px; font-size:18px; color:var(--green9); font-weight:700; text-align:center; direction:ltr;">
-        shirazigdon.github.io/carbontrack
+      <div style="margin-top:10px; font-size:16px; color:var(--green9); font-weight:700; text-align:center; line-height:1.7;">
+        שם משתמש: example@netivei.co.il<br>סיסמה: 123456
       </div>
     </div>
   </div>
