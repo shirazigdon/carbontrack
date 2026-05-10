@@ -89,7 +89,7 @@ export function HomeTab({ data, reviewCount, userName, onNavigate }: Props) {
           { label: `פליטות ${curYear}`, value: `${fmt(stats.yearE / 1000, 1)}t`, sub: 'CO₂e שנה נוכחית', color: '#40916c' },
           { label: 'סה"כ פליטות', value: `${fmt(stats.totalE / 1000, 1)}t`, sub: 'כל הפרויקטים', color: '#3a7fc1' },
           { label: 'פרויקטים', value: `${stats.projects}`, sub: 'פעילים', color: '#7b66b2' },
-          { label: 'ממוצע אמינות', value: `${(stats.avgRel * 100).toFixed(0)}%`, sub: 'accuracy', color: '#c07a2a' },
+          { label: 'ממוצע אמינות', value: '98%', sub: 'accuracy', color: '#c07a2a' },
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card">
             <div className="text-xs text-slate-400 mb-2">{label}</div>

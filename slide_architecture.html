@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarbonTrack — ארכיטקטורת המערכת</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0d1f15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .slide {
+    width: 1280px;
+    min-height: 720px;
+    background: linear-gradient(145deg, #0f2419 0%, #132e1e 60%, #0a1a10 100%);
+    border-radius: 20px;
+    padding: 52px 60px 44px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 40px 120px rgba(0,0,0,0.6);
+  }
+
+  /* background decoration */
+  .slide::before {
+    content: '';
+    position: absolute;
+    top: -180px; right: -180px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(82,183,136,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .slide::after {
+    content: '';
+    position: absolute;
+    bottom: -120px; left: -120px;
+    width: 380px; height: 380px;
+    background: radial-gradient(circle, rgba(52,211,153,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* header */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 44px;
+  }
+  .logo-mark {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, #52b788, #2d6a4f);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 16px rgba(82,183,136,0.35);
+    flex-shrink: 0;
+  }
+  .header-text { text-align: right; }
+  .slide-title {
+    font-size: 30px;
+    font-weight: 700;
+    color: #e8f5ee;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+  .slide-subtitle {
+    font-size: 14px;
+    color: #52b788;
+    margin-top: 4px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* steps row */
+  .steps {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+
+  /* arrow between steps */
+  .step:not(:last-child)::after {
+    content: '→';
+    position: absolute;
+    left: -14px;
+    top: 52px;
+    font-size: 22px;
+    color: #52b788;
+    opacity: 0.5;
+    z-index: 2;
+  }
+
+  .step-icon-wrap {
+    width: 80px; height: 80px;
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 34px;
+    margin-bottom: 16px;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .step-number {
+    position: absolute;
+    top: -8px; right: -8px;
+    width: 22px; height: 22px;
+    background: #52b788;
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0d1f15;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .step-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(82,183,136,0.18);
+    border-radius: 16px;
+    padding: 20px 14px 18px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.2s;
+    min-height: 230px;
+  }
+
+  .step-label {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #e8f5ee;
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .step-desc {
+    font-size: 11.5px;
+    color: #7ec8a0;
+    line-height: 1.55;
+    flex: 1;
+  }
+
+  .step-tag {
+    margin-top: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+
+  /* colour themes per step */
+  .s1 .step-icon-wrap { background: rgba(59,130,246,0.15); border: 1.5px solid rgba(59,130,246,0.3); }
+  .s1 .step-number   { background: #3b82f6; color: #fff; }
+  .s1 .step-tag      { background: rgba(59,130,246,0.15); color: #7dd3fc; border: 1px solid rgba(59,130,246,0.25); }
+
+  .s2 .step-icon-wrap { background: rgba(168,85,247,0.15); border: 1.5px solid rgba(168,85,247,0.3); }
+  .s2 .step-number   { background: #a855f7; color: #fff; }
+  .s2 .step-tag      { background: rgba(168,85,247,0.15); color: #d8b4fe; border: 1px solid rgba(168,85,247,0.25); }
+
+  .s3 .step-icon-wrap { background: rgba(251,146,60,0.15); border: 1.5px solid rgba(251,146,60,0.3); }
+  .s3 .step-number   { background: #f97316; color: #fff; }
+  .s3 .step-tag      { background: rgba(251,146,60,0.15); color: #fdba74; border: 1px solid rgba(251,146,60,0.25); }
+
+  .s4 .step-icon-wrap { background: rgba(16,185,129,0.15); border: 1.5px solid rgba(16,185,129,0.3); }
+  .s4 .step-number   { background: #10b981; color: #fff; }
+  .s4 .step-tag      { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.25); }
+
+  .s5 .step-icon-wrap { background: rgba(251,191,36,0.15); border: 1.5px solid rgba(251,191,36,0.3); }
+  .s5 .step-number   { background: #f59e0b; color: #000; }
+  .s5 .step-tag      { background: rgba(251,191,36,0.15); color: #fde68a; border: 1px solid rgba(251,191,36,0.25); }
+
+  .s6 .step-icon-wrap { background: rgba(236,72,153,0.15); border: 1.5px solid rgba(236,72,153,0.3); }
+  .s6 .step-number   { background: #ec4899; color: #fff; }
+  .s6 .step-tag      { background: rgba(236,72,153,0.15); color: #f9a8d4; border: 1px solid rgba(236,72,153,0.25); }
+
+  /* bottom bar */
+  .bottom-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(82,183,136,0.15);
+  }
+  .tech-pills {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .pill {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 4px 11px;
+    border-radius: 20px;
+    background: rgba(82,183,136,0.1);
+    color: #7ec8a0;
+    border: 1px solid rgba(82,183,136,0.2);
+    letter-spacing: 0.3px;
+  }
+  .scope-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #52b788;
+    background: rgba(82,183,136,0.1);
+    border: 1px solid rgba(82,183,136,0.3);
+    border-radius: 8px;
+    padding: 6px 14px;
+    letter-spacing: 0.3px;
+  }
+</style>
+</head>
+<body>
+<div class="slide">
+
+  <div class="header">
+    <div class="logo-mark">🌿</div>
+    <div class="header-text">
+      <div class="slide-title">איך המערכת עובדת — מקובץ לתוצאה</div>
+      <div class="slide-subtitle">CarbonTrack · Embodied Carbon Calculation Pipeline</div>
+    </div>
+  </div>
+
+  <div class="steps">
+
+    <!-- Step 1 -->
+    <div class="step s1">
+      <div class="step-card">
+        <div class="step-icon-wrap">
+          📂
+          <div class="step-number">1</div>
+        </div>
+        <div class="step-label">העלאת קובץ BOQ</div>
+        <div class="step-desc">
+          קובץ Excel או CSV עם כתב הכמויות של הפרויקט מועלה למערכת דרך ממשק הווב
+        </div>
+        <div class="step-tag">Excel / CSV · GCS</div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step s2">
+      <div class="step-card">
+        <div class="step-icon-wrap">
+          🤖
+          <div class="step-number">2</div>
+        </div>
+        <div class="step-label">סיווג חומרים ב-AI</div>
+        <div class="step-desc">
+          שני מהנדסי AI עצמאיים (Vertex AI) מזהים את החומר ומסווגים לקטגוריה — בטון, פלדה, אספלט, ועוד
+        </div>
+        <div class="step-tag">Vertex AI · Dual-Engineer</div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step s3">
+      <div class="step-card">
+        <div class="step-icon-wrap">
+          ⚖️
+          <div class="step-number">3</div>
+        </div>
+        <div class="step-label">המרת כמות למשקל</div>
+        <div class="step-desc">
+          כמויות ביחידות שונות (מ"ר, מ"א, יח') מומרות לק"ג לפי כללי הנדסה ומסד נתוני חומרים
+        </div>
+        <div class="step-tag">UOM Normalization · kg</div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step s4">
+      <div class="step-card">
+        <div class="step-icon-wrap">
+          🌍
+          <div class="step-number">4</div>
+        </div>
+        <div class="step-label">חישוב פליטות</div>
+        <div class="step-desc">
+          משקל × מקדם פליטה מ-Climatiq API או ICE DB v3.0 נותן את תוצאת CO₂e לפי Scope 3
+        </div>
+        <div class="step-tag">Climatiq · ICE DB v3.0</div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step s5">
+      <div class="step-card">
+        <div class="step-icon-wrap">
+          🔍
+          <div class="step-number">5</div>
+        </div>
+        <div class="step-label">בקרת איכות חכמה</div>
+        <div class="step-desc">
+          שורות עם ציון אמינות נמוך נשלחות לתור סקירה ידנית — הגורם האנושי מאמת ומתקן
+        </div>
+        <div class="step-tag">Review Queue · Reliability Score</div>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div class="step s6">
+      <div class="step-card">
+        <div class="step-icon-wrap">
+          📊
+          <div class="step-number">6</div>
+        </div>
+        <div class="step-label">דאשבורד ולמידה</div>
+        <div class="step-desc">
+          תוצאות נשמרות ב-BigQuery, מוצגות בדאשבורד אינטראקטיבי ומשפרות את הסיווג בהרצה הבאה
+        </div>
+        <div class="step-tag">BigQuery · Next.js Dashboard</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-bar">
+    <div class="tech-pills">
+      <span class="pill">Python · Flask</span>
+      <span class="pill">Next.js 14</span>
+      <span class="pill">Google Cloud Run</span>
+      <span class="pill">BigQuery</span>
+      <span class="pill">Vertex AI</span>
+      <span class="pill">Climatiq API</span>
+      <span class="pill">ICE DB v3.0</span>
+    </div>
+    <div class="scope-badge">GHG Protocol · Scope 3 Category 1</div>
+  </div>
+
+</div>
+</body>
+</html>

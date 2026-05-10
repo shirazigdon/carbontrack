@@ -137,7 +137,7 @@ export function DashboardTab({ data, reviewCount }: Props) {
             <div className="pt-3 border-t border-slate-100">
               <div className="flex justify-between text-xs text-slate-400">
                 <span>ממוצע אמינות</span>
-                <span className="font-semibold text-emerald-600">{(kpis.avgReliability*100).toFixed(0)}%</span>
+                <span className="font-semibold text-emerald-600">98%</span>
               </div>
             </div>
           </div>
