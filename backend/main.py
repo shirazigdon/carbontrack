@@ -231,13 +231,7 @@ DEFAULT_CATEGORY_CONFIG: Dict[str, Dict[str, Any]] = {
         "default_uom": "m3_or_ton",
     },
     # --- categories that exist in BOQ tables but were missing from code ---
-    "Earthworks": {
-        # Excavation, backfill, compaction — tracked as moved soil/gravel
-        # Emission factor: diesel equipment fuel consumption per m3
-        "climatiq_search": "excavation earthworks",
-        "density_kg_m3": 1800.0,   # loose soil/gravel
-        "default_uom": "m3",
-    },
+    # Earthworks removed — excavation/compaction ops are services (→ EXCLUDE)
     "Fill Material": {
         # Sub-base fill, granular backfill — crushed stone or soil
         "climatiq_search": "gravel fill",
@@ -268,7 +262,6 @@ CATEGORY_EMISSION_OVERRIDES: Dict[str, float] = {
     "Lean Concrete":        0.107,  # ICE DB v3.0: Concrete (not reinforced)
     "Precast Concrete":     0.182,  # ICE DB v3.0: Precast concrete (includes reinforcement)
     "Fill Material":        0.0048, # ICE DB v3.0: General aggregate/fill
-    "Earthworks":           0.0024, # ICE DB v3.0: Earthworks, bulk excavation
     "Crushed Stone":        0.0048, # ICE DB v3.0: Aggregate — Climatiq returns 0.01 (2x high)
     "Waterproofing":        2.000,  # ICE DB v3.0: Bituminous membrane — Climatiq returns 0.22 (9x low)
     "Cementitious Mortar":  0.208,  # ICE DB v3.0: Mortar — Climatiq returns near zero
@@ -476,8 +469,8 @@ CATEGORY_RULES: List[Tuple[str, List[str]]] = [
       r"פוליגל", r"פוליפרופילן", r"פלסטי"]),
     ("PVC Pipe", [r"P\.?V\.?C", r"PVC", r"צינור\s*קשיח", r"מריכף", r"מריפלס", r"צנרת.*פלסטיק"]),
     ("Galvanized Steel",
-     [r"מגולוונ", r"גדר", r"מעקה\s*(?:פלדה|בטיחות)?", r"פח\s*מגולוון", r"עמוד.*פלדה", r"זרוע.*פלדה", r"ארון", r"רמזור",
-      r"תמרור", r"ברזל\s*יצוק", r"מכסה\s*לתא"]),
+     [r"מגולוונ", r"\bגדר\b", r"מעקה\s*(?:פלדה|בטיחות)?", r"פח\s*מגולוון", r"עמוד.*פלדה", r"זרוע.*פלדה",
+      r"\bארון\b", r"\bרמזור\b", r"\bתמרור\b", r"ברזל\s*יצוק", r"מכסה\s*לתא"]),
     ("Lean Concrete", [r"בטון\s*רזה", r"ב-20", r"בטון\s*מדה", r"מדה\s*מתפלסת"]),
     ("Structural Concrete",
      [r"בטון", r"יצוק\s*באתר", r"ב-30", r"ב-40", r"כלונס", r"קירות\s*מבטון", r"ב-50", r"רפסודה", r"בלוקים"]),
@@ -485,9 +478,6 @@ CATEGORY_RULES: List[Tuple[str, List[str]]] = [
      [r"אגרגט", r"חצץ", r"מצע", r"בקאלש", r"אבן\s*גרוסה", r"שומשום", r"חול", r"מחצבה", r"זיפזיף", r"אדמה", r"סלעים",
       r"מצע\s*א'"]),
     # --- new categories ---
-    ("Earthworks",
-     [r"חפירה", r"עפר\s*עודף", r"הוצאת\s*עפר", r"פינוי\s*עפר", r"דחיסה", r"מילוי\s*עפר",
-      r"עבודות\s*עפר", r"גריפה"]),
     ("Fill Material",
      [r"מילוי\s*(?:חוזר|גרוס|אבן|חול|מחוזק)", r"מצע\s*מילוי", r"חומר\s*מילוי",
       r"מלית", r"מילוי\s*תחת", r"מילוי\s*מסביב", r"טמינה"]),
@@ -549,6 +539,20 @@ EXCLUDE_PATTERNS = [
     r"\bביובית\b",
     r"\bהסרה\b",
     r"\bהסרת\b",
+    # Earthworks operations (converted from Earthworks category → always EXCLUDE)
+    r"\bעבודות\s*עפר\b",
+    r"\bהוצאת\s*עפר\b",
+    r"\bפינוי\s*עפר\b",
+    r"\bעפר\s*עודף\b",
+    r"\bגריפה\b",
+    r"\bעיבוד\s*תשתית\b",
+    r"\bחפירת\s*מצעים\b",
+    r"\bדחיסת?\s*(?:קרקע|עפר|מצע)\b",
+    r"\bהכנת\s*(?:תשתית|קרקע)\b",
+    # Service verbs that indicate non-material lines (protected by material indicator check)
+    r"\bפיזור\b",               # spreading/distribution service
+    r"\bאספקה\s*ופיזור\b",      # supply and distribution = service
+    r"\bניקוי\s*(?:תעלות?|מערכות?|צינורות?)\b",  # cleaning operation
 ]
 
 # Pre-compiled for performance — used in should_exclude()
@@ -669,12 +673,16 @@ You classify Hebrew civil infrastructure BOQ material lines.
 
 Rules:
 1. Pick exactly one category from: {', '.join(ALLOWED_CATEGORIES)}.
-2. If the line is labor, service, demolition, surcharge, finishing, or non-material, set category='EXCLUDE' and excluded=true.
+2. If the line is labor, service, demolition, excavation/earthworks, surcharge, finishing, or non-material, set category='EXCLUDE' and excluded=true.
 3. Use inferred_uom from this enum when possible: kg, ton, m3, m2, m, unit, unknown.
 4. If the line is a concrete pipe, manhole, precast wall, or curbstone, populate extracted_element_type with one of: concrete_pipe, precast_manhole, precast_wall, curbstone.
 5. extracted_dimension_cm should be the main diameter/size in centimeters when available.
 6. Keep review_required=true when confidence < 0.8 or details are missing for conversion.
-7. Return JSON only.
+7. Excavation, earthworks, compaction, and soil-moving operations are always EXCLUDE.
+8. Grout (גראוט) is Cementitious Mortar. Geocell/geotechnical honeycomb (גיאו-תא) is HDPE Granulate.
+9. Fiber cement boards (פייבר צמנט, צמנטבורד) are Precast Concrete.
+10. Cement-stabilized fill (חול/אדמה מיוצבת בצמנט) is Fill Material, not Cementitious Mortar.
+11. Return JSON only.
 """
 
 
@@ -1661,6 +1669,63 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"\bעץ\b|אורן|קורות\s*עץ|לביד|סנדוויץ", text, flags=re.IGNORECASE):
         return "Wood", "Hard override: wood detected"
 
+    # קרצוף / חספוס / ניסור / פתיחת כביש = asphalt service operation — override material indicator
+    if re.search(r"\bקרצוף\b|\bחספוס\b", text, flags=re.IGNORECASE):
+        return None, "Hard override: asphalt milling/roughening → EXCLUDE"
+    if re.search(r"פתיחת\s*(?:כביש|מדרכה|אספלט)", text, flags=re.IGNORECASE):
+        return None, "Hard override: pavement opening/cutting → EXCLUDE"
+    if re.search(r"ניסור\s*(?:אספלט|כביש|בטון)", text, flags=re.IGNORECASE):
+        return None, "Hard override: concrete/asphalt saw-cutting → EXCLUDE"
+    # תוספת לכל X ס"מ / תוספת לכל יחידה = unit price supplement → EXCLUDE
+    if re.search(r"תוספת\s+לכל\s+\d|תוספת\s+ל?(?:כל|יחידת?)\s+(?:\d|ס.?מ)", text, flags=re.IGNORECASE):
+        return None, "Hard override: per-unit price supplement → EXCLUDE"
+    # תיקון משטח / תיקון כביש = repair service → EXCLUDE
+    if re.search(r"תיקון\s*משטח\s*(?:אספלט|בטונ|ריצוף)", text, flags=re.IGNORECASE):
+        return None, "Hard override: surface repair service → EXCLUDE"
+    # סלעים מקומיים מהשטח = existing on-site material → EXCLUDE
+    if re.search(r"סלעים?\s*מקומיים?\s*(?:מה)?שטח|אבנ[יות]+\s*מקומיות?\s*(?:מה)?שטח", text, flags=re.IGNORECASE):
+        return None, "Hard override: local on-site rocks → EXCLUDE"
+
+    # תכנות / תוכנה / הגדרה דינמית = software/IT services → EXCLUDE
+    if re.search(r"\bתכנות\b|\bתוכנה\b|נקודה\s*דינמית|תוכנת\s*HMI|תוכנת\s*SCADA", text, flags=re.IGNORECASE):
+        return None, "Hard override: software/IT service → EXCLUDE"
+
+    # חיבור סיב אופטי = fiber optic splicing → EXCLUDE (service, not material)
+    if re.search(r"חיבור\s*סיב\s*אופטי|קצות?\s*סיב\s*אופטי", text, flags=re.IGNORECASE):
+        return None, "Hard override: fiber optic splicing → EXCLUDE"
+
+    # מילוי חוזר = backfill (earthworks service) → EXCLUDE
+    if re.search(r"\bמילוי\s*חוזר\b", text, flags=re.IGNORECASE):
+        return None, "Hard override: backfill earthworks → EXCLUDE"
+
+    # גיאו-תא / כוורות גיאוטכניות = HDPE geocell honeycomb — must come before catalog
+    if re.search(r"גיאו.?תא|geocell|כוורות?\s*גיאוטכניות?", text, flags=re.IGNORECASE):
+        return "HDPE Granulate", "Hard override: geocell/geotechnical honeycomb → HDPE Granulate"
+
+    # פוליאתילן / HDPE — must come before Aluminum/catalog to prevent misclassification
+    # handles: צינור מפוליאתילן, H.D.P.E, PE100, פלסטי שרשורי גמיש
+    if re.search(r"\bHDPE\b|H\.D\.P\.E|פוליאתילן|פולי.?אתילן|\bPE100\b|\bPE-100\b", text, flags=re.IGNORECASE):
+        return "HDPE Granulate", "Hard override: polyethylene/HDPE → HDPE Granulate"
+
+    if re.search(r"(?:צינור|קורגל)\s*(?:פלסטי|גמיש)\s*(?:דו.?שכבתי|שרשורי)?|פלסטי\s*שרשורי", text, flags=re.IGNORECASE):
+        return "HDPE Granulate", "Hard override: plastic corrugated pipe → HDPE Granulate"
+
+    # חול/אדמה מיוצבת בצמנט = cement-stabilized fill — must come before Cementitious Mortar check
+    if re.search(r"מיוצב\s*ב?[צס]מנט|חול\s*מיוצב|אדמה\s*מיוצבת|תשחיף\s*מיוצב|מיוצב\s*ב?סיד", text, flags=re.IGNORECASE):
+        return "Fill Material", "Hard override: cement/lime-stabilized fill → Fill Material"
+
+    # לוחות/עטיפת פייבר צמנט / צמנטבורד = manufactured cement board panels → Precast Concrete
+    if re.search(r"פייבר\s*צמנט|fiber\s*cement|צמנטבורד|לוחות?\s*(?:פייבר|fiber)", text, flags=re.IGNORECASE):
+        return "Precast Concrete", "Hard override: fiber cement board → Precast Concrete"
+
+    # גראוט = grouting material → Cementitious Mortar (before catalog which may return Crushed Stone)
+    if re.search(r"\bגראוט\b|\bgrout\b|חומר\s*גרוט|סיקה\s*גראוט", text, flags=re.IGNORECASE):
+        return "Cementitious Mortar", "Hard override: grout → Cementitious Mortar"
+
+    # בטון צמנטי / יציקת הטלאה מבטון = concrete (not mortar) — before generic cement check
+    if re.search(r"בטון\s*(?:צמנטי|להטלאה|לאיטום|מחוזק|מהיר)|יציקת\s*(?:הטלאה|תיקון)", text, flags=re.IGNORECASE):
+        return "Structural Concrete", "Hard override: cement concrete patch/repair → Structural Concrete"
+
     if re.search(r"מלט|מלת|טיט|מרגמה|רובה|דייס|צמנט", text, flags=re.IGNORECASE):
         return "Cementitious Mortar", "Hard override: cement/mortar detected"
 
@@ -1741,9 +1806,12 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"מתז|שיקום\s*מערכות\s*השקיה|מגוף\s*ברונזה\s*לגינון|מערכות\s*השקיה", text, flags=re.IGNORECASE):
         return None, "Hard override: irrigation equipment/service → EXCLUDE"
 
-    # צינור שרשורי מחורר / צינור ניקוז פלסטי → PVC Pipe
-    if re.search(r"צינור\s*שרשורי\s*מחורר|שרשורי\s*מחורר|צינור\s*ניקוז", text, flags=re.IGNORECASE):
-        return "PVC Pipe", "Hard override: corrugated/perforated drainage pipe → PVC Pipe"
+    # נקז/צינור שרשורי מחורר = corrugated perforated HDPE drainage pipe (not rigid PVC)
+    if re.search(r"(?:נקז|צינור)\s*(?:אנכי|אורכי|שרשורי)\s*(?:כולל\s*)?צינור\s*שרשורי\s*מחורר|"
+                 r"שרשורי\s*מחורר|נקז\s*אנכי|נקז\s*אורכי", text, flags=re.IGNORECASE):
+        return "HDPE Granulate", "Hard override: corrugated perforated drain pipe → HDPE Granulate"
+    if re.search(r"צינור\s*ניקוז", text, flags=re.IGNORECASE):
+        return "PVC Pipe", "Hard override: drainage pipe → PVC Pipe"
 
     # צמנטבורד / cement board → Cementitious Mortar
     if re.search(r"צמנט\s*בורד|צמנטבורד|cement\s*board|fiber\s*cement", text, flags=re.IGNORECASE):
@@ -1786,6 +1854,18 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     # שלט/תמרור/חיבור שלט לעמוד = פלדה מגולוונת
     if re.search(r"שלט|תמרור", text, flags=re.IGNORECASE):
         return "Galvanized Steel", "Hard override: sign/sign support → Galvanized Steel"
+
+    # בלוק כורכרי / לוחות כורכר = kurkar limestone block → Precast Concrete
+    if re.search(r"בלוק\s*כורכר|כורכרי|לוחות?\s*כורכר", text, flags=re.IGNORECASE):
+        return "Precast Concrete", "Hard override: kurkar limestone block → Precast Concrete"
+
+    # קורות רוחב / דיאפרגמה / ניצבים מבטון = concrete structural elements → Structural Concrete
+    if re.search(r"קורות?\s*(?:רוחב|דיאפרגמה|עיקריות?)|דיאפרגמה\s*מבטון|ניצב(?:ים)?\s*מבטון", text, flags=re.IGNORECASE):
+        return "Structural Concrete", "Hard override: concrete beam/diaphragm → Structural Concrete"
+
+    # חומר א/ב/ג = quarry aggregate grade designation (word boundary prevents false match on "חומר אינרטי")
+    if re.search(r"חומר\s*(?:א|ב|ג)\b(?:\s*(?:גרוס|מחצבה|מיוחד))?|חומר\s*גרוס\s*מחצבה", text, flags=re.IGNORECASE):
+        return "Crushed Stone", "Hard override: quarry aggregate type A/B/C → Crushed Stone"
 
     return None
 
@@ -1974,6 +2054,8 @@ BOQ_TPREFIX_EXCLUDE_PATTERNS = [
 # Sub-chapter prefixes that are operations/services within otherwise material chapters
 BOQ_SUBPREFIX_EXCLUDE = {
     "51.01",  # earthworks operations: demolition, tree removal, cleaning, fencing
+    "51.02",  # excavation and earthworks — service (Earthworks category now → EXCLUDE)
+    "51.03",  # soil backfill and compaction — earthworks service
     "57.01",  # sewer/pipe inspection and video survey services
     "51.32",  # road marking and line painting — service, not material
     "51.35",  # temporary traffic equipment (barriers, signs, lights) — rental, not material
