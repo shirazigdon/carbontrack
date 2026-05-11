@@ -4620,16 +4620,21 @@ def _fill_reliability_defaults(rows: List[Dict[str, Any]]) -> List[Dict[str, Any
             row["matched_by"] += suffix
 
         # ── reliability_score ────────────────────────────────────────────
-        if row.get("reliability_score") is None:
+        if row.get("reliability_score") is None or row.get("reliability_score") == 0.0:
             if is_excluded:
                 score = 1.0
             else:
-                # Extract the leaf method (last segment after "+")
                 leaf = row["matched_by"].split(":")[0].split("+")[-1].strip()
-                base = _METHOD_BASE_SCORE.get(leaf)
-                score = conf if base is None else base  # vertex_ai → use AI conf
-                if score is None:
-                    score = conf if conf > 0 else 0.65
+                if leaf in _METHOD_BASE_SCORE:
+                    base = _METHOD_BASE_SCORE[leaf]
+                    # vertex_ai maps to None → use AI confidence
+                    score = (conf if conf > 0 else 0.72) if base is None else base
+                else:
+                    # Unknown method: derive from whether we have a real emission
+                    if row.get("emission_co2e") is not None:
+                        score = conf if conf > 0.5 else 0.75
+                    else:
+                        score = 0.0
                 # Penalties for pipeline failures
                 if status == "conversion_failed":
                     score = min(score, 0.50)
@@ -4637,7 +4642,6 @@ def _fill_reliability_defaults(rows: List[Dict[str, Any]]) -> List[Dict[str, Any
                     score = min(score, 0.40)
                 elif not uom or uom in ("unknown", ""):
                     score = max(0.0, score - 0.25)
-                # If we have no emission at all, floor to 0
                 if row.get("emission_co2e") is None and not is_excluded:
                     score = 0.0
             row["reliability_score"] = round(max(0.0, min(1.0, float(score))), 3)
@@ -4660,13 +4664,21 @@ def _fill_reliability_defaults(rows: List[Dict[str, Any]]) -> List[Dict[str, Any
 @app.get("/emissions")
 def emissions():
     try:
+        # Always query the raw table — the view may lack newer columns
+        # (reliability_score, reliability_status, matched_by).
+        rows = None
         try:
-            query = f"SELECT * FROM `{_BQ_DETAILS_VIEW_FULL}` ORDER BY calculation_date DESC LIMIT 20000"
-            job = bq_client.query(query)
+            job = bq_client.query(
+                f"SELECT * FROM `{_BQ_DETAILS_TABLE_FULL}` ORDER BY calculation_date DESC LIMIT 20000"
+            )
             rows = [sanitize_for_json(dict(r.items())) for r in job.result()]
         except Exception:
-            query = f"SELECT * FROM `{_BQ_DETAILS_TABLE_FULL}` ORDER BY calculation_date DESC LIMIT 20000"
-            job = bq_client.query(query)
+            pass
+        # Fall back to view only if table query failed
+        if rows is None:
+            job = bq_client.query(
+                f"SELECT * FROM `{_BQ_DETAILS_VIEW_FULL}` ORDER BY calculation_date DESC LIMIT 20000"
+            )
             rows = [sanitize_for_json(dict(r.items())) for r in job.result()]
         rows = _fill_reliability_defaults(rows)
         return jsonify({"items": rows}), 200
