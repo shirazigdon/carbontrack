@@ -116,8 +116,45 @@ def hard_classification_override(material_text: str) -> Optional[str]:
 
     if re.search(r"זכוכית|טריפלקס", text, re.IGNORECASE):
         return "Glass"
+    # ארגז הסתעפות ואבטחה = metal security/junction box → Galvanized Steel
+    if re.search(r"ארגז\s*הסתעפות\s*ואבטחה", text, re.IGNORECASE):
+        return "Galvanized Steel"
+    # ארגז הסתעפות = simple junction box = service item
+    if re.search(r"ארגז\s*הסתעפות|פרט\s*השקית", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # Transport+install of manhole covers = labor = EXCLUDE
+    if re.search(r"הובלה\s*ו?התקנת?\s*(?:של\s*)?מכסה\s*לתא", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # יחידת מעבר בין מעקות = transition unit = service/installation = EXCLUDE
+    if re.search(r"יחידת?\s*מעבר\s*(?:ממעקה|בין\s*מעקות?)", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # Warning signs, sign cover work = service = EXCLUDE
+    if re.search(r"שלט\s*אזהרה|הורדת?\s*כיסוי\s*(?:מה)?שלט|מכלול\s*צביעת?", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # Electrical cabinet with main switch = service item = EXCLUDE
+    if re.search(r"ארון.*מפסק\s*ראשי|ארון.*חלוקה.*למעבר", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # תומך לעץ = tree prop (landscaping service); כריתה/גיזום עץ = tree work service
+    if re.search(r"תומך\s*(?:לעץ|ל?עצים)|כריתת?\s*(?:עץ|עצים)|גיזום\s*עץ", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # ערוגות אבן = stone garden edging → Paving (before Wood check fires on ערוגות עץ)
+    if re.search(r"ערוגות\s*(?:עץ\s*)?אבן|אבן\s*(?:גן|ערוגה|מעוגלת)", text, re.IGNORECASE):
+        return "Paving"
+    # תוספת מחיר with material indicator bypasses should_exclude, catch here before Wood
+    # Exception: "תוספת מחיר לבטון/לאספלט" = material quality surcharge → let it fall through
+    if re.search(r"תוספת\s+מחיר|תוספת\s+למחיר", text, re.IGNORECASE):
+        if not re.search(r"תוספת\s+מחיר\s+ל(?:בטון|אספלט|מצע)", text, re.IGNORECASE):
+            return "EXCLUDE"
     if re.search(r"\bעץ\b|אורן|קורות\s*עץ|לביד|סנדוויץ", text, re.IGNORECASE):
-        return "Wood"
+        # עץ as secondary reference (wooden pole hardware, mixed materials, wooden pole ops) → skip Wood
+        if not re.search(r"(?:ל|מ|על|עם)\s*עמוד[י]?\s*עץ|עמוד[י]?\s*(?:תאורה\s*)?(?:פלדה\s*(?:או\s*)?)?עץ|פלדה\s*(?:או\s*)?עץ|\bועץ\b", text, re.IGNORECASE):
+            return "Wood"
+    # תכנון וביצוע (design+build service contract) → EXCLUDE
+    if re.search(r"תכנון\s*ו?ביצוע|ביצוע\s*ו?תכנון", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # מתקן הארקת יסוד = foundation grounding bracket = service, not material
+    if re.search(r"מתקן\s*הארקת?\s*(?:יסוד|מעקה|גדר)", text, re.IGNORECASE):
+        return "EXCLUDE"
     # Service operations that must fire even with material indicator present
     if re.search(r"\bקרצוף\b|\bחספוס\b", text, re.IGNORECASE):
         return "EXCLUDE"
@@ -127,24 +164,110 @@ def hard_classification_override(material_text: str) -> Optional[str]:
         return "EXCLUDE"
     if re.search(r"תוספת\s+לכל\s+\d|תוספת\s+ל?(?:כל|יחידת?)\s+(?:\d|ס.?מ)", text, re.IGNORECASE):
         return "EXCLUDE"
-    if re.search(r"תיקון\s*משטח\s*(?:אספלט|בטונ|ריצוף)", text, re.IGNORECASE):
+    if re.search(r"תיקון\s*(?:משטח\s*)?(?:אספלט|בטונ|ריצוף)", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # תכנון וביצוע / ת.וביצוע = design+build contract → EXCLUDE (service)
+    if re.search(r"תכנון\s*ו?ביצוע|ת\.?\s*ו?ביצוע\s+יסוד", text, re.IGNORECASE):
         return "EXCLUDE"
     if re.search(r"סלעים?\s*מקומיים?\s*(?:מה)?שטח|אבנ[יות]+\s*מקומיות?\s*(?:מה)?שטח", text, re.IGNORECASE):
         return "EXCLUDE"
     if re.search(r"\bתכנות\b|\bתוכנה\b|נקודה\s*דינמית|תוכנת\s*HMI|תוכנת\s*SCADA", text, re.IGNORECASE):
         return "EXCLUDE"
+    # חיבור סיב אופטי = fiber optic splicing = service (labeled EXCLUDE in sheet, more rows than Copper Wire)
     if re.search(r"חיבור\s*סיב\s*אופטי|קצות?\s*סיב\s*אופטי", text, re.IGNORECASE):
         return "EXCLUDE"
     if re.search(r"\bמילוי\s*חוזר\b", text, re.IGNORECASE):
         return "EXCLUDE"
+    # Foundation grounding exit/work = service (electrical grounding in concrete structure)
+    if re.search(r"יציאה\s*חיצונית.*הארקת?\s*יסוד|ביצוע\s*הארקת?\s*יסוד", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # יחידת כוורת = honeycomb unit embedded in concrete = prefab item → EXCLUDE
+    if re.search(r"יחידת?\s*כוורת", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # יחידת דיזל foundation = service item; also diesel unit itself
+    if re.search(r"יחידת?\s*דיזל", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # יסוד/גומחת בטון למרכזיה (switchboard) = electrical service item = EXCLUDE
+    if re.search(r"(?:יסוד|גומחת?)\s*בטון.*מרכזיה|מרכזיה.*(?:יסוד|גומחת?)\s*בטון", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # שרוול מצינור בטון\פלדה = supply-only concrete/steel pipe sleeve = EXCLUDE (not PE/PVC sleeves)
+    if re.search(r"שרוול\s*מצינור\s*(?:בטון|פלדה)|שרוול\s*(?:בטון|פלדה)", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # תיקון קו מים = repairing water/utility line = service = EXCLUDE
+    if re.search(r"תיקון\s*(?:קו\s*(?:מים|ביוב|גז)|צינור\s*(?:מים|ביוב))", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # Service connections (to existing unit = labor, NOT new pipe installation)
+    if re.search(r"התחברות\s*(?:צינור|קו)\s*(?:ניקוז|ביוב)|חבור\s*קו\s*(?:ביוב|מים)", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # שוחת מגוף = valve access pit = service/civil structure = EXCLUDE
+    if re.search(r"שוחת?\s*מגוף(?!\s*(?:ביקורת|בקרה))", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # הכנת (קירות/פני) לאיטום = wall/surface preparation service = EXCLUDE
+    if re.search(r"הכנת\s*(?:פני\s*)?(?:קירות?|הבטון|משטח)\s*ל?(?:איטום|צביעה|ריצוף)", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # IP ingress protection rating = transport/handling of cabinet = EXCLUDE (not the material box)
+    if re.search(r"(?:הובלת?|העברת?|הזזת?)\s*(?:תא|ארון|קופסה).*(?:דרגת?\s*(?:איטום|הגנה)\s*IP|IP\d+)", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # גילוי/חשיפת מתקנים קיימים = uncovering existing utilities = service
+    if re.search(r"גילוי\s*(?:תאי?|קווי?|מסלול|מתקן)", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # ניקוז תת אספלטי = collectors for drainage under asphalt = PVC pipe
+    if re.search(r"ניקוז\s*תת\s*אספלטי|קולטנים?\s*(?:ל|ו?)?ניקוז", text, re.IGNORECASE):
+        return "PVC Pipe"
+    # השלמת תשתית בתעלות = completing infrastructure in conduits = service = EXCLUDE
+    if re.search(r"השלמת\s*תשתית\s*ב?תעלות?", text, re.IGNORECASE):
+        return "EXCLUDE"
 
+    # Precast pits built from blocks (cable marker pits, inspection pits)
+    if re.search(r"שוח[הות]{1,2}.*בלוקים|בלוקים.*שוח[הות]{1,2}", text, re.IGNORECASE):
+        return "Precast Concrete"
+    # Concrete niche/foundation for meter box or utility pillar = precast structure
+    if re.search(r"(?:גומחת?|יסוד)\s*בטון.*(?:תא\s*מנייה|פילר\s*מונים)", text, re.IGNORECASE):
+        return "Precast Concrete"
+    # Concrete bench = precast street furniture
+    if re.search(r"ספסל\s*(?:מבטון|בטון)", text, re.IGNORECASE):
+        return "Precast Concrete"
+    # Concrete ceiling panel for existing junction box = precast element
+    if re.search(r"תקרת\s*בטון\s*לתא\s*מעבר", text, re.IGNORECASE):
+        return "Precast Concrete"
+    # שוחת ביקורת rule: concrete pad FOR the pit is Structural, the pit itself is Precast
+    if re.search(r"שוח[הות]{1,2}\s*(?:בקרה|ביקורת)|חוליות?\s*טרומיות?|מנהול\s*טרומי", text, re.IGNORECASE):
+        if not re.search(r"משטח\s*(?:מ|ב)?בטון\s*לשוחת?", text, re.IGNORECASE):
+            return "Precast Concrete"
+    if re.search(r"חפירת?\s*מצעים?\b", text, re.IGNORECASE):
+        return "EXCLUDE"
+    if (re.search(r"(?:מסילה|פסי?\s*רכבת)", text, re.IGNORECASE) and
+            re.search(r"(?:הרכבה|הנחה|התקנה|הובלה)", text, re.IGNORECASE)):
+        return "EXCLUDE"
+    if re.search(r"וויסות\s*לחץ\s*(?:עבור|ל)\s*מסילה", text, re.IGNORECASE):
+        return "EXCLUDE"
+    if re.search(r"ארגז[יות]*\s*פוליסטירן|פוליסטירן\s*(?:ברוחב|בגובה|בעובי|מוקצף\s*ב)", text, re.IGNORECASE):
+        return "HDPE Granulate"
+    if re.search(r"לוחות?\s*פוליסטירן\s*מוקצף\s*ב|פוליסטירן\s*מוקצף.*באלמנ", text, re.IGNORECASE):
+        return "HDPE Granulate"
+    if re.search(r"קופינג|חיפוי\s*(?:קיר|קירות?|חוץ)?\s*(?:ב)?לוחות?\s*אבן\s*כורכרית?", text, re.IGNORECASE):
+        return "Paving"
+    if re.search(r"אבן\s*גן\s*ב(?:גוון|מידות)|נדבכי?\s*ראש.*כורכרית?", text, re.IGNORECASE):
+        return "Paving"
+
+    if re.search(r"קופסת?\s*(?:פלסטיק|הסתעפות)|קופסת?\s*חיבורים?\s*(?:מפלסטיק|IP\d+)", text, re.IGNORECASE):
+        return "EXCLUDE"
     if re.search(r"גיאו.?תא|geocell|כוורות?\s*גיאוטכניות?", text, re.IGNORECASE):
         return "HDPE Granulate"
     if re.search(r"\bHDPE\b|H\.D\.P\.E|פוליאתילן|פולי.?אתילן|\bPE100\b|\bPE-100\b", text, re.IGNORECASE):
         return "HDPE Granulate"
+    # מריכף = corrugated PVC conduit pipe (must precede "צינור פלסטי" → HDPE)
+    if re.search(r"מריכף", text, re.IGNORECASE):
+        return "PVC Pipe"
     if re.search(r"(?:צינור|קורגל)\s*(?:פלסטי|גמיש)\s*(?:דו.?שכבתי|שרשורי)?|פלסטי\s*שרשורי", text, re.IGNORECASE):
         return "HDPE Granulate"
-    if re.search(r"מיוצב\s*ב?[צס]מנט|חול\s*מיוצב|אדמה\s*מיוצבת|תשחיף\s*מיוצב|מיוצב\s*ב?סיד", text, re.IGNORECASE):
+    # חול מיוצב = stabilized sand = aggregate material = Crushed Stone (not Fill)
+    if re.search(r"חול\s*מיוצב", text, re.IGNORECASE):
+        return "Crushed Stone"
+    # מילוי מובא לגשרים/מבנים = brought fill for structures (aggregate A/B/C type) = Crushed Stone
+    if re.search(r"מילוי\s*מובא\s*ל(?:מבנ|גשר)", text, re.IGNORECASE):
+        return "Crushed Stone"
+    if re.search(r"מיוצב\s*ב?[צס]מנט|אדמה\s*מיוצבת|תשחיף\s*מיוצב|מיוצב\s*ב?סיד", text, re.IGNORECASE):
         return "Fill Material"
     if re.search(r"פייבר\s*צמנט|fiber\s*cement|צמנטבורד|לוחות?\s*(?:פייבר|fiber)", text, re.IGNORECASE):
         return "Precast Concrete"
@@ -152,16 +275,23 @@ def hard_classification_override(material_text: str) -> Optional[str]:
         return "Cementitious Mortar"
     if re.search(r"בטון\s*(?:צמנטי|להטלאה|לאיטום|מחוזק|מהיר)|יציקת\s*(?:הטלאה|תיקון)", text, re.IGNORECASE):
         return "Structural Concrete"
+    if re.search(r"טיח\s*הידראולי|סיקה\s*טופ\s*\d", text, re.IGNORECASE):
+        return "Cementitious Mortar"
     if re.search(r"מלט|מלת|טיט|מרגמה|רובה|דייס|צמנט", text, re.IGNORECASE):
         return "Cementitious Mortar"
+    # concrete trash cans = prefab non-structural items = EXCLUDE; metal ones → AI
+    if re.search(r"אשפתון.*(?:מבטון|בטון\s*אדריכלי)|פח\s*אשפות?\s*מבטון", text, re.IGNORECASE):
+        return "EXCLUDE"
     if re.search(r"אלומיניום|אלומניום|פרופיל\s*אלומ", text, re.IGNORECASE):
         return "Aluminum"
     if re.search(r"עמוד\s*(?:פלד|תאורה|מפלד)|עמוד\s*קוני|עמוד\s*בגובה", text, re.IGNORECASE):
         return "Galvanized Steel"
+    # משטח יצוק מבטון = cast concrete slab (primary material is concrete, not rebar)
+    if re.search(r"משטח\s*(?:יצוק|בטון)\s*(?:מ)?בטון|משטח\s*מבטון\s*(?:מזויין|ל)", text, re.IGNORECASE):
+        return "Structural Concrete"
+    # מייתד כימי = chemical dowel rod used in concrete assembly → Structural Concrete
     if re.search(r"מייתד|מוט\s*מייתד|אינסרט\s*להארכת\s*זיון", text, re.IGNORECASE):
-        return "Steel Rebar"
-    if re.search(r"תוספת\s+מחיר|תוספת\s+למחיר", text, re.IGNORECASE):
-        return "EXCLUDE"
+        return "Structural Concrete"
     if re.search(r"דיפון\s*קשיח", text, re.IGNORECASE):
         return "Crushed Stone"
     if re.search(r"\bCLSM\b|בטון\s*זורם|בטון\s*נוזלי", text, re.IGNORECASE):
@@ -170,19 +300,51 @@ def hard_classification_override(material_text: str) -> Optional[str]:
         return "EXCLUDE"
     if re.search(r"\bזריע[הת]?\b|\bזיבול\b|הכשרת\s*קרקע\s*לגינון", text, re.IGNORECASE):
         return "EXCLUDE"
+    # Polystyrene in a thermal-insulation context for roofing = Waterproofing (per manual labels)
+    if re.search(r"(?:פוליסטירן|EPS|XPS).*בידוד\s*תרמי|בידוד\s*תרמי.*(?:פוליסטירן|EPS|XPS)", text, re.IGNORECASE):
+        return "Waterproofing"
     if re.search(r"פוליסטר[ין]|פוליסטי|\bEPS\b|\bXPS\b|סנדוויץ.*בידוד|בידוד.*תרמי", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # הכנת פני = surface preparation service = EXCLUDE (with or without material indicators)
+    if re.search(r"הכנת\s*פני\s*(?:הבטון|קירות?|משטח|המשטח|מיסעת)", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # בטון ב-20 = lean concrete; must precede CATEGORY_RULES Waterproofing (via "איטום")
+    if re.search(r"\bבטון\s*ב.?20\b", text, re.IGNORECASE):
+        return "Lean Concrete"
+    # גיאוגריד = geogrid reinforcement mesh → HDPE
+    if re.search(r"גיאוגריד|geogrids?", text, re.IGNORECASE):
+        return "HDPE Granulate"
+    # ארג גיאוטכני = woven geotextile = HDPE material; generic geotextile → Waterproofing
+    if re.search(r"ארג\s*גיאוטכני|גיאוטקסטיל", text, re.IGNORECASE):
+        return "HDPE Granulate"
+    # הנחה של יריעות גיאוטכניות = laying geotextile = service (not the material) = EXCLUDE
+    if re.search(r"(?:הנחה|אספקה\s*והנחה)\s*(?:של\s*)?(?:יריעות?|בד)\s*גיאוטכניות?", text, re.IGNORECASE):
+        return "EXCLUDE"
+    # איטום קירות עם לוחות = waterproofing walls with board cladding = service = EXCLUDE
+    if re.search(r"איטום\s*קירות?.*מ?לוחות|לוחות.*איטום\s*קירות?", text, re.IGNORECASE):
         return "EXCLUDE"
     if re.search(r"יריע[ות]+\s*ניקוז|גיאוקומפוזיט|geo.?composite", text, re.IGNORECASE):
         return "Waterproofing"
+    # Purchased natural boulders with a specified size → Crushed Stone (before local-site check)
+    if re.search(r"בולדרים?\s*טבעיים?\s*(?:בקוטר|בגובה|בגודל|במשקל)", text, re.IGNORECASE):
+        return "Crushed Stone"
     # Local/natural boulders must come BEFORE generic "בולדר → Crushed Stone" check
     if re.search(r"בולדרים?\s*מאבנים\s*מקומיות|בולדרים?\s*טבעיים|אבן\s*טבעית\s*מקומית|"
                  r"סלעים?\s*מקומיים?\s*(?:מה)?שטח", text, re.IGNORECASE):
         return "EXCLUDE"
     if re.search(r"אבן\s*דרך", text, re.IGNORECASE):
         return "EXCLUDE"
+    if re.search(r"ריצוף|מרצפות?\s*אבן|אבן\s*(?:שפה|משתלבת)", text, re.IGNORECASE):
+        return "Paving"
     if re.search(r"אבנ[יות]+\s*בגודל|תערובת\s*אבנ|בולדר|סלעי[ם]?\s*\d|אבן\s*(?:טבע|מקומ)", text, re.IGNORECASE):
         return "Crushed Stone"
-    if re.search(r"מילוי\s*מובא|חומר\s*(?:א|ב|ג|מילוי)\s*(?:מובא|סוג)|מילוי\s*חוזר|מילוי\s*להחלפת", text, re.IGNORECASE):
+    # מילוי חול מהודק / בחול = sand used as fill = Fill Material (not Crushed Stone)
+    if re.search(r"מילוי\s*(?:ב)?חול\s*(?:מהודק|דק)|בחול\s*(?:לפי|מהודק)", text, re.IGNORECASE):
+        return "Fill Material"
+    # מילוי מובא (חומר א/ב/ג) = brought aggregate classified by type = Crushed Stone
+    if re.search(r"מילוי\s*מובא.*\bחומר\s*(?:א|ב|ג)\b|\bחומר\s*(?:א|ב|ג)\b.*מילוי\s*מובא", text, re.IGNORECASE):
+        return "Crushed Stone"
+    if re.search(r"מילוי\s*מובא|חומר\s*(?:א|ב|ג|מילוי)\s*(?:מובא|סוג)|מילוי\s*(?:חוזר|מחול)|מילוי\s*להחלפת", text, re.IGNORECASE):
         return "Fill Material"
     if re.search(r"חצץ\s*(?:שטוף|מדורג|מסונן|ל?הידוק|בכל\s*הגדלים)", text, re.IGNORECASE):
         return "Crushed Stone"
@@ -190,18 +352,24 @@ def hard_classification_override(material_text: str) -> Optional[str]:
         return "EXCLUDE"
     if re.search(r"פינוי\s*(?:פסולת|חומר\s*קיים|שפכים)|פינוי\s*הקיים\s*באתר", text, re.IGNORECASE):
         return "EXCLUDE"
-    if re.search(r"נקז[ים]*\s*(?:בקירות|אורכי)\s*(?:בקוטר|כולל|שרשורי)", text, re.IGNORECASE):
+    if re.search(r"נקז[ים]*\s*(?:בקירות|אורכי)\s*(?:בקוטר|כולל|שרשורי)", text, re.IGNORECASE) and not re.search(r"מחורר", text, re.IGNORECASE):
         return "PVC Pipe"
-    if re.search(r"מוליך\s*הארקה.*נחושת|הארקה.*נחושת.*שזור", text, re.IGNORECASE):
+    if re.search(r"מוליך\s*הארקה.*נחושת|הארקה.*נחושת.*שזור|(?:אלקטרודות|מוטות)\s*הארקה.*נחושת", text, re.IGNORECASE):
         return "Copper Wire (Cable)"
     if re.search(r"גרניט\s*פורצלן|פורצלן|קרמיק|קרמיקה|אריחים?\s*עמידי?\s*חומצות|אריחי?\s*גרניט|ריצוף\s*באריח", text, re.IGNORECASE):
         return "Paving"
-    if re.search(r"מתז|שיקום\s*מערכות\s*השקיה|מגוף\s*ברונזה\s*לגינון", text, re.IGNORECASE):
+    if re.search(r"מתז|שיקום\s*מערכות\s*השקיה|מגוף\s*(?:פלסטיק|פלסטי|ברונזה)\s*לגינון", text, re.IGNORECASE):
         return "EXCLUDE"
     if re.search(r"(?:נקז|צינור)\s*(?:אנכי|אורכי|שרשורי)\s*(?:כולל\s*)?צינור\s*שרשורי\s*מחורר|"
                  r"שרשורי\s*מחורר|נקז\s*אנכי|נקז\s*אורכי", text, re.IGNORECASE):
         return "HDPE Granulate"
-    if re.search(r"צינור\s*ניקוז", text, re.IGNORECASE):
+    # מריפלקס/מריפלס = corrugated HDPE drainage pipe (before generic צינור ניקוז → PVC)
+    if re.search(r"מריפל[קס]?ס", text, re.IGNORECASE):
+        return "HDPE Granulate"
+    # galvanized steel drainage pipe must be caught before generic צינור ניקוז → PVC
+    if re.search(r"צינור\s*(?:ניקוז|פלדה)\s*(?:פלדה\s*)?מגולוון", text, re.IGNORECASE):
+        return "Galvanized Steel"
+    if re.search(r"צינור\s*ניקוז(?!\s*(?:PE\b|פולי|מריפל))", text, re.IGNORECASE):
         return "PVC Pipe"
     if re.search(r"צמנט\s*בורד|צמנטבורד|cement\s*board|fiber\s*cement", text, re.IGNORECASE):
         return "Cementitious Mortar"
@@ -223,6 +391,8 @@ def hard_classification_override(material_text: str) -> Optional[str]:
         return "Galvanized Steel"
     if re.search(r"בלוק\s*כורכר|כורכרי|לוחות?\s*כורכר", text, re.IGNORECASE):
         return "Precast Concrete"
+    if re.search(r"קורות?\s*טרומ|לוח(?:ות)?\s*טרומ|כלונסאות?\s*טרומ|אלמנטים?\s*טרומ|תקרה\s*טרומ", text, re.IGNORECASE):
+        return "Precast Concrete"
     if re.search(r"קורות?\s*(?:רוחב|דיאפרגמה|עיקריות?)|דיאפרגמה\s*מבטון|ניצב(?:ים)?\s*מבטון", text, re.IGNORECASE):
         return "Structural Concrete"
     if re.search(r"חומר\s*(?:א|ב|ג)\b(?:\s*(?:גרוס|מחצבה|מיוחד))?|חומר\s*גרוס\s*מחצבה", text, re.IGNORECASE):
@@ -235,7 +405,7 @@ CATEGORY_RULES: List[Tuple[str, List[str]]] = [
      [r"איטו[םמ]", r"ממברנה", r"ביטומ", r"יריעת\s*hdpe", r"גאוטכני", r"פריימר",
       r"זפת", r"פוליאוריטן", r"סילר", r"יריעות"]),
     ("Asphalt",
-     [r"אספלט", r"אספלת", r"תא.?צ", r"תא.?מ", r"\bSMA\b", r"בינדר", r"אמולסיה"]),
+     [r"אספלט", r"אספלת", r"\bתא.?צ\b", r"\bתא.?מ\b", r"\bSMA\b", r"בינדר", r"אמולסיה"]),
     ("Steel Rebar",
      [r"זיון", r"מוטות\s*פלדה", r"פלדה\s*מצולעים", r"ת.?י\s*4466",
       r"רשתות\s*פלדה", r"ברזל\s*בניין"]),
@@ -420,6 +590,8 @@ def main():
         detected_raw = row[col_detected].strip() if col_detected is not None and len(row) > col_detected else ""
 
         if not correct_raw or not desc:
+            continue
+        if correct_raw.strip().lower() in ("unknown", "לבדיקה ידנית"):
             continue
 
         correct_cat = norm_category(correct_raw)
