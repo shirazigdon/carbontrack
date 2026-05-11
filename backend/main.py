@@ -553,7 +553,7 @@ CATEGORY_RULES: List[Tuple[str, List[str]]] = [
     # --- new categories ---
     ("Fill Material",
      [r"מילוי\s*(?:חוזר|גרוס|אבן|חול|מחוזק)", r"מצע\s*מילוי", r"חומר\s*מילוי",
-      r"מלית", r"מילוי\s*תחת", r"מילוי\s*מסביב", r"טמינה"]),
+      r"\bמלית\b", r"מילוי\s*תחת", r"מילוי\s*מסביב", r"טמינה"]),
     ("Paving",
      [r"ריצוף", r"אבן\s*שפה", r"שפה\s*(?:טרומ|בטון|אבן)", r"מדרכה",
       r"ריצוף\s*(?:אבן|גרניט|שיש|קרמיק|אריח)", r"אריחי\s*בטון", r"אבן\s*משתלבת"]),
@@ -1767,9 +1767,9 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     # ארגז הסתעפות = junction box; פרט השקית = drip irrigation tree node (service)
     if re.search(r"ארגז\s*הסתעפות|פרט\s*השקית", text, flags=re.IGNORECASE):
         return None, "Hard override: junction box / irrigation drip node → EXCLUDE"
-    # Transport+install of manhole covers = labor = EXCLUDE
-    if re.search(r"הובלה\s*ו?התקנת?\s*(?:של\s*)?מכסה\s*לתא", text, flags=re.IGNORECASE):
-        return None, "Hard override: manhole cover installation → EXCLUDE"
+    # Transport+install of manhole covers / signs = labor = EXCLUDE
+    if re.search(r"הובלה\s*ו?התקנ[הת]?\s*(?:של\s*)?(?:מכסה\s*(?:לתא)?|תמרור|שלט\s*(?:הוריה|עצור|מגביל)?)", text, flags=re.IGNORECASE):
+        return None, "Hard override: manhole cover/sign installation → EXCLUDE"
     # יחידת מעבר בין מעקות = transition unit = EXCLUDE
     if re.search(r"יחידת?\s*מעבר\s*(?:ממעקה|בין\s*מעקות?)", text, flags=re.IGNORECASE):
         return None, "Hard override: guardrail transition unit → EXCLUDE"
@@ -1852,6 +1852,9 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         return None, "Hard override: IP-rated cabinet transport → EXCLUDE"
     if re.search(r"גילוי\s*(?:תאי?|קווי?|מסלול|מתקן)", text, flags=re.IGNORECASE):
         return None, "Hard override: utility uncovering → EXCLUDE"
+    # צילום קו ביוב/מים/ניקוז = CCTV pipe inspection = service
+    if re.search(r"צילום\s*קו\s*(?:ביוב|מים|ניקוז)|צילום.*מצלמת\s*(?:וידאו|CCTV)", text, flags=re.IGNORECASE):
+        return None, "Hard override: CCTV pipe inspection → EXCLUDE"
     if re.search(r"ניקוז\s*תת\s*אספלטי|קולטנים?\s*(?:ל|ו?)?ניקוז", text, flags=re.IGNORECASE):
         return "PVC Pipe", "Hard override: sub-asphalt drainage collectors → PVC Pipe"
     if re.search(r"השלמת\s*תשתית\s*ב?תעלות?", text, flags=re.IGNORECASE):
@@ -1867,9 +1870,11 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"תקרת\s*בטון\s*לתא\s*מעבר", text, flags=re.IGNORECASE):
         return "Precast Concrete", "Hard override: concrete ceiling for junction box → Precast Concrete"
     # שוחת בקרה / חוליות טרומיות = precast manhole rings → Precast Concrete
+    # PE/HDPE pits are HDPE, not Precast
     if re.search(r"שוח[הות]{1,2}\s*(?:בקרה|ביקורת)|חוליות?\s*טרומיות?|מנהול\s*טרומי", text, flags=re.IGNORECASE):
         if not re.search(r"משטח\s*(?:מ|ב)?בטון\s*לשוחת?", text, flags=re.IGNORECASE):
-            return "Precast Concrete", "Hard override: precast manhole/inspection chamber → Precast Concrete"
+            if not re.search(r"פולי[אא]?[תט]ילן|פולי.?א[תט]ילן|\bHDPE\b|\bPE\d", text, flags=re.IGNORECASE):
+                return "Precast Concrete", "Hard override: precast manhole/inspection chamber → Precast Concrete"
 
     # חפירת מצעים = excavation of base material → EXCLUDE (service, not material)
     if re.search(r"חפירת?\s*מצעים?\b", text, flags=re.IGNORECASE):
@@ -1911,6 +1916,13 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     # גיאו-תא / כוורות גיאוטכניות = HDPE geocell honeycomb — must come before catalog
     if re.search(r"גיאו.?תא|geocell|כוורות?\s*גיאוטכניות?", text, flags=re.IGNORECASE):
         return "HDPE Granulate", "Hard override: geocell/geotechnical honeycomb → HDPE Granulate"
+
+    # פוליגל as primary material in description start = PVC (not when listed among acrylic options)
+    if re.search(r"^לוחות?\s*פוליגל|פוליגל\s*בעובי", text, flags=re.IGNORECASE):
+        return "PVC Pipe", "Hard override: Polygal panel → PVC Pipe"
+    # תוספת לצינורות/לביצוע הנחת = unit supplement for pipe work = EXCLUDE (before HDPE/PE rule)
+    if re.search(r"תוספת\s+ל(?:צינורות?|ביצוע\s*הנחת?|כל\s*מד)", text, flags=re.IGNORECASE):
+        return None, "Hard override: pipe unit supplement → EXCLUDE"
 
     # פוליאתילן / HDPE — must come before Aluminum/catalog to prevent misclassification
     # handles: צינור מפוליאתילן, H.D.P.E, PE100, פלסטי שרשורי גמיש
@@ -1957,9 +1969,15 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"אלומיניום|אלומניום|פרופיל\s*אלומ", text, flags=re.IGNORECASE):
         return "Aluminum", "Hard override: aluminum detected"
 
+    # Service operations on lighting/traffic poles = EXCLUDE (bypass material indicator)
+    if re.search(r"צביע[את]?\s.*(?:עמוד|פנס)|(?:פרוק|פירוק|ניתוק|התקנ)\s.*(?:עמוד|פנס)\s*תאור[הת]?|החלפת?\s*נורה.*עמוד|העמדת?\s*עמוד.*(?:קיים|שפורק)\b", text, flags=re.IGNORECASE):
+        return None, "Hard override: lighting pole service/maintenance → EXCLUDE"
+
     # עמוד פלדה/תאורה — מסווג לפעמים כ-Copper Wire בגלל boq prefix 08.04/08.10
     if re.search(r"עמוד\s*(?:פלד|תאורה|מפלד)|עמוד\s*קוני|עמוד\s*בגובה", text, flags=re.IGNORECASE):
-        return "Galvanized Steel", "Hard override: steel pole → Galvanized Steel"
+        # Don't fire for rectangular concrete foundations (יסוד בטון without עגול)
+        if not re.search(r"יסוד\s*(?:מ)?בטון(?!\s*(?:עגול|מעוגל))", text, flags=re.IGNORECASE):
+            return "Galvanized Steel", "Hard override: steel pole → Galvanized Steel"
 
     # משטח יצוק מבטון = cast concrete slab (primary material is concrete, not rebar)
     if re.search(r"משטח\s*(?:יצוק|בטון)\s*(?:מ)?בטון|משטח\s*מבטון\s*(?:מזויין|ל)", text, flags=re.IGNORECASE):
@@ -2023,6 +2041,10 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"יריע[ות]+\s*ניקוז|גיאוקומפוזיט|geo.?composite", text, flags=re.IGNORECASE):
         return "Waterproofing", "Hard override: drainage membrane → Waterproofing"
 
+    # מעקות/מחסום בטון = concrete barrier/guardrail → Structural Concrete (before CATEGORY_RULES מעקה→Galvanized)
+    if re.search(r"מעקות?\s*(?:מ|ה)?בטון|מחסום\s*(?:מ|ה)?בטון|קיר\s*(?:מ|ה)?בטון.*מעקה", text, flags=re.IGNORECASE):
+        return "Structural Concrete", "Hard override: concrete barrier → Structural Concrete"
+
     # ריצוף = paving material — must come before generic stone→Crushed Stone check
     if re.search(r"ריצוף|מרצפות?\s*אבן|אבן\s*(?:שפה|משתלבת)", text, flags=re.IGNORECASE):
         return "Paving", "Hard override: paving material → Paving"
@@ -2074,8 +2096,8 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"(?:נקז|צינור)\s*(?:אנכי|אורכי|שרשורי)\s*(?:כולל\s*)?צינור\s*שרשורי\s*מחורר|"
                  r"שרשורי\s*מחורר|נקז\s*אנכי|נקז\s*אורכי", text, flags=re.IGNORECASE):
         return "HDPE Granulate", "Hard override: corrugated perforated drain pipe → HDPE Granulate"
-    # מריפלקס/מריפלס = corrugated HDPE drainage pipe (before generic צינור ניקוז → PVC)
-    if re.search(r"מריפל[קס]?ס", text, flags=re.IGNORECASE):
+    # מריפלכס/מריפלקס/מריפלס/מריפלכ/מריפלק = corrugated HDPE (also truncated forms without final ס)
+    if re.search(r"מריפל(?:כ|ק)ס?", text, flags=re.IGNORECASE):
         return "HDPE Granulate", "Hard override: mariflex corrugated HDPE pipe → HDPE Granulate"
     # galvanized steel drainage pipe must be caught before generic צינור ניקוז → PVC
     if re.search(r"צינור\s*(?:ניקוז|פלדה)\s*(?:פלדה\s*)?מגולוון", text, flags=re.IGNORECASE):
