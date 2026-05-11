@@ -4571,21 +4571,89 @@ def admin_add_user():
 # ====================================================================
 # EMISSIONS ENDPOINT
 # ====================================================================
+# Base reliability score per classification method (used to back-fill old rows with NULL)
+_METHOD_BASE_SCORE: Dict[str, Optional[float]] = {
+    "hard_override":          0.97,
+    "exclude_pattern":        1.00,
+    "boq_prefix_exclude":     1.00,
+    "boq_tprefix_exclude":    1.00,
+    "boq_prefix_override":    0.99,
+    "catalog_exact_material": 0.99,
+    "catalog_substring":      0.93,
+    "catalog_smart_tokens":   0.86,
+    "catalog_weak_tokens":    0.74,
+    "catalog_regex":          0.82,
+    "catalog_exact_boq":      0.98,
+    "catalog_boq_prefix":     0.93,
+    "boq_code_mapping":       0.98,
+    "merged_mapping":         0.95,
+    "regex_rule":             0.87,
+    "auto_learned_csv":       0.88,
+    "vertex_ai":              None,   # use classification_confidence
+}
+
+# Stage suffix appended to matched_by to show where in the pipeline the row failed
+_STAGE_SUFFIXES = {
+    "conversion_failed": ":uom_failed",
+    "estimate_failed":   ":estimate_failed",
+    "unmapped":          ":unmapped",
+}
+
+
 def _fill_reliability_defaults(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Back-fill NULL reliability fields for rows written by older backend versions."""
+    """
+    Back-fill NULL reliability fields and enrich matched_by with pipeline stage info.
+    Runs at query time so old rows and new rows always return complete data to the UI.
+    """
     for row in rows:
-        if row.get("reliability_score") is None:
-            if row.get("status") == "excluded" or row.get("excluded"):
-                row["reliability_score"] = 1.0
-                row["reliability_status"] = row.get("reliability_status") or "auto_approved"
-            elif row.get("emission_co2e") is not None:
-                row["reliability_score"] = 0.7
-                row["reliability_status"] = row.get("reliability_status") or "auto_approved"
-            else:
-                row["reliability_score"] = 0.0
-                row["reliability_status"] = row.get("reliability_status") or "review_required"
+        status = row.get("status") or ""
+        conf   = float(row.get("classification_confidence") or 0)
+        uom    = row.get("assumed_uom") or ""
+        is_excluded = status == "excluded" or bool(row.get("excluded"))
+
+        # ── matched_by: build from classification_method + failure stage ──
         if not row.get("matched_by"):
             row["matched_by"] = row.get("classification_method") or "unknown"
+        # Append failure-stage suffix if not already present
+        suffix = _STAGE_SUFFIXES.get(status, "")
+        if suffix and suffix not in row["matched_by"]:
+            row["matched_by"] += suffix
+
+        # ── reliability_score ────────────────────────────────────────────
+        if row.get("reliability_score") is None:
+            if is_excluded:
+                score = 1.0
+            else:
+                # Extract the leaf method (last segment after "+")
+                leaf = row["matched_by"].split(":")[0].split("+")[-1].strip()
+                base = _METHOD_BASE_SCORE.get(leaf)
+                score = conf if base is None else base  # vertex_ai → use AI conf
+                if score is None:
+                    score = conf if conf > 0 else 0.65
+                # Penalties for pipeline failures
+                if status == "conversion_failed":
+                    score = min(score, 0.50)
+                elif status == "estimate_failed":
+                    score = min(score, 0.40)
+                elif not uom or uom in ("unknown", ""):
+                    score = max(0.0, score - 0.25)
+                # If we have no emission at all, floor to 0
+                if row.get("emission_co2e") is None and not is_excluded:
+                    score = 0.0
+            row["reliability_score"] = round(max(0.0, min(1.0, float(score))), 3)
+
+        # ── reliability_status ───────────────────────────────────────────
+        if not row.get("reliability_status"):
+            sc = float(row.get("reliability_score") or 0)
+            if is_excluded:
+                row["reliability_status"] = "auto_approved"
+            elif status in ("unmapped", "conversion_failed", "estimate_failed"):
+                row["reliability_status"] = "review_required"
+            elif sc >= 0.85:
+                row["reliability_status"] = "auto_approved"
+            else:
+                row["reliability_status"] = "review_required"
+
     return rows
 
 

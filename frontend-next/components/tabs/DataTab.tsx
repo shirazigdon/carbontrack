@@ -41,11 +41,57 @@ const STATUS_COLORS: Record<string, string> = {
   rejected:        'text-red-700',
 };
 
+// Human-readable Hebrew labels for each classification method
+const METHOD_LABELS: Record<string, string> = {
+  hard_override:          'כלל קשיח',
+  exclude_pattern:        'תבנית החרגה',
+  boq_prefix_exclude:     'BOQ ← החרגה',
+  boq_tprefix_exclude:    'BOQ ← החרגה',
+  boq_prefix_override:    'BOQ ← עקיפה',
+  catalog_exact_material: 'קטלוג – מדויק',
+  catalog_substring:      'קטלוג – חלקי',
+  catalog_smart_tokens:   'קטלוג – טוקנים',
+  catalog_weak_tokens:    'קטלוג – טוקנים חלשים',
+  catalog_regex:          'קטלוג – ביטוי רגולרי',
+  catalog_exact_boq:      'קטלוג – BOQ מדויק',
+  catalog_boq_prefix:     'קטלוג – קידומת BOQ',
+  boq_code_mapping:       'מיפוי קוד BOQ',
+  merged_mapping:         'מיפוי משולב',
+  regex_rule:             'כלל ביטוי רגולרי',
+  auto_learned_csv:       'למידה אוטומטית',
+  vertex_ai:              'Vertex AI',
+  none:                   'לא מסווג',
+  unknown:                'לא ידוע',
+};
+
+// Stage-failure suffixes appended to matched_by
+const STAGE_LABELS: Record<string, string> = {
+  uom_failed:      ' · ⚠ יח׳ מידה נכשל',
+  estimate_failed: ' · ⚠ אומדן נכשל',
+  unmapped:        ' · ⚠ לא נמצאה קטגוריה',
+};
+
+function formatMatchedBy(raw: string | null | undefined): string {
+  if (!raw) return '—';
+  const [methodPart, stagePart] = raw.split(':');
+  const methods = methodPart.split('+').map(m => METHOD_LABELS[m.trim()] ?? m.trim());
+  const stageLabel = stagePart ? (STAGE_LABELS[stagePart] ?? ` · ${stagePart}`) : '';
+  return methods.join(' + ') + stageLabel;
+}
+
+function reliabilityColor(score: number): string {
+  if (score >= 0.90) return 'text-green-700 font-medium';
+  if (score >= 0.75) return 'text-amber-600 font-medium';
+  return 'text-red-600 font-medium';
+}
+
 function formatCell(c: { key: keyof EmissionRow }, r: EmissionRow): string {
   const v = r[c.key];
   if (v == null) return '';
   if (c.key === 'weight_kg' || c.key === 'emission_co2e') return ((v as number) / 1000).toFixed(3);
-  if (c.key === 'reliability_score') return ((v as number) * 100).toFixed(1);
+  if (c.key === 'reliability_score') return ((v as number) * 100).toFixed(1) + '%';
+  if (c.key === 'matched_by') return formatMatchedBy(v as string);
+  if (c.key === 'reliability_status') return STATUS_LABELS[String(v)] ?? String(v);
   return String(v);
 }
 
@@ -246,17 +292,21 @@ export function DataTab({ data }: Props) {
                   } else if (c.key === 'emission_co2e') {
                     display = fmt((val as number) / 1000, 1) + 't';
                   } else if (c.key === 'reliability_score') {
-                    display = ((val as number) * 100).toFixed(0) + '%';
+                    const pct = (val as number) * 100;
+                    display = pct.toFixed(0) + '%';
+                    cls = reliabilityColor(val as number);
                   } else if (c.key === 'reliability_status') {
                     const s = String(val);
                     display = STATUS_LABELS[s] ?? s;
                     cls = STATUS_COLORS[s] ?? '';
+                  } else if (c.key === 'matched_by') {
+                    display = formatMatchedBy(val as string);
                   } else {
                     display = String(val);
                   }
                   return (
                     <td key={c.key} title={display}
-                      className={`px-3 py-2 whitespace-nowrap max-w-[200px] truncate text-gray-700 ${cls}`}>
+                      className={`px-3 py-2 whitespace-nowrap max-w-[240px] truncate text-gray-700 ${cls}`}>
                       {display}
                     </td>
                   );
