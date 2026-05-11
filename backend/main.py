@@ -816,6 +816,7 @@ EMISSIONS_DETAILS_DEFAULTS: Dict[str, Any] = {
     "region": None,
     "reliability_score": None,   # computed per row — 0.0-1.0
     "reliability_status": None,  # auto_approved / review_required / rejected
+    "matched_by": None,          # which rule/method matched this item
     "scope": "Scope 3",          # GHG Protocol — embodied carbon is always Scope 3
     "measurement_year": None,
 }
@@ -1852,6 +1853,15 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         return None, "Hard override: IP-rated cabinet transport → EXCLUDE"
     if re.search(r"גילוי\s*(?:תאי?|קווי?|מסלול|מתקן)", text, flags=re.IGNORECASE):
         return None, "Hard override: utility uncovering → EXCLUDE"
+    # Agricultural/landscaping supplies = organic, not construction material → EXCLUDE
+    if re.search(
+        r"קרקע\s*חקלאית|פקעות?\s+ובצלים?|בצלים?\s+ופקעות?|מרבדי?\s*דשא|"
+        r"הטמנת?\s*(?:פקעות?|בצלים?)|ערוגות?\s*(?:כלואות?|פרחים?)|"
+        r"שתיל(?:ה|ים|ות)\s+(?:עצים|שיחים|זרעים|פרחים)|"
+        r"זריעת?\s*דשא|דשא\s*(?:מכל\s*סוג|טבעי|מלאכותי)|קומפוסט",
+        text, flags=re.IGNORECASE,
+    ):
+        return None, "Hard override: agricultural/landscaping supply → EXCLUDE"
     # צילום קו ביוב/מים/ניקוז = CCTV pipe inspection = service
     if re.search(r"צילום\s*קו\s*(?:ביוב|מים|ניקוז)|צילום.*מצלמת\s*(?:וידאו|CCTV)", text, flags=re.IGNORECASE):
         return None, "Hard override: CCTV pipe inspection → EXCLUDE"
@@ -3553,6 +3563,7 @@ def _process_single_row_task(row_tuple, metadata, regulator_catalog, threshold, 
             "classification_method": classification_method, "classification_confidence": classification_confidence,
             "matched_by": matched_by, "review_required": True, "status": "unmapped",
             "conversion_assumption": category_rule, "error_reason": "No category mapping rule matched",
+            "reliability_score": 0.0, "reliability_status": "review_required",
             "source_mode": source_mode,
             "normalized_material": classification_material,
             "annual_reference_material": annual_reference_material,
@@ -4560,6 +4571,24 @@ def admin_add_user():
 # ====================================================================
 # EMISSIONS ENDPOINT
 # ====================================================================
+def _fill_reliability_defaults(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Back-fill NULL reliability fields for rows written by older backend versions."""
+    for row in rows:
+        if row.get("reliability_score") is None:
+            if row.get("status") == "excluded" or row.get("excluded"):
+                row["reliability_score"] = 1.0
+                row["reliability_status"] = row.get("reliability_status") or "auto_approved"
+            elif row.get("emission_co2e") is not None:
+                row["reliability_score"] = 0.7
+                row["reliability_status"] = row.get("reliability_status") or "auto_approved"
+            else:
+                row["reliability_score"] = 0.0
+                row["reliability_status"] = row.get("reliability_status") or "review_required"
+        if not row.get("matched_by"):
+            row["matched_by"] = row.get("classification_method") or "unknown"
+    return rows
+
+
 @app.get("/emissions")
 def emissions():
     try:
@@ -4571,6 +4600,7 @@ def emissions():
             query = f"SELECT * FROM `{_BQ_DETAILS_TABLE_FULL}` ORDER BY calculation_date DESC LIMIT 20000"
             job = bq_client.query(query)
             rows = [sanitize_for_json(dict(r.items())) for r in job.result()]
+        rows = _fill_reliability_defaults(rows)
         return jsonify({"items": rows}), 200
     except Exception as exc:
         logger.exception("emissions failed")

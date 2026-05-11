@@ -211,6 +211,15 @@ def hard_classification_override(material_text: str) -> Optional[str]:
     # גילוי/חשיפת מתקנים קיימים = uncovering existing utilities = service
     if re.search(r"גילוי\s*(?:תאי?|קווי?|מסלול|מתקן)", text, re.IGNORECASE):
         return "EXCLUDE"
+    # Agricultural/landscaping supplies = organic, not construction material → EXCLUDE
+    if re.search(
+        r"קרקע\s*חקלאית|פקעות?\s+ובצלים?|בצלים?\s+ופקעות?|מרבדי?\s*דשא|"
+        r"הטמנת?\s*(?:פקעות?|בצלים?)|ערוגות?\s*(?:כלואות?|פרחים?)|"
+        r"שתיל(?:ה|ים|ות)\s+(?:עצים|שיחים|זרעים|פרחים)|"
+        r"זריעת?\s*דשא|דשא\s*(?:מכל\s*סוג|טבעי|מלאכותי)|קומפוסט",
+        text, re.IGNORECASE,
+    ):
+        return "EXCLUDE"
     # צילום קו ביוב/מים/ניקוז = CCTV pipe inspection = service
     if re.search(r"צילום\s*קו\s*(?:ביוב|מים|ניקוז)|צילום.*מצלמת\s*(?:וידאו|CCTV)", text, re.IGNORECASE):
         return "EXCLUDE"
