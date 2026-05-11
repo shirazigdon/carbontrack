@@ -2424,20 +2424,6 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
                 "exclusion_code": f"BOQ_{prefix_2}",
             }, None
 
-        # Force category for known misclassified BOQ sub-prefixes
-        forced_cat = (BOQ_SUBPREFIX_CATEGORY.get(prefix_8) or BOQ_SUBPREFIX_CATEGORY.get(prefix_5)
-                      or BOQ_SUBPREFIX_FORCE.get(prefix_8) or BOQ_SUBPREFIX_FORCE.get(prefix_5))
-        if forced_cat:
-            return forced_cat, {
-                "method": "boq_prefix_override",
-                "reason": f"BOQ prefix {prefix_8} forced to {forced_cat}",
-                "confidence": 0.99,
-                "excluded": False,
-                "review_required": False,
-                "inferred_uom": "unknown",
-                "matched_by": "boq_prefix_override",
-            }, None
-
     excluded, exclusion_code, pattern = should_exclude(text)
     if excluded:
         return None, {
@@ -2451,8 +2437,8 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
             "exclusion_code": exclusion_code,
         }, None
 
-    # Run precise semantic hard-overrides before generic catalog/BOQ matching.
-    # This prevents broad mapping rows from swallowing known edge cases.
+    # Run precise semantic hard-overrides before BOQ forced-category and catalog matching.
+    # Description-based rules (HDPE, geocell, etc.) must win over broad BOQ chapter defaults.
     hard = hard_classification_override(text)
     if hard:
         category, reason = hard
@@ -2469,6 +2455,26 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
             "catalog_mapping": None,
             "boq_mapping": None,
         }, None
+
+    if boq_code:
+        code_norm = str(boq_code).strip()
+        prefix_2 = code_norm.split(".")[0]
+        prefix_5 = ".".join(code_norm.split(".")[:2]) if "." in code_norm else code_norm
+        prefix_8 = ".".join(code_norm.split(".")[:3])[:8] if code_norm.count(".") >= 2 else prefix_5
+
+        # Force category for known misclassified BOQ sub-prefixes
+        forced_cat = (BOQ_SUBPREFIX_CATEGORY.get(prefix_8) or BOQ_SUBPREFIX_CATEGORY.get(prefix_5)
+                      or BOQ_SUBPREFIX_FORCE.get(prefix_8) or BOQ_SUBPREFIX_FORCE.get(prefix_5))
+        if forced_cat:
+            return forced_cat, {
+                "method": "boq_prefix_override",
+                "reason": f"BOQ prefix {prefix_8} forced to {forced_cat}",
+                "confidence": 0.99,
+                "excluded": False,
+                "review_required": False,
+                "inferred_uom": "unknown",
+                "matched_by": "boq_prefix_override",
+            }, None
         
     # --- SMART CSV AUTO-LEARNED RULES ---
     if AUTO_LEARNED_RULES:
