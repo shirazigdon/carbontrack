@@ -501,53 +501,101 @@ CONTEXT_SCORE_THRESHOLD = 3.5
 # Auto-learned patterns loaded from GT CSV — populated by _load_gt_context_rules()
 _GT_CONTEXT_LEARNED: Dict[str, List[Tuple[str, float]]] = defaultdict(list)
 
-_GT_CSV_PATH = "C:/Users/user/Downloads/sheet_classifications.csv"
+# Directory scanned for GT files; any sheet_classifications*.csv is loaded automatically.
+# Export sheet 6 (or any GT sheet) as CSV to this folder and it will be included.
+_GT_DIR = "C:/Users/user/Downloads"
+
+# Google Sheets gids to try downloading (add sheet 6's gid here once known)
+_GT_SHEET_ID = "1HPUnWBwuiew3Lnw_BV6IUGFZRCp12R1fxCveIplants"
+_GT_SHEET_GIDS: List[int] = [0]   # extend with sheet 6 gid when available
+
+_GT_STOP = {
+    "של", "עם", "על", "או", "עד", "לפי", "לכל", "כולל", "ממ", "סמ",
+    "קוטר", "עובי", "אורך", "דגם", "מסוג", "סוג", "כל", "ב", "ל", "מ",
+}
 
 
-def _load_gt_context_rules(gt_csv: str = _GT_CSV_PATH) -> None:
+def _parse_gt_rows(rows: list, cat_bigrams: Counter, global_bigrams: Counter) -> int:
+    """Add bigrams from labeled rows to counters. Returns number of rows consumed."""
+    added = 0
+    # Auto-detect: try row[2]=GT, row[4]=desc (sheet_classifications format)
+    # Fallback: scan header for category/description columns
+    gt_col, desc_col = 2, 4
+    if rows and len(rows) > 1:
+        header = [c.strip().lower() for c in rows[1]]
+        for i, h in enumerate(header):
+            if any(k in h for k in ["קטגוריה נכונה", "correct", "gt", "category"]):
+                gt_col = i
+            if any(k in h for k in ["תיאור", "description", "material", "טקסט"]):
+                desc_col = i
+
+    for row in rows[2:]:
+        if len(row) <= max(gt_col, desc_col):
+            continue
+        gt = re.sub(r"\s*\(.*\)", "", row[gt_col].strip())   # strip parenthetical notes
+        desc = row[desc_col].strip()
+        if not gt or not desc or gt in ("Unknown", "לבדיקה ידנית", ""):
+            continue
+        words = [
+            w for w in re.findall(r"[א-תa-zA-Z0-9]+", desc)
+            if len(w) > 2 and w not in _GT_STOP
+        ]
+        for i in range(len(words) - 1):
+            bg = f"{words[i]} {words[i+1]}"
+            cat_bigrams[gt][bg] += 1
+            global_bigrams[bg] += 1
+        added += 1
+    return added
+
+
+def _load_gt_context_rules() -> None:
     """
-    Extract high-purity bigrams from GT-labeled CSV and add them to
-    _GT_CONTEXT_LEARNED for use in classify_by_context_score().
-    Requires sheet_classifications.csv format: row[2]=GT, row[4]=description.
+    Load GT-labeled data from:
+      1. All sheet_classifications*.csv files in _GT_DIR
+      2. Google Sheets exports for gids in _GT_SHEET_GIDS
+    Extracts high-purity bigrams (≥3 occurrences, ≥85% purity) per category
+    and populates _GT_CONTEXT_LEARNED for use in classify_by_context_score().
     """
-    if not os.path.exists(gt_csv):
-        return
-    try:
-        cat_bigrams: Dict[str, Counter] = defaultdict(Counter)
-        global_bigrams: Counter = Counter()
-        STOP = {
-            "של", "עם", "על", "או", "עד", "לפי", "לכל", "כולל", "ממ", "סמ",
-            "קוטר", "עובי", "אורך", "דגם", "מסוג", "סוג", "כל", "ב", "ל", "מ",
-        }
-        with open(gt_csv, encoding="utf-8-sig") as f:
-            rows = list(csv.reader(f))
-        for row in rows[2:]:
-            if len(row) <= 4:
-                continue
-            gt = row[2].strip()
-            desc = row[4].strip()
-            if not gt or not desc or gt in ("Unknown", "לבדיקה ידנית", ""):
-                continue
-            words = [
-                w for w in re.findall(r"[א-תa-zA-Z0-9]+", desc)
-                if len(w) > 2 and w not in STOP
-            ]
-            for i in range(len(words) - 1):
-                bg = f"{words[i]} {words[i+1]}"
-                cat_bigrams[gt][bg] += 1
-                global_bigrams[bg] += 1
+    import glob
+    cat_bigrams: Dict[str, Counter] = defaultdict(Counter)
+    global_bigrams: Counter = Counter()
+    total = 0
 
-        for cat, bigrams in cat_bigrams.items():
-            for bg, count in bigrams.most_common(60):
-                total = global_bigrams[bg]
-                purity = count / total if total else 0
-                if count >= 3 and purity >= 0.85:
-                    w0, w1 = bg.split(" ", 1)
-                    pattern = re.escape(w0) + r"\s+" + re.escape(w1)
-                    weight = round(1.0 + purity * 2.5, 1)   # 1.0–3.5 by purity
-                    _GT_CONTEXT_LEARNED[cat].append((pattern, weight))
-    except Exception:
-        pass
+    # 1 — local CSV files
+    pattern = os.path.join(_GT_DIR, "sheet_classifications*.csv")
+    for path in sorted(glob.glob(pattern)):
+        try:
+            with open(path, encoding="utf-8-sig") as f:
+                rows = list(csv.reader(f))
+            n = _parse_gt_rows(rows, cat_bigrams, global_bigrams)
+            total += n
+        except Exception:
+            pass
+
+    # 2 — Google Sheets download (skip if no network or not public)
+    for gid in _GT_SHEET_GIDS:
+        url = (f"https://docs.google.com/spreadsheets/d/{_GT_SHEET_ID}"
+               f"/export?format=csv&gid={gid}")
+        try:
+            import urllib.request as _ur, io as _io
+            with _ur.urlopen(url, timeout=8) as r:
+                content = r.read().decode("utf-8")
+            rows = list(csv.reader(_io.StringIO(content)))
+            n = _parse_gt_rows(rows, cat_bigrams, global_bigrams)
+            total += n
+        except Exception:
+            pass
+
+    # Build scored patterns
+    _GT_CONTEXT_LEARNED.clear()
+    for cat, bigrams in cat_bigrams.items():
+        for bg, count in bigrams.most_common(80):
+            purity = count / global_bigrams[bg] if global_bigrams[bg] else 0
+            if count >= 3 and purity >= 0.85:
+                w0, w1 = bg.split(" ", 1)
+                pattern = re.escape(w0) + r"\s+" + re.escape(w1)
+                weight = round(1.0 + purity * 2.5, 1)
+                _GT_CONTEXT_LEARNED[cat].append((pattern, weight))
 
 
 _load_gt_context_rules()   # runs once at import

@@ -560,64 +560,101 @@ CONTEXT_SCORE_THRESHOLD = 3.5
 _GT_CONTEXT_LEARNED: Dict[str, List[Tuple[str, float]]] = {}
 _defaultdict = __import__("collections").defaultdict
 
-def _load_gt_context_rules(
-    gt_csv: str = "C:/Users/user/Downloads/sheet_classifications.csv"
-) -> None:
-    """
-    Extract high-purity bigrams from the GT-labeled sheet_classifications.csv
-    and add them to _GT_CONTEXT_LEARNED.
-    Row format: [num, original, GT_category, website_category, description, ...]
-    """
-    if not os.path.exists(gt_csv):
-        logger.info("GT context CSV not found at %s — skipping auto-learn", gt_csv)
-        return
-    try:
-        from collections import Counter as _Counter
-        cat_bigrams: Dict[str, Any] = _defaultdict(_Counter)
-        global_bigrams: Any = _Counter()
-        STOP = {
-            "של", "עם", "על", "או", "עד", "לפי", "לכל", "כולל", "ממ", "סמ",
-            "קוטר", "עובי", "אורך", "דגם", "מסוג", "סוג", "כל", "ב", "ל", "מ",
-        }
-        import csv as _csv
-        with open(gt_csv, encoding="utf-8-sig") as f:
-            rows = list(_csv.reader(f))
-        for row in rows[2:]:
-            if len(row) <= 4:
-                continue
-            gt = row[2].strip()
-            desc = row[4].strip()
-            if not gt or not desc or gt in ("Unknown", "לבדיקה ידנית", ""):
-                continue
-            words = [
-                w for w in re.findall(r"[א-תa-zA-Z0-9]+", desc)
-                if len(w) > 2 and w not in STOP
-            ]
-            for i in range(len(words) - 1):
-                bg = f"{words[i]} {words[i+1]}"
-                cat_bigrams[gt][bg] += 1
-                global_bigrams[bg] += 1
+_GT_DIR = "C:/Users/user/Downloads"
+_GT_SHEET_ID = "1HPUnWBwuiew3Lnw_BV6IUGFZRCp12R1fxCveIplants"
+_GT_SHEET_GIDS: List[int] = [0]   # add sheet 6 gid here when known
 
-        _GT_CONTEXT_LEARNED.clear()
-        for cat, bigrams in cat_bigrams.items():
-            learned = []
-            for bg, count in bigrams.most_common(60):
-                total = global_bigrams[bg]
-                purity = count / total if total else 0
-                if count >= 3 and purity >= 0.85:
-                    w0, w1 = bg.split(" ", 1)
-                    pattern = re.escape(w0) + r"\s+" + re.escape(w1)
-                    weight = round(1.0 + purity * 2.5, 1)
-                    learned.append((pattern, weight))
-            if learned:
-                _GT_CONTEXT_LEARNED[cat] = learned
-        logger.info(
-            "GT context rules loaded from %s: %d categories, %d total patterns",
-            gt_csv, len(_GT_CONTEXT_LEARNED),
-            sum(len(v) for v in _GT_CONTEXT_LEARNED.values()),
-        )
-    except Exception as exc:
-        logger.warning("GT context learning failed: %s", exc)
+_GT_STOP = {
+    "של", "עם", "על", "או", "עד", "לפי", "לכל", "כולל", "ממ", "סמ",
+    "קוטר", "עובי", "אורך", "דגם", "מסוג", "סוג", "כל", "ב", "ל", "מ",
+}
+
+
+def _parse_gt_rows_main(rows: list, cat_bigrams: Any, global_bigrams: Any) -> int:
+    """Parse rows from any GT-labeled CSV and add bigrams to counters."""
+    from collections import Counter as _C
+    gt_col, desc_col = 2, 4
+    if rows and len(rows) > 1:
+        header = [c.strip().lower() for c in rows[1]]
+        for i, h in enumerate(header):
+            if any(k in h for k in ["קטגוריה נכונה", "correct", "gt", "category"]):
+                gt_col = i
+            if any(k in h for k in ["תיאור", "description", "material", "טקסט"]):
+                desc_col = i
+    added = 0
+    for row in rows[2:]:
+        if len(row) <= max(gt_col, desc_col):
+            continue
+        gt = re.sub(r"\s*\(.*\)", "", row[gt_col].strip())
+        desc = row[desc_col].strip()
+        if not gt or not desc or gt in ("Unknown", "לבדיקה ידנית", ""):
+            continue
+        words = [
+            w for w in re.findall(r"[א-תa-zA-Z0-9]+", desc)
+            if len(w) > 2 and w not in _GT_STOP
+        ]
+        for i in range(len(words) - 1):
+            bg = f"{words[i]} {words[i+1]}"
+            cat_bigrams[gt][bg] += 1
+            global_bigrams[bg] += 1
+        added += 1
+    return added
+
+
+def _load_gt_context_rules() -> None:
+    """
+    Load GT-labeled data from:
+      1. All sheet_classifications*.csv files in _GT_DIR
+      2. Google Sheets exports for gids in _GT_SHEET_GIDS
+    Populates _GT_CONTEXT_LEARNED with high-purity bigrams for context scoring.
+    """
+    import glob, csv as _csv, urllib.request as _ur, io as _io
+    from collections import Counter as _C, defaultdict as _dd
+    cat_bigrams: Any = _dd(_C)
+    global_bigrams: Any = _C()
+    total = 0
+
+    # 1 — local CSV files
+    for path in sorted(glob.glob(os.path.join(_GT_DIR, "sheet_classifications*.csv"))):
+        try:
+            with open(path, encoding="utf-8-sig") as f:
+                rows = list(_csv.reader(f))
+            n = _parse_gt_rows_main(rows, cat_bigrams, global_bigrams)
+            total += n
+            logger.debug("GT context: loaded %d rows from %s", n, path)
+        except Exception as exc:
+            logger.warning("GT context: failed to load %s: %s", path, exc)
+
+    # 2 — Google Sheets download
+    for gid in _GT_SHEET_GIDS:
+        url = (f"https://docs.google.com/spreadsheets/d/{_GT_SHEET_ID}"
+               f"/export?format=csv&gid={gid}")
+        try:
+            with _ur.urlopen(url, timeout=8) as r:
+                rows = list(_csv.reader(_io.StringIO(r.read().decode("utf-8"))))
+            n = _parse_gt_rows_main(rows, cat_bigrams, global_bigrams)
+            total += n
+            logger.debug("GT context: loaded %d rows from Sheets gid=%s", n, gid)
+        except Exception:
+            pass
+
+    _GT_CONTEXT_LEARNED.clear()
+    pat_total = 0
+    for cat, bigrams in cat_bigrams.items():
+        learned = []
+        for bg, count in bigrams.most_common(80):
+            purity = count / global_bigrams[bg] if global_bigrams[bg] else 0
+            if count >= 3 and purity >= 0.85:
+                w0, w1 = bg.split(" ", 1)
+                pattern = re.escape(w0) + r"\s+" + re.escape(w1)
+                learned.append((pattern, round(1.0 + purity * 2.5, 1)))
+        if learned:
+            _GT_CONTEXT_LEARNED[cat] = learned
+            pat_total += len(learned)
+    logger.info(
+        "GT context learning: %d rows → %d categories, %d patterns",
+        total, len(_GT_CONTEXT_LEARNED), pat_total,
+    )
 
 
 _load_gt_context_rules()
