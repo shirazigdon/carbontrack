@@ -114,6 +114,72 @@ def should_exclude(text: str) -> bool:
 def hard_classification_override(material_text: str) -> Optional[str]:
     text = normalize_text(material_text)
 
+    # ── Block A: Service operations that ALWAYS mean EXCLUDE ──────────────────
+    if re.search(
+        r"ביצוע\s+(?:מספור|הפרד[הת]|הקשח[הת]|בדיקות?|איפוס|כיול|ריסוס|צביע|הדבק|ניקוי|פינוי|חיטוי"
+        r"|\"?TOTAL\s*RISK\"?|ה?ארכ[הת]\s*שרוול|חיבורי?\s*הארקה\s+ע.י\s+ריתוך"
+        r"|הפעלת?\s*מערכת|הרכבת?\s*(?:גנרטור|דיזל|מנוע|משאבה))",
+        text, flags=re.IGNORECASE
+    ):
+        return "EXCLUDE"
+
+    if re.search(r"TOTAL\s*RISK|עלות\s*(?:כוללת|פאושלית)|חוזה\s*גג\s*|הסכם\s*פאושל", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(
+        r"לשימוש\s*זמני.{0,30}(?:גוף|מנגנון|ציוד|מצלמ|בקר|ארון|לוח|גנרטור|UPS)"
+        r"|(?:גוף|מנגנון|ציוד|מצלמ|בקר|ארון|לוח).{0,30}לשימוש\s*זמני",
+        text, flags=re.IGNORECASE
+    ):
+        return "EXCLUDE"
+
+    if re.search(r"כיול.{0,20}הפעל|הפעל.{0,20}כיול|ניסוי\s*ו?הפעלה", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(
+        r"בדיקות?\s+(?:אינטגר|קבלה|מערכת|ביצועים|עומס|ריצה|נסיעה)"
+        r"|בדיקת?\s+(?:קו\b|מסלול\b|רשת\b|מובל\b)",
+        text, flags=re.IGNORECASE
+    ):
+        return "EXCLUDE"
+
+    if re.search(
+        r"אספקה.{0,15}התקנ.{0,15}(?:כיול|הפעל|חיבור\s+ל|ריתוך)",
+        text, flags=re.IGNORECASE
+    ):
+        return "EXCLUDE"
+
+    # ── Block B: Electrical equipment items (never raw materials) ─────────────
+    if re.search(r"(?:^|\s)ראש\s*רמזור|פנס\s*רמזור|מכלול\s*רמזור", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(
+        r"(?:^|\b)(?:גנרטור|דיזל\s*גנרטור|מנוע\s*גנרטור)\b"
+        r"|(?:^|\b)(?:UPS|אל\s*פסק)\s+\d"
+        r"|(?:אספקה|התקנה|הרכבה)\s+(?:של\s+)?(?:גנרטור|UPS|אל\s*פסק)",
+        text, flags=re.IGNORECASE
+    ):
+        return "EXCLUDE"
+
+    if re.search(
+        r"(?:^|\b)ממסר\s+(?:\d|מסוג|דגם|ל[א-ת])|"
+        r"(?:^|\b)מגען\s+(?:\d|מסוג|דגם|ל[א-ת])|"
+        r"(?:^|\b)פיוז\s+(?:\d|מסוג|[א-ת])|"
+        r"(?:^|\b)שנאי\s+(?:מתח|זרם|מיד|מבוד)",
+        text, flags=re.IGNORECASE
+    ):
+        return "EXCLUDE"
+
+    if re.search(
+        r"(?:אספקה|התקנה|חיבור)\s+(?:של\s+)?(?:מצלמת?\s+(?:גילוי|מעקב|צינור|כיפה|אבטחה)"
+        r"|חיישן\s+(?:תנועה|עשן|חום|נוכחות|מהירות)"
+        r"|גלאי\s+(?:עשן|להבה|גז|חום|תנועה))",
+        text, flags=re.IGNORECASE
+    ):
+        return "EXCLUDE"
+
+    # ──────────────────────────────────────────────────────────────────────────
+
     if re.search(r"זכוכית|טריפלקס", text, re.IGNORECASE):
         return "Glass"
     # ארגז הסתעפות ואבטחה = metal security/junction box → Galvanized Steel
