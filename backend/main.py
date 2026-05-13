@@ -3772,6 +3772,11 @@ def maybe_write_learning_rows(material: str, boq_code: Optional[str], category: 
                               source: str, emission_factor: Optional[float] = None, emission_factor_source: Optional[str] = None) -> None:
     if not AUTO_WRITE_MAPPINGS or category in {"Unknown", "EXCLUDE"}:
         return
+    # Vertex AI results must not be auto-written to the catalog — they can misclassify
+    # service items as materials, poisoning future lookups.  Only deterministic sources
+    # (hard_override, BOQ mapping, catalog exact match) are safe to persist.
+    if source == "vertex_auto_approved":
+        return
     if reliability_score < AUTO_APPROVE_CONFIDENCE:
         return
 
