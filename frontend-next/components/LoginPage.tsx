@@ -60,7 +60,7 @@ export function LoginPage() {
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 32px', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <img src={LOGO} style={{ width: 36, height: 36, objectFit: 'contain' }} alt="logo" />
-          <span style={{ fontWeight: 700, fontSize: 15, color: '#1b4332' }}>Carbon₂Track</span>
+          <span style={{ fontWeight: 700, fontSize: 15, color: '#1b4332' }}>CarbonTrack</span>
         </div>
         <span style={{ fontSize: 12, color: '#52b788', fontWeight: 500 }}>🌿 נתיבי ישראל</span>
       </header>
@@ -115,7 +115,7 @@ export function LoginPage() {
       </main>
 
       <footer style={{ textAlign: 'center', fontSize: 11, color: '#95d5b2', padding: '16px', position: 'relative', zIndex: 1 }}>
-        Carbon₂Track · נתיבי ישראל · {new Date().getFullYear()} 🌿
+        CarbonTrack · נתיבי ישראל · {new Date().getFullYear()} 🌿
       </footer>
     </div>
   );

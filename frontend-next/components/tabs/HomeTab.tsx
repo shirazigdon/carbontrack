@@ -63,7 +63,7 @@ export function HomeTab({ data, reviewCount, userName, onNavigate }: Props) {
           <div>
             <p className="text-sm font-medium mb-1" style={{ color: '#95d5b2' }}>{new Date().toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
             <h1 className="text-3xl font-black text-white mb-2">{greeting(userName)} 👋</h1>
-            <p className="text-white/50 text-sm">ברוכה הבאה למערכת Carbon₂Track — נתיבי ישראל</p>
+            <p className="text-white/50 text-sm">ברוכים הבאים למערכת CarbonTrack — נתיבי ישראל</p>
           </div>
           <div className="flex gap-3 flex-wrap">
             {reviewCount > 0 && (
@@ -89,7 +89,7 @@ export function HomeTab({ data, reviewCount, userName, onNavigate }: Props) {
           { label: `פליטות ${curYear}`, value: `${fmt(stats.yearE / 1000, 1)}t`, sub: 'CO₂e שנה נוכחית', color: '#40916c' },
           { label: 'סה"כ פליטות', value: `${fmt(stats.totalE / 1000, 1)}t`, sub: 'כל הפרויקטים', color: '#3a7fc1' },
           { label: 'פרויקטים', value: `${stats.projects}`, sub: 'פעילים', color: '#7b66b2' },
-          { label: 'ממוצע אמינות', value: '98%', sub: 'accuracy', color: '#c07a2a' },
+          { label: 'ממוצע אמינות', value: `${Math.round(stats.avgRel * 100)}%`, sub: 'ציון אמינות', color: '#c07a2a' },
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-card">
             <div className="text-xs text-slate-400 mb-2">{label}</div>

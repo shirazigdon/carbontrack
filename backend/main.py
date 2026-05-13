@@ -4830,12 +4830,26 @@ def manage_db():
             tables = ["emissions_details", "emissions_summary", "review_queue", "processing_runs"]
 
             for table in tables:
-                query = f"DELETE FROM `{dataset}.{table}` WHERE project_name = @pid"
-                job_config = bigquery.QueryJobConfig(
-                    query_parameters=[bigquery.ScalarQueryParameter("pid", "STRING", project_name)]
-                )
-                client.query(query, job_config=job_config).result()
-                
+                full = f"`{dataset}.{table}`"
+                pid_param = bigquery.ScalarQueryParameter("pid", "STRING", project_name)
+                try:
+                    client.query(
+                        f"DELETE FROM {full} WHERE project_name = @pid",
+                        job_config=bigquery.QueryJobConfig(query_parameters=[pid_param]),
+                    ).result()
+                except Exception as del_err:
+                    err_str = str(del_err)
+                    if "STREAMING_BUFFER" in err_str or "streaming buffer" in err_str.lower():
+                        # BigQuery can't DELETE rows still in the streaming buffer (~90 min window).
+                        # Workaround: recreate the table without the deleted project's rows.
+                        client.query(
+                            f"CREATE OR REPLACE TABLE {full} AS "
+                            f"SELECT * FROM {full} WHERE project_name != @pid",
+                            job_config=bigquery.QueryJobConfig(query_parameters=[pid_param]),
+                        ).result()
+                    else:
+                        raise
+
             return jsonify({"status": "success", "message": f"הפרויקט '{project_name}' נמחק בהצלחה"}), 200
         
         return jsonify({"status": "error", "message": "פעולה לא חוקית או חסר שם פרויקט"}), 400

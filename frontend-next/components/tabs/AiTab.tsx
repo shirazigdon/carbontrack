@@ -27,7 +27,7 @@ function buildContext(data: EmissionRow[]): string {
   const byCat: Record<string, number> = {};
   data.forEach(r => { byCat[r.category] = (byCat[r.category] || 0) + (r.emission_co2e || 0); });
   const catCsv = Object.entries(byCat).map(([c, e]) => `${c},${(e / 1000).toFixed(1)}t`).join('\n');
-  return `אתה עוזר AI מומחה של מערכת CarbonTrack360 — מעקב פליטות פחמן לנתיבי ישראל.
+  return `אתה עוזר AI מומחה של מערכת CarbonTrack — מעקב פליטות פחמן לנתיבי ישראל.
 תפקידך: לנתח נתונים, לזהות מגמות, להציע המלצות לצמצום פחמן, ולענות בעברית בצורה מקצועית.
 מספרים גדולים — הצג בטונות CO₂e. ענה בנקודות קצרות. הצע פעולות מעשיות.
 
@@ -70,7 +70,7 @@ export function AiTab({ data }: Props) {
         <div className="flex-1 flex flex-col items-center justify-center gap-6 pb-4">
           <div className="text-center">
             <div className="text-5xl mb-3">🤖</div>
-            <h2 className="font-bold text-lg mb-1">עוזר AI של CarbonTrack360</h2>
+            <h2 className="font-bold text-lg mb-1">עוזר AI של CarbonTrack</h2>
             <p className="text-sm text-muted-fg max-w-md">שאל אותי כל שאלה על נתוני הפחמן — אנתח, אשווה ואמליץ בזמן אמת</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full max-w-xl">

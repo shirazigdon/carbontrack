@@ -11,7 +11,7 @@ function buildContext(data: EmissionRow[]): string {
   const byProj: Record<string, number> = {};
   data.forEach(r => { byProj[r.project_name] = (byProj[r.project_name] || 0) + (r.emission_co2e || 0); });
   const topProj = Object.entries(byProj).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
-  return `אתה עוזר AI מומחה של CarbonTrack360 — פליטות פחמן לנתיבי ישראל. ענה קצר ומקצועי בעברית.
+  return `אתה עוזר AI מומחה של CarbonTrack — פליטות פחמן לנתיבי ישראל. ענה קצר ומקצועי בעברית.
 סה"כ ${fmt(totalT)}t CO₂e · פרויקט מוביל: ${topProj}`;
 }
 

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'CarbonTrack360 — נתיבי ישראל',
+  title: 'CarbonTrack — נתיבי ישראל',
   description: 'מערכת ניהול פליטות פחמן',
   icons: { icon: 'https://storage.googleapis.com/green_excal/carbontrack-logo.png' },
 };
