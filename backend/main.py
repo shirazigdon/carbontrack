@@ -903,20 +903,48 @@ VERTEX_CLASSIFICATION_SCHEMA = {
 }
 
 VERTEX_SYSTEM_INSTRUCTION = f"""
-You classify Hebrew civil infrastructure BOQ material lines.
+You are a senior civil-infrastructure quantity surveyor classifying Hebrew BOQ (Bill of Quantities) lines into material categories for embodied-carbon accounting.
 
-Rules:
-1. Pick exactly one category from: {', '.join(ALLOWED_CATEGORIES)}.
-2. If the line is labor, service, demolition, excavation/earthworks, surcharge, finishing, or non-material, set category='EXCLUDE' and excluded=true.
-3. Use inferred_uom from this enum when possible: kg, ton, m3, m2, m, unit, unknown.
-4. If the line is a concrete pipe, manhole, precast wall, or curbstone, populate extracted_element_type with one of: concrete_pipe, precast_manhole, precast_wall, curbstone.
-5. extracted_dimension_cm should be the main diameter/size in centimeters when available.
-6. Keep review_required=true when confidence < 0.8 or details are missing for conversion.
-7. Excavation, earthworks, compaction, and soil-moving operations are always EXCLUDE.
-8. Grout (גראוט) is Cementitious Mortar. Geocell/geotechnical honeycomb (גיאו-תא) is HDPE Granulate.
-9. Fiber cement boards (פייבר צמנט, צמנטבורד) are Precast Concrete.
-10. Cement-stabilized fill (חול/אדמה מיוצבת בצמנט) is Fill Material, not Cementitious Mortar.
-11. Return JSON only.
+## Task
+Pick exactly one category from this list:
+{', '.join(ALLOWED_CATEGORIES)}
+
+Set category='EXCLUDE' and excluded=true for any line that is NOT a physical material supply:
+  - Labor, services, inspections, surveys, tests, maintenance, cleaning
+  - Demolition, excavation, earthworks, compaction, soil-moving, backfill
+  - Formwork, surface finishing, painting, marking
+  - Surcharges, color supplements, temporary equipment, rentals
+  - Administrative items, bonuses, project management
+
+## Category definitions (pick the BEST match)
+- **Structural Concrete**: cast-in-place concrete poured on site, including foundations, columns, slabs, retaining walls. Described as "יצוק/יציקה בטון", "בטון מזויין", "בטון אורפי", "יסוד בטון". A foundation that IS the concrete supply = Structural Concrete.
+- **Precast Concrete**: factory-cast elements: pipes (צינור בטון), manholes (שוחה/מנהול), curbstones (אבן שפה), guardrails/barriers (ניו ג'רסי טרומי, מעקה בטון טרומי), retaining wall panels.
+- **Steel Rebar**: reinforcement bars, welded mesh, rebar cages. "זיון/מוטות/רשת זיון".
+- **Galvanized Steel**: poles, sign structures, guardrails, covers, fencing, channels, sign bridges. "עמוד/גדר/מכסה/זרוע/תמרור/מעקה מגולוון".
+- **Copper Wire (Cable)**: electrical cables, communication cables, fiber optic cables. "כבל חשמל/תקשורת, סיב אופטי".
+- **HDPE Granulate**: PE/HDPE pipes and conduits (Φ diameter), irrigation lines, telecom ducts. "צינור PE/HDPE, מריפל, שרשורי".
+- **PVC Pipe**: PVC drainage, sewage, or conduit pipes. "צינור PVC/אפקה".
+- **Asphalt**: asphalt/bitumen paving layers. "אספלט, ביטומן, מעטפת".
+- **Paving**: paving stones, interlocking pavers, granite/stone tiles, floor tiles. "אבן משתלבת, אריחי גרניט, ריצוף, מדרכה".
+- **Crushed Stone**: aggregate, gravel, crushed stone base, boulders. "אבן כתושה, חצץ, אגרגט".
+- **Fill Material**: sand, soil, engineered fill. "חול, עפר מילוי".
+- **Waterproofing**: membranes, bitumen sheets, geotextiles used for sealing. "יריעת איטום, ממברנה, ביטומן גיליוני".
+- **Aluminum**: aluminum profiles, frames, cladding. "אלומיניום".
+- **Cementitious Mortar**: grout, mortar, cement-slurry. "גראוט, מלט, טיח צמנטי".
+- **Lean Concrete**: low-strength blinding/leveling concrete. "בטון רזה/גיבוש".
+
+## Special rules
+- Grout (גראוט) → Cementitious Mortar. Geocell (גיאו-תא) → HDPE Granulate.
+- Fiber cement board (פייבר צמנט, צמנטבורד) → Precast Concrete.
+- Cement-stabilized fill (חול/אדמה מיוצבת בצמנט) → Fill Material (NOT Cementitious Mortar).
+- "תכנון וביצוע יסוד" / "ביצוע יסוד לעמוד" (design+build foundation for a pole) → EXCLUDE (service contract).
+- "אספקה בלבד של עמוד" (supply-only of a pole) → Galvanized Steel (it IS a material supply).
+- A foundation that supplies concrete ("יסוד בטון מזויין") → Structural Concrete.
+
+## Output
+Return JSON only. Use inferred_uom: kg, ton, m3, m2, m, unit, or unknown.
+For concrete pipes/manholes/curbstones set extracted_element_type and extracted_dimension_cm.
+Set review_required=true when confidence < 0.8 or details are ambiguous.
 """
 
 
@@ -2421,18 +2449,34 @@ def _safe_vertex_json_call(prompt: str, system_instruction: str, schema: Dict[st
     raise last_exc
 
 
-def classify_with_vertex_dual(material_text: str) -> Dict[str, Any]:
+def _boq_context_paragraph(boq_code: Optional[str]) -> str:
+    """Return a short BOQ chapter context sentence to prepend to prompts."""
+    if not boq_code:
+        return ""
+    ctx = get_boq_context(str(boq_code).strip())
+    if not ctx:
+        return f"\nBOQ code: {boq_code}"
+    parts = [f"\nBOQ code: {boq_code} — chapter {ctx['prefix']}: {ctx['name_he']} ({ctx['name_en']})."]
+    if ctx.get("always_exclude"):
+        parts.append(" This chapter contains only services/operations — classify as EXCLUDE.")
+    elif ctx.get("expected"):
+        parts.append(f" Expected material category for this chapter: {', '.join(ctx['expected'])}.")
+    return "".join(parts)
+
+
+def classify_with_vertex_dual(material_text: str, boq_code: Optional[str] = None) -> Dict[str, Any]:
+    ctx_para = _boq_context_paragraph(boq_code)
     engineer_1_instruction = VERTEX_SYSTEM_INSTRUCTION + "\nYou are Civil Engineer A. Focus on identifying the dominant material category, unit, and whether this is a true material line."
     engineer_2_instruction = VERTEX_SYSTEM_INSTRUCTION + "\nYou are Civil Engineer B. Be skeptical. Reject service / surcharge / labor / demolition lines aggressively."
 
     e1 = _safe_vertex_json_call(
-        f"Classify this BOQ line: {material_text}",
+        f"Classify this BOQ line:{ctx_para}\nText: {material_text}",
         engineer_1_instruction,
         VERTEX_CLASSIFICATION_SCHEMA,
         material_text,
     )
     e2 = _safe_vertex_json_call(
-        f"Review this BOQ line independently: {material_text}",
+        f"Review this BOQ line independently:{ctx_para}\nText: {material_text}",
         engineer_2_instruction,
         VERTEX_CLASSIFICATION_SCHEMA,
         material_text,
@@ -2475,16 +2519,14 @@ def classify_with_vertex_dual(material_text: str) -> Dict[str, Any]:
     }
 
 
-def classify_with_vertex_resilient(material_text: str) -> Dict[str, Any]:
-    """
-    Prefer dual review for higher quality, but fall back to single-call model and finally to Unknown.
-    """
+def classify_with_vertex_resilient(material_text: str, boq_code: Optional[str] = None) -> Dict[str, Any]:
+    """Prefer dual review for higher quality, fall back to single-call then Unknown."""
     try:
-        return classify_with_vertex_dual(material_text)
+        return classify_with_vertex_dual(material_text, boq_code=boq_code)
     except Exception as exc:
         logger.exception("Dual Vertex classification failed for material=%s", material_text[:120])
         try:
-            single = classify_with_vertex(material_text)
+            single = classify_with_vertex(material_text, boq_code=boq_code)
             single.setdefault("reason", f"Single Vertex fallback after dual failure: {exc}")
             single.setdefault("review_required", True)
             return single
@@ -2505,9 +2547,9 @@ def classify_with_vertex_resilient(material_text: str) -> Dict[str, Any]:
             }
 
 
-def classify_with_vertex(material_text: str) -> Dict[str, Any]:
-    prompt = f"""
-Classify this Hebrew civil infrastructure BOQ line and infer likely unit.
+def classify_with_vertex(material_text: str, boq_code: Optional[str] = None) -> Dict[str, Any]:
+    ctx_para = _boq_context_paragraph(boq_code)
+    prompt = f"""Classify this Hebrew civil infrastructure BOQ line and infer likely unit.{ctx_para}
 
 Text:
 {material_text}
@@ -2558,48 +2600,130 @@ def choose_category_from_sources(sources: Dict[str, Optional[Dict[str, Any]]]) -
     return None, None, None
 
 
-# BOQ chapter prefixes that are always admin/service — never physical materials
-BOQ_PREFIX_EXCLUDE = {
-    "60",   # admin, misc, bonuses, cameras, traffic management
-    "69",   # misc/general items
+# ==========================================================
+# BOQ BLUE BOOK CHAPTER CONTEXT
+# Israeli Standard Infrastructure BOQ — "ספר כחול של התשתיות"
+# Each entry: name_he, name_en, expected (likely categories), always_exclude
+# Used to enrich Vertex AI prompts with structured chapter semantics.
+# ==========================================================
+BOQ_CHAPTER_CONTEXT: Dict[str, Dict] = {
+    # ── Chapter 51: General civil infrastructure ─────────────────────────────
+    "51":         {"name_he": "עבודות כלליות",          "name_en": "General civil works",             "expected": []},
+    "51.01":      {"name_he": "עבודות מקדמיות",         "name_en": "Preliminary/demolition/clearing",  "always_exclude": True},
+    "51.02":      {"name_he": "חפירות ועפר",             "name_en": "Excavation and earthworks",        "always_exclude": True},
+    "51.02.004":  {"name_he": "הידוק קרקע",             "name_en": "Soil compaction operations",       "always_exclude": True},
+    "51.03":      {"name_he": "מילוי חוזר",             "name_en": "Backfill and compaction",          "always_exclude": True},
+    "51.04":      {"name_he": "מצע ואגרגט",             "name_en": "Aggregate base/sub-base course",   "expected": ["Crushed Stone", "Fill Material"]},
+    "51.05":      {"name_he": "עבודות אבן",              "name_en": "Stone and paving works",           "expected": ["Crushed Stone", "Paving"]},
+    "51.05.28":   {"name_he": "אבנים בגדלים שונים",     "name_en": "Rocks/boulders/aggregate",          "expected": ["Crushed Stone"], "force_category": "Crushed Stone"},
+    "51.05.30":   {"name_he": "חצץ שטוף",               "name_en": "Washed/graded gravel",              "expected": ["Crushed Stone"], "force_category": "Crushed Stone"},
+    "51.06":      {"name_he": "עבודות בטון",            "name_en": "Concrete works",                   "expected": ["Structural Concrete", "Lean Concrete"]},
+    "51.07":      {"name_he": "זיון",                    "name_en": "Reinforcement steel (rebar)",       "expected": ["Steel Rebar"]},
+    "51.07.01":   {"name_he": "צינור מחורר / גלי",      "name_en": "Drainage/perforated corrugated pipe","expected": ["PVC Pipe"], "force_category": "PVC Pipe"},
+    "51.08":      {"name_he": "קינוח ועיבוד",           "name_en": "Formwork/surface finishing",        "always_exclude": True},
+    "51.09":      {"name_he": "איטום",                   "name_en": "Waterproofing membranes",           "expected": ["Waterproofing"]},
+    "51.10":      {"name_he": "אלמנטים טרומיים",        "name_en": "Precast concrete elements",         "expected": ["Precast Concrete"]},
+    "51.11":      {"name_he": "עבודות פלדה",            "name_en": "Structural steel fabrication",      "expected": ["Galvanized Steel", "Steel Rebar"]},
+    "51.12":      {"name_he": "ניקוז ומים",             "name_en": "Drainage and water pipes",          "expected": ["PVC Pipe", "HDPE Granulate", "Precast Concrete"]},
+    "51.20":      {"name_he": "אספלט",                  "name_en": "Asphalt paving",                    "expected": ["Asphalt"]},
+    "51.22":      {"name_he": "ריצוף ומדרכות",          "name_en": "Paving stones and sidewalks",       "expected": ["Paving", "Precast Concrete"]},
+    "51.23":      {"name_he": "תעלות ניקוז",            "name_en": "Drainage trenches",                 "expected": ["Crushed Stone", "Fill Material"]},
+    "51.23.04":   {"name_he": "חפירת תעלת ניקוז",      "name_en": "Drainage trench excavation",        "always_exclude": True},
+    "51.24":      {"name_he": "קירות תומכים",           "name_en": "Retaining walls",                   "expected": ["Structural Concrete", "Precast Concrete", "Galvanized Steel"]},
+    "51.25":      {"name_he": "גדרות ומעקות",           "name_en": "Fencing and guardrails",            "expected": ["Galvanized Steel"]},
+    "51.26":      {"name_he": "תמרורים ושילוט",         "name_en": "Traffic signs and signage",         "expected": ["Galvanized Steel"]},
+    "51.27":      {"name_he": "אורנמנטציה",              "name_en": "Landscaping / street furniture",    "expected": ["Paving", "Precast Concrete"]},
+    "51.30":      {"name_he": "תאורה",                  "name_en": "Street lighting",                   "expected": ["Galvanized Steel", "Copper Wire (Cable)"]},
+    "51.31":      {"name_he": "חשמל ותקשורת",           "name_en": "Electrical and communications",     "expected": ["Copper Wire (Cable)", "Galvanized Steel"]},
+    "51.32":      {"name_he": "סימון כביש",             "name_en": "Road marking (paint)",              "always_exclude": True},
+    "51.33":      {"name_he": "מבנה עזר",               "name_en": "Ancillary structures",              "expected": ["Structural Concrete", "Precast Concrete"]},
+    "51.34":      {"name_he": "מחזירי אור",             "name_en": "Road markers/reflectors",           "always_exclude": True},
+    "51.35":      {"name_he": "ציוד תנועה זמני",        "name_en": "Temporary traffic equipment",       "always_exclude": True},
+    # ── Chapter 18: Electrical / Telecom conduits ────────────────────────────
+    "18":         {"name_he": "תשתית חשמל ותקשורת",    "name_en": "Electrical/telecom infrastructure", "expected": ["HDPE Granulate", "Copper Wire (Cable)"]},
+    "18.01":      {"name_he": "צינורות פוליאתילן",      "name_en": "Polyethylene (PE/HDPE) conduits",   "expected": ["HDPE Granulate"]},
+    "18.01.04":   {"name_he": "צינור PE ד.כ.",          "name_en": "Single-wall PE conduit",            "expected": ["HDPE Granulate"], "force_category": "HDPE Granulate"},
+    "18.01.05":   {"name_he": "צינור PE ד.ד.",          "name_en": "Double-wall PE conduit",            "expected": ["HDPE Granulate"], "force_category": "HDPE Granulate"},
+    "18.01.06":   {"name_he": "בדיקת לחץ צינור",       "name_en": "Pipe pressure test",                "always_exclude": True},
+    "18.01.07":   {"name_he": "בדיקת מנדרל",           "name_en": "Mandrel inspection",                "always_exclude": True},
+    "18.01.08":   {"name_he": "שירותי צנרת",            "name_en": "Pipe-related services",             "always_exclude": True},
+    "18.02":      {"name_he": "תעלות בטון",             "name_en": "Concrete cable ducts",              "expected": ["Precast Concrete", "Structural Concrete"]},
+    "18.03":      {"name_he": "כבלים",                  "name_en": "Electrical cables",                 "expected": ["Copper Wire (Cable)", "Aluminum"]},
+    "18.04":      {"name_he": "לוחות חשמל",             "name_en": "Electrical panels/cabinets",        "expected": ["Galvanized Steel"]},
+    "18.05":      {"name_he": "עמודי תאורה",            "name_en": "Street lighting poles",             "expected": ["Galvanized Steel"]},
+    # ── Chapter 08: Electrical conduit (roads/urban) ─────────────────────────
+    "08":         {"name_he": "חשמל ותקשורת — כבישים", "name_en": "Electrical/telecom — roads",        "expected": ["HDPE Granulate", "PVC Pipe", "Copper Wire (Cable)"]},
+    "08.04":      {"name_he": "צינורות חשמל/תקשורת",   "name_en": "Electrical/telecom conduits",       "expected": ["HDPE Granulate", "PVC Pipe"]},
+    "08.04.11":   {"name_he": "צינור PVC חשמל",         "name_en": "PVC electrical conduit",            "expected": ["PVC Pipe"], "force_category": "PVC Pipe"},
+    "08.04.12":   {"name_he": "צינור PE חשמל",          "name_en": "PE conduit in electrical chapter",  "expected": ["HDPE Granulate"], "force_category": "HDPE Granulate"},
+    "08.04.57":   {"name_he": "גופי תאורה LED",         "name_en": "LED lighting fixtures",             "always_exclude": True},
+    # ── Chapter 41: Irrigation / landscape PE pipes ──────────────────────────
+    "41":         {"name_he": "השקיה ונוף",             "name_en": "Irrigation and landscape",          "expected": ["HDPE Granulate", "PVC Pipe"]},
+    "41.01":      {"name_he": "צינורות PE השקיה",       "name_en": "Irrigation PE pipes",               "expected": ["HDPE Granulate"]},
+    "41.01.03":   {"name_he": "צינור PE השקיה ד.כ.",    "name_en": "Single-wall irrigation PE pipe",    "expected": ["HDPE Granulate"], "force_category": "HDPE Granulate"},
+    "41.01.04":   {"name_he": "צינור PE השקיה ד.ד.",    "name_en": "Double-wall irrigation PE pipe",    "expected": ["HDPE Granulate"], "force_category": "HDPE Granulate"},
+    "41.01.05":   {"name_he": "צינור PE השקיה רב-שכבתי","name_en": "Multi-layer irrigation PE pipe",   "expected": ["HDPE Granulate"], "force_category": "HDPE Granulate"},
+    # ── Chapter 57: Sewage ───────────────────────────────────────────────────
+    "57":         {"name_he": "ביוב",                   "name_en": "Sewage infrastructure",             "expected": ["PVC Pipe", "Precast Concrete"]},
+    "57.01":      {"name_he": "שירותי ביוב",            "name_en": "Sewage inspection/survey services", "always_exclude": True},
+    "57.02":      {"name_he": "צינורות ביוב",           "name_en": "Sewage pipes (PVC/HDPE)",           "expected": ["PVC Pipe", "HDPE Granulate"]},
+    "57.03":      {"name_he": "תעלת ביוב בבטון",        "name_en": "Concrete sewage channels",          "expected": ["Precast Concrete", "Structural Concrete"]},
+    "57.04":      {"name_he": "שוחות ביוב",             "name_en": "Sewage manholes/access pits",       "expected": ["Precast Concrete"]},
+    "57.05":      {"name_he": "ביוב לחץ",               "name_en": "Pressure sewage main",              "expected": ["HDPE Granulate"]},
+    # ── Chapter 52: Water ────────────────────────────────────────────────────
+    "52":         {"name_he": "מים",                    "name_en": "Water infrastructure",              "expected": ["HDPE Granulate", "PVC Pipe", "Precast Concrete"]},
+    "52.01":      {"name_he": "צינורות מים",            "name_en": "Water pipes",                       "expected": ["HDPE Granulate", "PVC Pipe"]},
+    "52.02":      {"name_he": "אביזרי מים",             "name_en": "Water fittings/valves",             "expected": ["Galvanized Steel"]},
+    "52.03":      {"name_he": "בניית מבנה מים",         "name_en": "Water structures",                  "expected": ["Precast Concrete", "Structural Concrete"]},
+    # ── Chapter 53: Storm drainage ───────────────────────────────────────────
+    "53":         {"name_he": "ניקוז עילי",             "name_en": "Storm drainage",                    "expected": ["Precast Concrete", "Crushed Stone"]},
+    "53.01":      {"name_he": "תעלות ניקוז",            "name_en": "Drainage channels",                 "expected": ["Precast Concrete", "Structural Concrete"]},
+    "53.02":      {"name_he": "ניקוז רוחבי",            "name_en": "Cross drainage culverts",           "expected": ["Precast Concrete"]},
+    # ── Chapter 55: Bridges and structures ──────────────────────────────────
+    "55":         {"name_he": "גשרים ומבנים",           "name_en": "Bridges and structures",            "expected": ["Structural Concrete", "Steel Rebar", "Galvanized Steel"]},
+    # ── Chapter 60/69: Admin ─────────────────────────────────────────────────
+    "60":         {"name_he": "כללי ומנהל",             "name_en": "Administrative/general",            "always_exclude": True},
+    "69":         {"name_he": "שונות",                  "name_en": "Miscellaneous",                     "always_exclude": True},
+}
+
+
+def get_boq_context(boq_code: str) -> Optional[Dict]:
+    """Look up the most specific matching Blue Book chapter entry for a BOQ code."""
+    if not boq_code:
+        return None
+    code = str(boq_code).strip()
+    parts = code.split(".")
+    for n in range(min(len(parts), 3), 0, -1):
+        prefix = ".".join(parts[:n])
+        ctx = BOQ_CHAPTER_CONTEXT.get(prefix)
+        if ctx:
+            return {"prefix": prefix, **ctx}
+    return None
+
+
+# ── Derived from BOQ_CHAPTER_CONTEXT — single source of truth ────────────────
+BOQ_PREFIX_EXCLUDE: set = {
+    k for k, v in BOQ_CHAPTER_CONTEXT.items()
+    if "." not in k and v.get("always_exclude")
 }
 # BOQ prefix patterns for T/B project-specific items → EXCLUDE
 BOQ_TPREFIX_EXCLUDE_PATTERNS = [
-    r"^T51\.01\.",   # T51.01.xxxx = project-specific demolition/removal
-    r"^T51\.0[0-9]\.",  # T51.0x = project-specific earthworks operations
+    r"^T51\.01\.",
+    r"^T51\.0[0-9]\.",
 ]
-# Sub-chapter prefixes that are operations/services within otherwise material chapters
-BOQ_SUBPREFIX_EXCLUDE = {
-    "51.01",  # earthworks operations: demolition, tree removal, cleaning, fencing
-    "51.02",  # excavation and earthworks — service (Earthworks category now → EXCLUDE)
-    "51.03",  # soil backfill and compaction — earthworks service
-    "57.01",  # sewer/pipe inspection and video survey services
-    "51.32",  # road marking and line painting — service, not material
-    "51.35",  # temporary traffic equipment (barriers, signs, lights) — rental, not material
-    "51.34",  # road markers and reflectors — small items, negligible mass
-    "18.01.06",  # pipe pressure testing and mandrel operations — service
-    "18.01.07",  # pipe inspection services
-    "18.01.08",  # pipe-related services
-    "51.02.004",  # soil compaction operations (הידוק קרקע) — not a material
-    "51.23.04",  # drainage trench excavation (חפירת תעלת ניקוז) — earthworks/service
+BOQ_SUBPREFIX_EXCLUDE: set = {
+    k for k, v in BOQ_CHAPTER_CONTEXT.items()
+    if "." in k and v.get("always_exclude")
 }
-# Sub-chapter prefixes that force a specific category (material, but wrong default)
-BOQ_SUBPREFIX_FORCE = {
-    "18.01.04": "HDPE Granulate",  # polyethylene pipes (telecom/infra)
-    "18.01.05": "HDPE Granulate",
+# Merged forced-category map (replaces BOQ_SUBPREFIX_FORCE + BOQ_SUBPREFIX_CATEGORY)
+BOQ_FORCED_CATEGORY: Dict[str, str] = {
+    k: v["force_category"]
+    for k, v in BOQ_CHAPTER_CONTEXT.items()
+    if "force_category" in v
 }
-# BOQ sub-chapter prefixes that need forced category override
-BOQ_SUBPREFIX_CATEGORY = {
-    "51.05.28": "Crushed Stone",   # rocks/boulders/aggregates — NOT Galvanized Steel
-    "51.05.30": "Crushed Stone",   # washed/graded gravel — NOT Galvanized Steel
-    "41.01.03": "HDPE Granulate",  # irrigation PE pipes
-    "41.01.04": "HDPE Granulate",
-    "41.01.05": "HDPE Granulate",
-    "08.04.11": "PVC Pipe",        # PVC conduit/pipes
-    "08.04.12": "HDPE Granulate",  # PE pipes in electrical chapter
-    "08.04.57": "EXCLUDE",         # LED lighting fixtures — electrical equipment
-    "51.07.01": "PVC Pipe",        # drainage / perforated corrugated pipes
-}
+# Legacy aliases kept for any external references
+BOQ_SUBPREFIX_FORCE = BOQ_FORCED_CATEGORY
+BOQ_SUBPREFIX_CATEGORY = BOQ_FORCED_CATEGORY
 
 
 def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tuple[
@@ -2674,8 +2798,7 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
         prefix_8 = ".".join(code_norm.split(".")[:3])[:8] if code_norm.count(".") >= 2 else prefix_5
 
         # Force category for known misclassified BOQ sub-prefixes
-        forced_cat = (BOQ_SUBPREFIX_CATEGORY.get(prefix_8) or BOQ_SUBPREFIX_CATEGORY.get(prefix_5)
-                      or BOQ_SUBPREFIX_FORCE.get(prefix_8) or BOQ_SUBPREFIX_FORCE.get(prefix_5))
+        forced_cat = BOQ_FORCED_CATEGORY.get(prefix_8) or BOQ_FORCED_CATEGORY.get(prefix_5)
         if forced_cat:
             return forced_cat, {
                 "method": "boq_prefix_override",
@@ -2806,7 +2929,7 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
                 }, None
 
     if USE_VERTEX_CLASSIFIER:
-        ai = classify_with_vertex_resilient(text)
+        ai = classify_with_vertex_resilient(text, boq_code=boq_code)
         if ai.get("excluded") is True or ai.get("category") == "EXCLUDE":
             return None, {
                 "method": "vertex_ai",
