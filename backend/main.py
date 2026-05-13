@@ -2368,6 +2368,11 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"בד\s*גיאוטכני|גיאוטכני|יריעת\s*HDPE|שטיח\s*גומי\s*מבודד", text, flags=re.IGNORECASE):
         return "Waterproofing", "Hard override: geotextile / protection sheet → Waterproofing"
 
+    # יריעות ביטומניות / ממברנה ביטומנית → Waterproofing (before context_score misidentifies "שכבות")
+    if re.search(r"יריע[ותה]+\s*ביטומנ|ממברנה\s*ביטומנ|ביטומן\s*(?:גיליוני|עצמ|מוקצף|רך)"
+                 r"|איטום.*ביטומנ|ביטומנ.*איטום", text, flags=re.IGNORECASE):
+        return "Waterproofing", "Hard override: bituminous membrane → Waterproofing"
+
     # סלעים/בולדרים מקומיים או טבעיים = חומר קיים באתר, לא חומר נרכש
     if re.search(r"בולדרים?\s*מאבנים\s*מקומיות|בולדרים?\s*טבעיים|אבן\s*טבעית\s*מקומית|סלעים?\s*מקומיים", text, flags=re.IGNORECASE):
         return None, "Hard override: local/natural boulders are existing site material → EXCLUDE"

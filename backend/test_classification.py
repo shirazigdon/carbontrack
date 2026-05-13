@@ -448,6 +448,9 @@ def hard_classification_override(material_text: str) -> Optional[str]:
         return "Waterproofing"
     if re.search(r"בד\s*גיאוטכני|גיאוטכני|יריעת\s*HDPE|שטיח\s*גומי\s*מבודד", text, re.IGNORECASE):
         return "Waterproofing"
+    if re.search(r"יריע[ותה]+\s*ביטומנ|ממברנה\s*ביטומנ|ביטומן\s*(?:גיליוני|עצמ|מוקצף|רך)"
+                 r"|איטום.*ביטומנ|ביטומנ.*איטום", text, re.IGNORECASE):
+        return "Waterproofing"
     if re.search(r"אסלה|כיור|משתנ(?:ה|ות)|עביט|קערות?\s*מטבח|מזרם", text, re.IGNORECASE):
         return "EXCLUDE"
     if re.search(r"מנתק\s*הספק|מפסק\s*חשמל|מרכזיית\s*הדלקה|לוח\s*מונים", text, re.IGNORECASE):
