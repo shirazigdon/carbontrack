@@ -157,6 +157,13 @@ def hard_classification_override(material_text: str) -> Optional[str]:
         text, re.IGNORECASE
     ):
         return "EXCLUDE"
+    # יסוד בטון [מזויין/ב-30] לעמוד תאורה = concrete foundation for pole = construction service → EXCLUDE
+    # (plain "יסוד בטון" without a pole/light target is left for CATEGORY_RULES/context scoring)
+    if re.search(
+        r"יסוד\s*(?:מ)?בטון\s*(?:מזויין|עגול|מרובע|ב[_\-]?\d+)?\s*(?:ב[_\-]?\d+\s*)?ל(?:עמוד|תאורה|מצלמ|רמזור|שלט)",
+        text, re.IGNORECASE
+    ):
+        return "EXCLUDE"
     # מתקן הארקת יסוד = foundation grounding bracket = service, not material
     if re.search(r"מתקן\s*הארקת?\s*(?:יסוד|מעקה|גדר)", text, re.IGNORECASE):
         return "EXCLUDE"
@@ -176,15 +183,16 @@ def hard_classification_override(material_text: str) -> Optional[str]:
         return "EXCLUDE"
     if re.search(r"\bתכנות\b|\bתוכנה\b|נקודה\s*דינמית|תוכנת\s*HMI|תוכנת\s*SCADA", text, re.IGNORECASE):
         return "EXCLUDE"
-    # סיב אופטי X גידים / כבל סיב אופטי = fiber optic cable supply → Copper Wire (Cable)
+    # Fiber optic: service operations MUST be checked BEFORE supply rule
+    # "חיבור סיב אופטי 48 גידים" has gidim count but is a SERVICE, not supply
+    if re.search(
+        r"(?:חיבור|קצות?|ניתוב|הנחה|תוספת|בדיקת?)\s*(?:ל)?סיב\s*אופטי",
+        text, re.IGNORECASE
+    ):
+        return "EXCLUDE"
+    # סיב אופטי X גידים / כבל סיב אופטי = fiber optic cable supply → Copper Wire
     if re.search(r"סיב\s*אופטי\s*\d+\s*גידים|כבל\s*סיב\s*אופטי", text, re.IGNORECASE):
         return "Copper Wire (Cable)"
-    # חיבור סיב אופטי = fiber optic splicing = service (labeled EXCLUDE in sheet, more rows than Copper Wire)
-    if re.search(r"חיבור\s*סיב\s*אופטי|קצות?\s*סיב\s*אופטי", text, re.IGNORECASE):
-        return "EXCLUDE"
-    # ניתוב/הנחת סיב אופטי = fiber optic routing/installation service → EXCLUDE
-    if re.search(r"(?:תוספת|ניתוב|הנחה)\s*(?:ל)?סיב\s*אופטי", text, re.IGNORECASE):
-        return "EXCLUDE"
     # END CAP/CUP, antenna accessories → EXCLUDE
     if re.search(
         r"\bEND\s*CAP\b|\bEND\s*CUP\b|אביזר\s*קצה\s*(?:מסוג|ל|ע)"
@@ -468,6 +476,117 @@ def hard_classification_override(material_text: str) -> Optional[str]:
     return None
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONTEXT SCORING  — multi-signal "smart" classification
+# Unlike single-pattern CATEGORY_RULES, this sums weighted evidence so that
+# weak individual signals can combine to a confident conclusion.
+# ═══════════════════════════════════════════════════════════════════════════════
+import os
+from collections import defaultdict, Counter
+from typing import Dict
+
+# Hand-crafted initial rules: (must_match, must_not_match, category, weight)
+CONTEXT_SCORE_RULES: List[Tuple] = [
+    # Foundation construction for a pole/light = service → EXCLUDE
+    (r"\bיסוד\b",                                   None,                    "EXCLUDE",          1.5),
+    (r"ל(?:עמוד|תאורה|מצלמ|רמזור|שלט)\b",          r"אספקה\s+(?:בלבד\s+)?של\s+עמוד",
+                                                                              "EXCLUDE",          2.0),
+    (r"לעמוד\s+(?:תאורה|חשמל|רמזור)",              None,                    "EXCLUDE",          2.5),
+    # Steel infrastructure supply → Galvanized Steel
+    (r"מכסה\s*לתא\s*(?:כבישי|ביוב|בזק|מים|בקרה|ביקורת)", None,             "Galvanized Steel", 4.0),
+    (r"ייצור\s*ואספקה\s*(?:של\s*)?(?:עמוד|מכסה)",  None,                    "Galvanized Steel", 4.0),
+    (r"אספקה\s*(?:בלבד\s*)?(?:של\s*)?(?:זרוע|מכסה|עמוד\s*פלד)", None,      "Galvanized Steel", 3.5),
+    (r"דופן\s*(?:בטוחה|בטחון)",                     None,                    "Galvanized Steel", 3.5),
+    (r"החלפת\s*מכסה\s*לתא",                         None,                    "Galvanized Steel", 4.0),
+]
+
+CONTEXT_SCORE_THRESHOLD = 3.5
+
+# Auto-learned patterns loaded from GT CSV — populated by _load_gt_context_rules()
+_GT_CONTEXT_LEARNED: Dict[str, List[Tuple[str, float]]] = defaultdict(list)
+
+_GT_CSV_PATH = "C:/Users/user/Downloads/sheet_classifications.csv"
+
+
+def _load_gt_context_rules(gt_csv: str = _GT_CSV_PATH) -> None:
+    """
+    Extract high-purity bigrams from GT-labeled CSV and add them to
+    _GT_CONTEXT_LEARNED for use in classify_by_context_score().
+    Requires sheet_classifications.csv format: row[2]=GT, row[4]=description.
+    """
+    if not os.path.exists(gt_csv):
+        return
+    try:
+        cat_bigrams: Dict[str, Counter] = defaultdict(Counter)
+        global_bigrams: Counter = Counter()
+        STOP = {
+            "של", "עם", "על", "או", "עד", "לפי", "לכל", "כולל", "ממ", "סמ",
+            "קוטר", "עובי", "אורך", "דגם", "מסוג", "סוג", "כל", "ב", "ל", "מ",
+        }
+        with open(gt_csv, encoding="utf-8-sig") as f:
+            rows = list(csv.reader(f))
+        for row in rows[2:]:
+            if len(row) <= 4:
+                continue
+            gt = row[2].strip()
+            desc = row[4].strip()
+            if not gt or not desc or gt in ("Unknown", "לבדיקה ידנית", ""):
+                continue
+            words = [
+                w for w in re.findall(r"[א-תa-zA-Z0-9]+", desc)
+                if len(w) > 2 and w not in STOP
+            ]
+            for i in range(len(words) - 1):
+                bg = f"{words[i]} {words[i+1]}"
+                cat_bigrams[gt][bg] += 1
+                global_bigrams[bg] += 1
+
+        for cat, bigrams in cat_bigrams.items():
+            for bg, count in bigrams.most_common(60):
+                total = global_bigrams[bg]
+                purity = count / total if total else 0
+                if count >= 3 and purity >= 0.85:
+                    w0, w1 = bg.split(" ", 1)
+                    pattern = re.escape(w0) + r"\s+" + re.escape(w1)
+                    weight = round(1.0 + purity * 2.5, 1)   # 1.0–3.5 by purity
+                    _GT_CONTEXT_LEARNED[cat].append((pattern, weight))
+    except Exception:
+        pass
+
+
+_load_gt_context_rules()   # runs once at import
+
+
+def classify_by_context_score(text: str) -> Optional[str]:
+    """
+    Multi-signal scorer: returns the category whose combined evidence score
+    exceeds CONTEXT_SCORE_THRESHOLD and leads the second-best by ≥ 40%.
+    Returns None when the classifier isn't confident enough.
+    """
+    norm = normalize_text(text)
+    scores: Dict[str, float] = defaultdict(float)
+
+    for pos_pat, neg_pat, cat, w in CONTEXT_SCORE_RULES:
+        if re.search(pos_pat, norm, re.I):
+            if not neg_pat or not re.search(neg_pat, norm, re.I):
+                scores[cat] += w
+
+    for cat, rules in _GT_CONTEXT_LEARNED.items():
+        for pattern, w in rules:
+            if re.search(pattern, norm, re.I):
+                scores[cat] += w
+
+    if not scores:
+        return None
+    ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
+    best_cat, best_score = ranked[0]
+    if best_score < CONTEXT_SCORE_THRESHOLD:
+        return None
+    if len(ranked) >= 2 and best_score < ranked[1][1] * 1.4:
+        return None   # tie — not confident enough
+    return best_cat
+
+
 CATEGORY_RULES: List[Tuple[str, List[str]]] = [
     ("Waterproofing",
      [r"איטו[םמ]", r"ממברנה", r"ביטומ", r"יריעת\s*hdpe", r"גאוטכני", r"פריימר",
@@ -522,7 +641,7 @@ def classify_local(material_text: str) -> Tuple[str, str]:
     """
     Returns (predicted_category, method).
     predicted_category is "EXCLUDE" for excluded rows.
-    method is one of: exclude, hard_override, category_rules, no_local_match.
+    method is one of: exclude, hard_override, context_score, category_rules, no_local_match.
     """
     if should_exclude(material_text):
         return "EXCLUDE", "exclude"
@@ -531,6 +650,10 @@ def classify_local(material_text: str) -> Tuple[str, str]:
     if hard is not None:
         cat = hard if hard != "EXCLUDE" else "EXCLUDE"
         return cat, "hard_override"
+
+    scored = classify_by_context_score(material_text)
+    if scored is not None:
+        return scored if scored != "EXCLUDE" else "EXCLUDE", "context_score"
 
     rule = apply_category_rules(material_text)
     if rule:

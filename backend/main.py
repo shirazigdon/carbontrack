@@ -529,6 +529,126 @@ def auto_learn_from_csv(csv_path="ground_truth.csv"):
 auto_learn_from_csv()
 
 
+# ==========================================================
+# CONTEXT SCORING — multi-signal "smart" classification
+# Unlike single-pattern CATEGORY_RULES, sums weighted evidence
+# so multiple weak signals can combine to a confident conclusion.
+# Sits between hard_classification_override and CATEGORY_RULES.
+# ==========================================================
+
+# (must_match_pattern, must_not_match_pattern_or_None, category, weight)
+CONTEXT_SCORE_RULES: List[Tuple] = [
+    # Foundation construction for a pole/light = service → EXCLUDE
+    (r"\bיסוד\b",                                 None,                              "EXCLUDE",          1.5),
+    (r"ל(?:עמוד|תאורה|מצלמ|רמזור|שלט)\b",        r"אספקה\s+(?:בלבד\s+)?של\s+עמוד", "EXCLUDE",          2.0),
+    (r"לעמוד\s+(?:תאורה|חשמל|רמזור)",             None,                              "EXCLUDE",          2.5),
+    # Steel infrastructure supply → Galvanized Steel
+    (r"מכסה\s*לתא\s*(?:כבישי|ביוב|בזק|מים|בקרה|ביקורת)", None,                      "Galvanized Steel", 4.0),
+    (r"ייצור\s*ואספקה\s*(?:של\s*)?(?:עמוד|מכסה)", None,                             "Galvanized Steel", 4.0),
+    (r"אספקה\s*(?:בלבד\s*)?(?:של\s*)?(?:זרוע|מכסה|עמוד\s*פלד)", None,              "Galvanized Steel", 3.5),
+    (r"דופן\s*(?:בטוחה|בטחון)",                   None,                              "Galvanized Steel", 3.5),
+    (r"החלפת\s*מכסה\s*לתא",                        None,                              "Galvanized Steel", 4.0),
+]
+
+CONTEXT_SCORE_THRESHOLD = 3.5
+
+# GT-learned patterns loaded at startup (populated below)
+_GT_CONTEXT_LEARNED: Dict[str, List[Tuple[str, float]]] = {}
+_defaultdict = __import__("collections").defaultdict
+
+def _load_gt_context_rules(
+    gt_csv: str = "C:/Users/user/Downloads/sheet_classifications.csv"
+) -> None:
+    """
+    Extract high-purity bigrams from the GT-labeled sheet_classifications.csv
+    and add them to _GT_CONTEXT_LEARNED.
+    Row format: [num, original, GT_category, website_category, description, ...]
+    """
+    if not os.path.exists(gt_csv):
+        logger.info("GT context CSV not found at %s — skipping auto-learn", gt_csv)
+        return
+    try:
+        from collections import Counter as _Counter
+        cat_bigrams: Dict[str, Any] = _defaultdict(_Counter)
+        global_bigrams: Any = _Counter()
+        STOP = {
+            "של", "עם", "על", "או", "עד", "לפי", "לכל", "כולל", "ממ", "סמ",
+            "קוטר", "עובי", "אורך", "דגם", "מסוג", "סוג", "כל", "ב", "ל", "מ",
+        }
+        import csv as _csv
+        with open(gt_csv, encoding="utf-8-sig") as f:
+            rows = list(_csv.reader(f))
+        for row in rows[2:]:
+            if len(row) <= 4:
+                continue
+            gt = row[2].strip()
+            desc = row[4].strip()
+            if not gt or not desc or gt in ("Unknown", "לבדיקה ידנית", ""):
+                continue
+            words = [
+                w for w in re.findall(r"[א-תa-zA-Z0-9]+", desc)
+                if len(w) > 2 and w not in STOP
+            ]
+            for i in range(len(words) - 1):
+                bg = f"{words[i]} {words[i+1]}"
+                cat_bigrams[gt][bg] += 1
+                global_bigrams[bg] += 1
+
+        _GT_CONTEXT_LEARNED.clear()
+        for cat, bigrams in cat_bigrams.items():
+            learned = []
+            for bg, count in bigrams.most_common(60):
+                total = global_bigrams[bg]
+                purity = count / total if total else 0
+                if count >= 3 and purity >= 0.85:
+                    w0, w1 = bg.split(" ", 1)
+                    pattern = re.escape(w0) + r"\s+" + re.escape(w1)
+                    weight = round(1.0 + purity * 2.5, 1)
+                    learned.append((pattern, weight))
+            if learned:
+                _GT_CONTEXT_LEARNED[cat] = learned
+        logger.info(
+            "GT context rules loaded from %s: %d categories, %d total patterns",
+            gt_csv, len(_GT_CONTEXT_LEARNED),
+            sum(len(v) for v in _GT_CONTEXT_LEARNED.values()),
+        )
+    except Exception as exc:
+        logger.warning("GT context learning failed: %s", exc)
+
+
+_load_gt_context_rules()
+
+
+def classify_by_context_score(text: str) -> Optional[str]:
+    """
+    Multi-signal scorer.  Sums weighted evidence from CONTEXT_SCORE_RULES and
+    GT-learned bigrams.  Returns winning category only when score exceeds
+    CONTEXT_SCORE_THRESHOLD and leads the second-best by ≥ 40%.
+    """
+    norm = normalize_text(text)
+    scores: Dict[str, float] = _defaultdict(float)
+
+    for pos_pat, neg_pat, cat, w in CONTEXT_SCORE_RULES:
+        if re.search(pos_pat, norm, re.IGNORECASE):
+            if not neg_pat or not re.search(neg_pat, norm, re.IGNORECASE):
+                scores[cat] += w
+
+    for cat, rules in _GT_CONTEXT_LEARNED.items():
+        for pattern, w in rules:
+            if re.search(pattern, norm, re.IGNORECASE):
+                scores[cat] += w
+
+    if not scores:
+        return None
+    ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
+    best_cat, best_score = ranked[0]
+    if best_score < CONTEXT_SCORE_THRESHOLD:
+        return None
+    if len(ranked) >= 2 and best_score < ranked[1][1] * 1.4:
+        return None   # tie — not confident enough
+    return best_cat
+
+
 CATEGORY_RULES: List[Tuple[str, List[str]]] = [
     ("Waterproofing",
      [r"איטו[םמ]", r"ממברנה", r"ביטומ", r"יריעת\s*hdpe", r"גאוטכני", r"פריימר", r"זפת", r"פוליאוריטן", r"סילר",
@@ -1803,6 +1923,13 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     ):
         return None, "Hard override: design+build service → EXCLUDE"
 
+    # יסוד בטון [מזויין/ב-30] לעמוד תאורה = concrete foundation for pole = construction service → EXCLUDE
+    if re.search(
+        r"יסוד\s*(?:מ)?בטון\s*(?:מזויין|עגול|מרובע|ב[_\-]?\d+)?\s*(?:ב[_\-]?\d+\s*)?ל(?:עמוד|תאורה|מצלמ|רמזור|שלט)",
+        text, flags=re.IGNORECASE
+    ):
+        return None, "Hard override: concrete foundation for pole/light → EXCLUDE"
+
     # מתקן הארקת יסוד = foundation grounding bracket = service, not material
     if re.search(r"מתקן\s*הארקת?\s*(?:יסוד|מעקה|גדר)", text, flags=re.IGNORECASE):
         return None, "Hard override: grounding bracket installation → EXCLUDE"
@@ -1828,17 +1955,17 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"\bתכנות\b|\bתוכנה\b|נקודה\s*דינמית|תוכנת\s*HMI|תוכנת\s*SCADA", text, flags=re.IGNORECASE):
         return None, "Hard override: software/IT service → EXCLUDE"
 
-    # סיב אופטי X גידים / כבל סיב אופטי = fiber optic cable supply → Copper Wire (Cable)
+    # Fiber optic: service operations MUST come BEFORE supply rule
+    # "חיבור סיב אופטי 48 גידים" has a gidim count but is a SERVICE, not cable supply
+    if re.search(
+        r"(?:חיבור|קצות?|ניתוב|הנחה|תוספת|בדיקת?)\s*(?:ל)?סיב\s*אופטי",
+        text, flags=re.IGNORECASE
+    ):
+        return None, "Hard override: fiber optic service operation → EXCLUDE"
+
+    # סיב אופטי X גידים / כבל סיב אופטי = cable supply (no service verb) → Copper Wire
     if re.search(r"סיב\s*אופטי\s*\d+\s*גידים|כבל\s*סיב\s*אופטי", text, flags=re.IGNORECASE):
         return "Copper Wire (Cable)", "Hard override: fiber optic cable supply → Copper Wire (Cable)"
-
-    # חיבור סיב אופטי = fiber optic splicing → EXCLUDE (service, not material)
-    if re.search(r"חיבור\s*סיב\s*אופטי|קצות?\s*סיב\s*אופטי", text, flags=re.IGNORECASE):
-        return None, "Hard override: fiber optic splicing → EXCLUDE"
-
-    # ניתוב/הנחת סיב אופטי = fiber optic routing/installation service → EXCLUDE
-    if re.search(r"(?:תוספת|ניתוב|הנחה)\s*(?:ל)?סיב\s*אופטי", text, flags=re.IGNORECASE):
-        return None, "Hard override: fiber optic routing/installation service → EXCLUDE"
 
     # END CAP/CUP, antenna, cable-end accessories = component/service → EXCLUDE
     if re.search(
@@ -2562,6 +2689,23 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
                 "catalog_mapping": None,
                 "boq_mapping": None,
             }, None
+
+    # --- CONTEXT SCORING (multi-signal smart classifier) ---
+    ctx_cat = classify_by_context_score(text)
+    if ctx_cat is not None:
+        is_exclude = ctx_cat == "EXCLUDE"
+        return (None if is_exclude else ctx_cat), {
+            "method": "context_score",
+            "reason": f"Context scoring → {ctx_cat}",
+            "confidence": 0.92,
+            "excluded": is_exclude,
+            "review_required": False,
+            "inferred_uom": "unknown",
+            "matched_by": "context_score",
+            "exclusion_code": "CONTEXT_SCORE" if is_exclude else None,
+            "catalog_mapping": None,
+            "boq_mapping": None,
+        }, None
 
     sources = merge_mapping_sources(text, boq_code)
     category, source_method, chosen_mapping = choose_category_from_sources(sources)
