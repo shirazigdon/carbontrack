@@ -581,11 +581,14 @@ def _parse_gt_rows_main(rows: list, cat_bigrams: Any, global_bigrams: Any) -> in
                 gt_col = i
             if any(k in h for k in ["תיאור", "description", "material", "טקסט"]):
                 desc_col = i
+    # Map abbreviated GT labels to canonical ALLOWED_CATEGORIES names
+    _GT_CAT_NORM = {"Copper Wire": "Copper Wire (Cable)"}
     added = 0
     for row in rows[2:]:
         if len(row) <= max(gt_col, desc_col):
             continue
         gt = re.sub(r"\s*\(.*\)", "", row[gt_col].strip())
+        gt = _GT_CAT_NORM.get(gt, gt)
         desc = row[desc_col].strip()
         if not gt or not desc or gt in ("Unknown", "לבדיקה ידנית", ""):
             continue
@@ -687,6 +690,8 @@ def classify_by_context_score(text: str) -> Optional[str]:
         return None
     if len(ranked) >= 2 and best_score < ranked[1][1] * 1.4:
         return None   # tie — not confident enough
+    if best_cat not in ALLOWED_CATEGORIES:
+        return None   # GT learned an invalid category name
     return best_cat
 
 

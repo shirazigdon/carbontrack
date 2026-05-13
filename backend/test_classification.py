@@ -501,6 +501,14 @@ CONTEXT_SCORE_RULES: List[Tuple] = [
 
 CONTEXT_SCORE_THRESHOLD = 3.5
 
+# Valid category names — context_score must return one of these
+_VALID_CATEGORIES = {
+    "Structural Concrete", "Precast Concrete", "Steel Rebar", "Galvanized Steel",
+    "Copper Wire (Cable)", "HDPE Granulate", "PVC Pipe", "Asphalt", "Paving",
+    "Crushed Stone", "Fill Material", "Waterproofing", "Aluminum",
+    "Cementitious Mortar", "Lean Concrete", "Glass", "Wood", "EXCLUDE", "Unknown",
+}
+
 # Auto-learned patterns loaded from GT CSV — populated by _load_gt_context_rules()
 _GT_CONTEXT_LEARNED: Dict[str, List[Tuple[str, float]]] = defaultdict(list)
 
@@ -536,6 +544,7 @@ def _parse_gt_rows(rows: list, cat_bigrams: Counter, global_bigrams: Counter) ->
         if len(row) <= max(gt_col, desc_col):
             continue
         gt = re.sub(r"\s*\(.*\)", "", row[gt_col].strip())   # strip parenthetical notes
+        gt = {"Copper Wire": "Copper Wire (Cable)"}.get(gt, gt)  # normalize aliases
         desc = row[desc_col].strip()
         if not gt or not desc or gt in ("Unknown", "לבדיקה ידנית", ""):
             continue
@@ -631,6 +640,8 @@ def classify_by_context_score(text: str) -> Optional[str]:
         return None
     if len(ranked) >= 2 and best_score < ranked[1][1] * 1.4:
         return None   # tie — not confident enough
+    if best_cat not in _VALID_CATEGORIES:
+        return None   # GT learned an invalid/abbreviated category name
     return best_cat
 
 
