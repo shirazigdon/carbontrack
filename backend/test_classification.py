@@ -157,13 +157,6 @@ def hard_classification_override(material_text: str) -> Optional[str]:
         text, re.IGNORECASE
     ):
         return "EXCLUDE"
-    # יסוד בטון [מזויין/ב-30] לעמוד תאורה = concrete foundation for pole = construction service → EXCLUDE
-    # (plain "יסוד בטון" without a pole/light target is left for CATEGORY_RULES/context scoring)
-    if re.search(
-        r"יסוד\s*(?:מ)?בטון\s*(?:מזויין|עגול|מרובע|ב[_\-]?\d+)?\s*(?:ב[_\-]?\d+\s*)?ל(?:עמוד|תאורה|מצלמ|רמזור|שלט)",
-        text, re.IGNORECASE
-    ):
-        return "EXCLUDE"
     # מתקן הארקת יסוד = foundation grounding bracket = service, not material
     if re.search(r"מתקן\s*הארקת?\s*(?:יסוד|מעקה|גדר)", text, re.IGNORECASE):
         return "EXCLUDE"
@@ -487,11 +480,14 @@ from typing import Dict
 
 # Hand-crafted initial rules: (must_match, must_not_match, category, weight)
 CONTEXT_SCORE_RULES: List[Tuple] = [
-    # Foundation construction for a pole/light = service → EXCLUDE
-    (r"\bיסוד\b",                                   None,                    "EXCLUDE",          1.5),
-    (r"ל(?:עמוד|תאורה|מצלמ|רמזור|שלט)\b",          r"אספקה\s+(?:בלבד\s+)?של\s+עמוד",
-                                                                              "EXCLUDE",          2.0),
-    (r"לעמוד\s+(?:תאורה|חשמל|רמזור)",              None,                    "EXCLUDE",          2.5),
+    # Foundation construction = service → EXCLUDE only when NO concrete material spec present.
+    # "יסוד בטון" = the concrete IS the material → Structural Concrete (handled by CATEGORY_RULES).
+    # "יסוד לעמוד" without "בטון" = service item → EXCLUDE.
+    (r"\bיסוד\b",              r"(?:מ)?בטון",                                      "EXCLUDE",  1.5),
+    (r"ל(?:עמוד|תאורה|מצלמ|רמזור|שלט)\b",
+                               r"(?:אספקה\s+(?:בלבד\s+)?של\s+עמוד|(?:מ)?בטון)",  "EXCLUDE",  2.0),
+    (r"לעמוד\s+(?:תאורה|חשמל|רמזור)",
+                               r"(?:מ)?בטון",                                      "EXCLUDE",  2.5),
     # Steel infrastructure supply → Galvanized Steel
     (r"מכסה\s*לתא\s*(?:כבישי|ביוב|בזק|מים|בקרה|ביקורת)", None,             "Galvanized Steel", 4.0),
     (r"ייצור\s*ואספקה\s*(?:של\s*)?(?:עמוד|מכסה)",  None,                    "Galvanized Steel", 4.0),
