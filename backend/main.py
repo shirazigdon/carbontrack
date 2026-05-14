@@ -8,6 +8,7 @@ import traceback
 import threading
 import random
 import time
+from catalog_classifier import catalog_classifier, EXCLUDE_LABEL
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeoutError
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -661,6 +662,51 @@ def _load_gt_context_rules() -> None:
 
 
 _load_gt_context_rules()
+
+
+# ==========================================================
+# CATALOG SIMILARITY CLASSIFIER — startup fit + background refresh
+# ==========================================================
+
+def _fit_catalog_classifier_from_bq() -> None:
+    """Load historical classified rows from BigQuery and fit the TF-IDF classifier."""
+    try:
+        sql = f"""
+            SELECT short_text, category,
+                   COALESCE(reliability_score, 0.9) AS confidence,
+                   COALESCE(excluded, FALSE) AS excluded
+            FROM `{_BQ_DETAILS_TABLE_FULL}`
+            WHERE short_text IS NOT NULL
+              AND (
+                    (category IS NOT NULL AND category != '' AND category != 'Unknown')
+                    OR excluded = TRUE
+              )
+              AND COALESCE(reliability_score, 0.9) >= 0.7
+            ORDER BY calculation_date DESC
+            LIMIT 30000
+        """
+        rows = [dict(r.items()) for r in bq_client.query(sql).result()]
+        catalog_classifier.fit(rows)
+        logger.info("CatalogClassifier fitted from BQ: %d rows", catalog_classifier.size)
+    except Exception as exc:
+        logger.warning("CatalogClassifier BQ fit failed: %s", exc)
+
+
+def _start_catalog_classifier() -> None:
+    """Fit now, then refresh every 30 min in the background."""
+    _fit_catalog_classifier_from_bq()
+
+    def _loop() -> None:
+        import time as _time
+        while True:
+            _time.sleep(1800)
+            _fit_catalog_classifier_from_bq()
+
+    threading.Thread(target=_loop, daemon=True, name="catalog-refresh").start()
+
+
+# Non-blocking: init runs in background thread so startup stays fast
+threading.Thread(target=_start_catalog_classifier, daemon=True, name="catalog-init").start()
 
 
 def classify_by_context_score(text: str) -> Optional[str]:
@@ -3341,6 +3387,25 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
             "matched_by": exclusion_code or "exclude_pattern",
             "exclusion_code": exclusion_code,
         }, None
+
+    # ── Catalog Similarity Classifier (replaces most of hard_classification_override) ──
+    # Searches k-nearest neighbours in historical classifications using TF-IDF cosine similarity.
+    # Returns a result only when the top-k neighbors agree with high confidence.
+    if catalog_classifier.is_ready:
+        cat_sim, cat_conf, cat_reason = catalog_classifier.classify(text)
+        if cat_sim != "":  # "" means "no confident match"
+            is_exclude = cat_sim is None
+            logger.debug("CatalogSim: %s conf=%.2f | %s", cat_sim or "EXCLUDE", cat_conf, cat_reason[:120])
+            return cat_sim, {
+                "method": "catalog_similarity",
+                "reason": cat_reason,
+                "confidence": cat_conf,
+                "excluded": is_exclude,
+                "review_required": cat_conf < 0.80,
+                "inferred_uom": "unknown",
+                "matched_by": "catalog_similarity",
+                "exclusion_code": "CATALOG_SIM" if is_exclude else None,
+            }, None
 
     # Run precise semantic hard-overrides before BOQ forced-category and catalog matching.
     # Description-based rules (HDPE, geocell, etc.) must win over broad BOQ chapter defaults.
