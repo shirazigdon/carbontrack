@@ -180,6 +180,80 @@ def hard_classification_override(material_text: str) -> Optional[str]:
 
     # ──────────────────────────────────────────────────────────────────────────
 
+    # ── Block C: Connection/transport services & electrical infrastructure ────
+    if re.search(
+        r"התחברות\s+(?:מתקן|סככת|גוף|עמוד).{0,30}(?:מרכזי[יתה]|תאורה|חשמל|בקרה)"
+        r"|התחברות\s+(?:ל)?מרכזי[יתה]",
+        text, flags=re.IGNORECASE
+    ):
+        return "EXCLUDE"
+
+    if re.search(r"הארקת\s+כל|הארקת\s+(?:מתכת|שירות|צינור|מערכ)", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(r"הגנות?\s+ב(?:הצטלבות|מפגש|קרבת|חציית)", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(
+        r"(?:טעינה|הובלה|פריקה|טעינה.{0,6}הובלה).{0,20}זרוע"
+        r"|טעינה,?\s*הובלה\s*ו?פריקת",
+        text, flags=re.IGNORECASE
+    ):
+        return "EXCLUDE"
+
+    if re.search(r"התקנ[הת]\s+(?:של\s+)?מגש\s+אביזרים|התקנת\s+אביזרי", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(r"חיבור\s+צנרת\s+(?:חדשה\s+)?(?:ל)?תא\s+בקרה", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(r"חציית\s+כביש\s+(?:ל)?הנחת\s+(?:צנרת|כבל)", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(r"הוצאת\s+כבל.{0,15}(?:הטמון|מהאדמה|מהקרקע|הקבור)", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(r"(?:העברת|עמידה\s+ב|קבלת)\s+(?:ביקורת|אישור)\s+(?:משרד|מחלקת|רשות)", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(
+        r"(?:הובלה|התקנה|הצבת).{0,20}(?:מרכזית\s+הדלק|גנרטור\s+דיזל|מכל\s+דלק)"
+        r"|(?:הצבת\s+ו)?חיבור\s+(?:של\s+)?מרכזית\s+הדלק",
+        text, flags=re.IGNORECASE
+    ):
+        return "EXCLUDE"
+
+    if re.search(r"בריכת\s+ביקורת\s+ל?אלקטרודה", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(r"החלפת\s+מכסה.{0,20}שוחה|החלפת\s+מסגרת.{0,20}שוחה", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(r"(?:ארון|ארגז)\s+(?:חשמל|טמ.?ס|בקרה).{0,30}פוליאסטר", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(r"חיבור\s+חשמלי\s+(?:של\s+)?אנטנה", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(r"יחידת?\s+רב\s*מודד|מד\s+(?:אנרגיה|עוצמה|זרם)\s+\w+\s+פאזות?", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(r"גוף\s+חימום\s+ב?הספק|אלמנט\s+חימום", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    # ── Block D: Galvanized Steel items wrongly hitting Aluminum ─────────────
+    if re.search(
+        r"(?:אספק[תה]|אספקה\s+לאתר\s+של)\s+זרוע|זרוע\s+(?:יחידה|כפולה|משולשת|קונית|מגולוונת)",
+        text, flags=re.IGNORECASE
+    ):
+        if not re.search(r"אלומינ", text, flags=re.IGNORECASE):
+            return "Galvanized Steel"
+
+    if re.search(r"אלקטרוד[תה]\s+הארקה|אלקטרודה\s+ב?קוטר", text, flags=re.IGNORECASE):
+        return "Galvanized Steel"
+
+    # ──────────────────────────────────────────────────────────────────────────
+
     if re.search(r"זכוכית|טריפלקס", text, re.IGNORECASE):
         return "Glass"
     # ארגז הסתעפות ואבטחה = metal security/junction box → Galvanized Steel

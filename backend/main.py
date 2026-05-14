@@ -2033,6 +2033,98 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     ):
         return None, "Hard override: camera/sensor/detector unit → EXCLUDE"
 
+    # ── Block C: Connection/transport services & electrical infrastructure ────
+
+    # Connecting a lighting unit to an existing/temporary control center
+    if re.search(
+        r"התחברות\s+(?:מתקן|סככת|גוף|עמוד).{0,30}(?:מרכזי[יתה]|תאורה|חשמל|בקרה)"
+        r"|התחברות\s+(?:ל)?מרכזי[יתה]",
+        text, flags=re.IGNORECASE
+    ):
+        return None, "Hard override: connection-to-center service → EXCLUDE"
+
+    # Grounding service (הארקת/חיבורי הארקה as work item, not material)
+    if re.search(r"הארקת\s+כל|הארקת\s+(?:מתכת|שירות|צינור|מערכ)", text, flags=re.IGNORECASE):
+        return None, "Hard override: grounding service → EXCLUDE"
+
+    # Protection at crossing / interference protection work
+    if re.search(r"הגנות?\s+ב(?:הצטלבות|מפגש|קרבת|חציית)", text, flags=re.IGNORECASE):
+        return None, "Hard override: crossing-protection work → EXCLUDE"
+
+    # Transport/handling of lighting arms (not the arm itself)
+    if re.search(
+        r"(?:טעינה|הובלה|פריקה|טעינה.{0,6}הובלה).{0,20}זרוע"
+        r"|טעינה,?\s*הובלה\s*ו?פריקת",
+        text, flags=re.IGNORECASE
+    ):
+        return None, "Hard override: arm transport service → EXCLUDE"
+
+    # Installation of accessory trays / hardware mounting
+    if re.search(r"התקנ[הת]\s+(?:של\s+)?מגש\s+אביזרים|התקנת\s+אביזרי", text, flags=re.IGNORECASE):
+        return None, "Hard override: accessory tray installation → EXCLUDE"
+
+    # Connecting new conduit to existing control box
+    if re.search(r"חיבור\s+צנרת\s+(?:חדשה\s+)?(?:ל)?תא\s+בקרה", text, flags=re.IGNORECASE):
+        return None, "Hard override: conduit-to-control-box service → EXCLUDE"
+
+    # Road crossing for conduit laying
+    if re.search(r"חציית\s+כביש\s+(?:ל)?הנחת\s+(?:צנרת|כבל)", text, flags=re.IGNORECASE):
+        return None, "Hard override: road crossing for conduit → EXCLUDE"
+
+    # Extraction of buried cable (excavation service)
+    if re.search(r"הוצאת\s+כבל.{0,15}(?:הטמון|מהאדמה|מהקרקע|הקבור)", text, flags=re.IGNORECASE):
+        return None, "Hard override: buried cable extraction service → EXCLUDE"
+
+    # Ministry/authority inspection approval
+    if re.search(r"(?:העברת|עמידה\s+ב|קבלת)\s+(?:ביקורת|אישור)\s+(?:משרד|מחלקת|רשות)", text, flags=re.IGNORECASE):
+        return None, "Hard override: regulatory inspection → EXCLUDE"
+
+    # Diesel/fuel system installation service
+    if re.search(
+        r"(?:הובלה|התקנה|הצבת).{0,20}(?:מרכזית\s+הדלק|גנרטור\s+דיזל|מכל\s+דלק)"
+        r"|(?:הצבת\s+ו)?חיבור\s+(?:של\s+)?מרכזית\s+הדלק",
+        text, flags=re.IGNORECASE
+    ):
+        return None, "Hard override: diesel/fuel installation service → EXCLUDE"
+
+    # Inspection pit for grounding electrode (concrete structure, not metal)
+    if re.search(r"בריכת\s+ביקורת\s+ל?אלקטרודה", text, flags=re.IGNORECASE):
+        return None, "Hard override: inspection pit for electrode → EXCLUDE"
+
+    # Manhole cover replacement (service, not material supply)
+    if re.search(r"החלפת\s+מכסה.{0,20}שוחה|החלפת\s+מסגרת.{0,20}שוחה", text, flags=re.IGNORECASE):
+        return None, "Hard override: manhole cover replacement service → EXCLUDE"
+
+    # Electrical junction/control box made of polyester (not metal)
+    if re.search(r"(?:ארון|ארגז)\s+(?:חשמל|טמ.?ס|בקרה).{0,30}פוליאסטר", text, flags=re.IGNORECASE):
+        return None, "Hard override: polyester electrical cabinet → EXCLUDE"
+
+    # Electrical connection of antenna due to bypass
+    if re.search(r"חיבור\s+חשמלי\s+(?:של\s+)?אנטנה", text, flags=re.IGNORECASE):
+        return None, "Hard override: antenna electrical connection service → EXCLUDE"
+
+    # Multi-meter / measurement unit (equipment, not material)
+    if re.search(r"יחידת?\s+רב\s*מודד|מד\s+(?:אנרגיה|עוצמה|זרם)\s+\w+\s+פאזות?", text, flags=re.IGNORECASE):
+        return None, "Hard override: multi-meter unit → EXCLUDE"
+
+    # Heating element / heater (equipment)
+    if re.search(r"גוף\s+חימום\s+ב?הספק|אלמנט\s+חימום", text, flags=re.IGNORECASE):
+        return None, "Hard override: heating element → EXCLUDE"
+
+    # ── Block D: Galvanized Steel items wrongly hitting Aluminum ─────────────
+
+    # Lighting arm (זרוע) – when not explicitly aluminum
+    if re.search(
+        r"(?:אספק[תה]|אספקה\s+לאתר\s+של)\s+זרוע|זרוע\s+(?:יחידה|כפולה|משולשת|קונית|מגולוונת)",
+        text, flags=re.IGNORECASE
+    ):
+        if not re.search(r"אלומינ", text, flags=re.IGNORECASE):
+            return "Galvanized Steel", "Hard override: lighting arm (זרוע) → Galvanized Steel"
+
+    # Grounding electrode / copper-clad rod (NOT aluminum)
+    if re.search(r"אלקטרוד[תה]\s+הארקה|אלקטרודה\s+ב?קוטר", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: grounding electrode → Galvanized Steel"
+
     # ──────────────────────────────────────────────────────────────────────────
 
     if re.search(r"זכוכית|טריפלקס", text, flags=re.IGNORECASE):
