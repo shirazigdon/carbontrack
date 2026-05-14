@@ -2125,6 +2125,67 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"אלקטרוד[תה]\s+הארקה|אלקטרודה\s+ב?קוטר", text, flags=re.IGNORECASE):
         return "Galvanized Steel", "Hard override: grounding electrode → Galvanized Steel"
 
+    # ── Block E: Traffic-signal / ITS control items in BOQ 08.01 (all EXCLUDE) ─
+    # These are electronic/electrical components, never construction materials.
+
+    # Electronic control mechanisms, UPS, traffic light systems
+    if re.search(
+        r"מנגנון\s+בקרה\s+אלקטרוני|מערכת\s+(?:אל\s*פסק|רמזור|מהבהב)|"
+        r"(?:הובלה|התקנה)\s+(?:של\s+)?(?:כרטיס|מנגנון|מערכת\s+פנסי|מערכת\s+טעינה)|"
+        r"כרטיס\s+(?:תאום|MASTER|מנגנון)|"
+        r"(?:לחצן|זמזם)\s+(?:ל)?הולכי\s+רגל|"
+        r"עמעם\s+אורות|קופסת\s+מפסק\s+ראשי|"
+        r"ממסר\s+(?:פחת|יתר|כיוון|ל[א-ת])|"
+        r"לולאה[- ]+(?:רגילה|מלבנית|רכב\s+דל\s+מתכת)|"
+        r"מחבר\s+אפוקסי\s+אטום|"
+        r"פיתוח\s+ממשק\s+בקר|"
+        r"(?:שינויים|עדכונים|תוספות)\s+במנגנון\s+בקרה|"
+        r"עזרה\s+(?:ל)?חברת\s+החשמל|"
+        r"(?:הקמת|הפעלת)\s+טכנולוגיה\s+לרמזור\s+חכם",
+        text, flags=re.IGNORECASE
+    ):
+        return None, "Hard override: traffic-signal/ITS control component → EXCLUDE"
+
+    # Signal arm (זרוע שוט) for traffic signals → Galvanized Steel
+    if re.search(r"זרוע\s+שוט\b", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: traffic signal arm (זרוע שוט) → Galvanized Steel"
+
+    # Traffic signal wiring systems → Copper Wire
+    if re.search(
+        r"מערכת\s+כבלי\s+(?:הזנה|חיבור)\s+(?:ל(?:גלאים|לחצנים|רמזורים)|מסוג)|"
+        r"קו\s+הזנת\s+חשמל\s+(?:ל)?(?:מנגנון|רמזור)|"
+        r"כבלי\s+(?:COAX|הזנה)\s+(?:מסוכך|ל)",
+        text, flags=re.IGNORECASE
+    ):
+        return "Copper Wire (Cable)", "Hard override: signal wiring system → Copper Wire (Cable)"
+
+    # Communication cabinets (IT racks) → EXCLUDE
+    if re.search(r"ארון\s+תקשורת\s+19\"|ארון\s+19\"\s+(?:\d+U|רק)", text, flags=re.IGNORECASE):
+        return None, "Hard override: communication cabinet (rack) → EXCLUDE"
+
+    # Demolition / dismantling work → EXCLUDE
+    if re.search(
+        r"^(?:הריסת?|פירוק|קריעת?)\s+(?:קיר|תקרה|יסוד|מבנה|מוביל|תא|כלונסאות)",
+        text, flags=re.IGNORECASE
+    ):
+        return None, "Hard override: demolition/dismantling work → EXCLUDE"
+
+    # Water connection details (plumbing fittings, not steel)
+    if re.search(r"פרט\s+(?:ה)?התחברות\s+(?:ל)?מקור\s+מים", text, flags=re.IGNORECASE):
+        return None, "Hard override: water connection fitting → EXCLUDE"
+
+    # Cellular/wireless adapter for control → EXCLUDE
+    if re.search(r"מתאם\s+(?:סלולארי|אלחוטי|WiFi|GPS)\s+ל?(?:בקר|מנגנון|רמזור|מרכזי)", text, flags=re.IGNORECASE):
+        return None, "Hard override: wireless adapter for control system → EXCLUDE"
+
+    # Plastic rainwater fitting → not Galvanized Steel
+    if re.search(r"אביזר\s+(?:כניסה|יציאה).{0,20}(?:מי\s+גשם|גשמים|ניקוז).{0,20}(?:פלסטי|PP\b|PVC|HDPE)", text, flags=re.IGNORECASE):
+        return None, "Hard override: plastic drainage fitting → EXCLUDE"
+
+    # Pipe preparation for connection (service, not material)
+    if re.search(r"הכנת\s+קו\s+קי[יתם]+.{0,20}(?:לצורך\s+התחברות|לחיבור)", text, flags=re.IGNORECASE):
+        return None, "Hard override: pipe-preparation-for-connection service → EXCLUDE"
+
     # ──────────────────────────────────────────────────────────────────────────
 
     if re.search(r"זכוכית|טריפלקס", text, flags=re.IGNORECASE):

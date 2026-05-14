@@ -252,6 +252,56 @@ def hard_classification_override(material_text: str) -> Optional[str]:
     if re.search(r"אלקטרוד[תה]\s+הארקה|אלקטרודה\s+ב?קוטר", text, flags=re.IGNORECASE):
         return "Galvanized Steel"
 
+    # ── Block E: Traffic-signal / ITS control items ───────────────────────────
+    if re.search(
+        r"מנגנון\s+בקרה\s+אלקטרוני|מערכת\s+(?:אל\s*פסק|רמזור|מהבהב)|"
+        r"(?:הובלה|התקנה)\s+(?:של\s+)?(?:כרטיס|מנגנון|מערכת\s+פנסי|מערכת\s+טעינה)|"
+        r"כרטיס\s+(?:תאום|MASTER|מנגנון)|"
+        r"(?:לחצן|זמזם)\s+(?:ל)?הולכי\s+רגל|"
+        r"עמעם\s+אורות|קופסת\s+מפסק\s+ראשי|"
+        r"ממסר\s+(?:פחת|יתר|כיוון|ל[א-ת])|"
+        r"לולאה[- ]+(?:רגילה|מלבנית|רכב\s+דל\s+מתכת)|"
+        r"מחבר\s+אפוקסי\s+אטום|"
+        r"פיתוח\s+ממשק\s+בקר|"
+        r"(?:שינויים|עדכונים|תוספות)\s+במנגנון\s+בקרה|"
+        r"עזרה\s+(?:ל)?חברת\s+החשמל|"
+        r"(?:הקמת|הפעלת)\s+טכנולוגיה\s+לרמזור\s+חכם",
+        text, flags=re.IGNORECASE
+    ):
+        return "EXCLUDE"
+
+    if re.search(r"זרוע\s+שוט\b", text, flags=re.IGNORECASE):
+        return "Galvanized Steel"
+
+    if re.search(
+        r"מערכת\s+כבלי\s+(?:הזנה|חיבור)\s+(?:ל(?:גלאים|לחצנים|רמזורים)|מסוג)|"
+        r"קו\s+הזנת\s+חשמל\s+(?:ל)?(?:מנגנון|רמזור)|"
+        r"כבלי\s+(?:COAX|הזנה)\s+(?:מסוכך|ל)",
+        text, flags=re.IGNORECASE
+    ):
+        return "Copper Wire (Cable)"
+
+    if re.search(r"ארון\s+תקשורת\s+19\"|ארון\s+19\"\s+(?:\d+U|רק)", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(
+        r"^(?:הריסת?|פירוק|קריעת?)\s+(?:קיר|תקרה|יסוד|מבנה|מוביל|תא|כלונסאות)",
+        text, flags=re.IGNORECASE
+    ):
+        return "EXCLUDE"
+
+    if re.search(r"פרט\s+(?:ה)?התחברות\s+(?:ל)?מקור\s+מים", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(r"מתאם\s+(?:סלולארי|אלחוטי|WiFi|GPS)\s+ל?(?:בקר|מנגנון|רמזור|מרכזי)", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(r"אביזר\s+(?:כניסה|יציאה).{0,20}(?:מי\s+גשם|גשמים|ניקוז).{0,20}(?:פלסטי|PP\b|PVC|HDPE)", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
+    if re.search(r"הכנת\s+קו\s+קי[יתם]+.{0,20}(?:לצורך\s+התחברות|לחיבור)", text, flags=re.IGNORECASE):
+        return "EXCLUDE"
+
     # ──────────────────────────────────────────────────────────────────────────
 
     if re.search(r"זכוכית|טריפלקס", text, re.IGNORECASE):
