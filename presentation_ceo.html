@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarbonTrack — מצגת מנכ״ל</title>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cream:   #f5f2eb;
+  --green9:  #1b4332;
+  --green7:  #2d6a4f;
+  --green5:  #52b788;
+  --green3:  #95d5b2;
+  --green1:  #d8f3e3;
+  --border:  #c8ddc0;
+  --text:    #1b4332;
+  --sub:     #4a7c59;
+  --muted:   #8aaa8e;
+}
+
+body {
+  font-family: 'Rubik', sans-serif;
+  background: #222;
+  color: var(--text);
+  overflow: hidden;
+  direction: rtl;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+.deck {
+  width: 1600px;
+  height: 900px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: center center;
+  overflow: hidden;
+}
+
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: flex-start;
+  padding: 36px 48px;
+  background: var(--cream);
+  background-image:
+    radial-gradient(ellipse 65% 55% at 92% 8%, rgba(82,183,136,0.10) 0%, transparent 100%),
+    radial-gradient(ellipse 55% 55% at 6% 94%, rgba(149,213,178,0.07) 0%, transparent 100%),
+    radial-gradient(circle, rgba(27,67,50,0.032) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 30px 30px;
+  opacity: 0; pointer-events: none;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.slide.active { opacity: 1; pointer-events: all; }
+
+/* ── animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── shared ── */
+.label {
+  font-size: 84px; font-weight: 700; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--green5);
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.label::before { content: ''; display: block; width: 28px; height: 3px; background: var(--green5); border-radius: 2px; }
+
+h1.hero { font-size: 68px; font-weight: 900; line-height: 1.05; color: var(--green9); }
+h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--green9); margin-bottom: 28px; }
+.sub { font-size: 22px; color: var(--sub); font-weight: 400; }
+.green { color: var(--green5); }
+
+/* ── slide badge ── */
+.slide-badge {
+  position: fixed; bottom: 18px; left: 20px; z-index: 100;
+  background: rgba(27,67,50,0.55); backdrop-filter: blur(8px);
+  color: rgba(255,255,255,0.9); font-size: 12px; font-weight: 700;
+  padding: 5px 12px; border-radius: 7px; letter-spacing: 1px;
+  pointer-events: none;
+}
+
+/* ── S1 Title ── */
+.s1 { flex-direction: column; align-items: center; text-align: center; overflow: hidden; justify-content: center; gap: 40px; }
+.s1 .bg-ring { position: absolute; width: 700px; height: 700px; border-radius: 50%; border: 1.5px solid var(--border); opacity: 0.5; }
+.s1 .ring1 { top: -200px; right: -200px; }
+.s1 .ring2 { bottom: -300px; left: -250px; width: 600px; height: 600px; }
+.s1 .logo-area { position: relative; margin-bottom: 0; }
+.s1 .glow { position: absolute; inset: -20px; border-radius: 50%; background: radial-gradient(circle, rgba(82,183,136,0.18), transparent); filter: blur(18px); }
+.s1 img.logo { display: block; width: 260px; height: 260px; object-fit: contain; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; filter: contrast(1.08) saturate(1.1); }
+.s1 h1 { font-size: 130px; font-weight: 900; letter-spacing: -3px; color: var(--green9); margin: 0; }
+.s1 .tagline { font-size: 34px; color: var(--sub); max-width: 800px; line-height: 1.5; margin: 0; }
+.s1 .partners-bar { display: flex; align-items: center; justify-content: center; width: 100%; }
+
+/* ── S2 Team ── */
+.s2 { gap: 0; justify-content: flex-start; padding-top: 16px; }
+.s2 .top { margin-bottom: 16px; }
+.s2 .team-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; width: 100%; }
+.s2 .member { background: white; border: 1.5px solid var(--border); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; }
+.s2 .photo-wrap { width: 100%; aspect-ratio: 4/5; overflow: hidden; background: var(--green1); position: relative; }
+.s2 .photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.s2 .photo-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 52px; font-weight: 900; color: var(--green5); background: linear-gradient(160deg, var(--green1), white); }
+.s2 .info { padding: 14px 18px; }
+.s2 .name { font-size: 42px; font-weight: 800; color: var(--green9); margin-bottom: 6px; }
+.s2 .unit { font-size: 28px; color: var(--muted); line-height: 1.4; }
+.s2 .quote-bar { width: 100%; border-top: 1.5px solid var(--border); padding-top: 14px; margin-top: 14px; text-align: center; }
+
+/* ── S3 Problem ── */
+.s3 { align-items: center; text-align: center; gap: 0; }
+.s3 .problem-label { position: absolute; top: 44px; right: 60px; font-size: 84px; font-weight: 900; letter-spacing: -3px; color: var(--green5); direction: rtl; line-height: 1; pointer-events: none; display: flex; align-items: center; gap: 16px; }
+.s3 .problem-label::before { content: ''; display: block; width: 44px; height: 5px; background: var(--green5); border-radius: 2px; flex-shrink: 0; }
+.s3 .big { font-size: 148px; font-weight: 900; line-height: 1; letter-spacing: -3px; margin: 0; background: linear-gradient(135deg, #c07a2a, #e07b7b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.s3 .stat-sub { font-size: 46px; color: var(--sub); margin: 6px 0 32px; font-weight: 600; letter-spacing: -0.5px; }
+.s3 .facts-top { display: flex; gap: 20px; width: 100%; margin-bottom: 18px; }
+.s3 .fact { background: white; border: 2px solid var(--border); border-radius: 20px; padding: 28px 32px; text-align: center; flex: 1; }
+.s3 .fn { font-size: 42px; font-weight: 900; color: var(--green9); }
+.s3 .ft { font-size: 32px; color: var(--muted); margin-top: 10px; line-height: 1.3; font-weight: 600; }
+.s3 .fact-infra { width: 100%; background: linear-gradient(135deg, var(--green9), #2d6a4f); border-radius: 20px; padding: 26px 36px; display: flex; align-items: center; justify-content: center; gap: 24px; opacity: 0; }
+.s3 .fact { opacity: 0; }
+.s3 .fact.revealed { animation: fadeUp 0.45s both; }
+.s3 .fact-infra.revealed { animation: fadeUp 0.55s both; }
+.hook-quote { opacity: 0; }
+.hook-quote.revealed { animation: fadeUp 0.5s both; }
+
+/* ── S4 GHG ── */
+.s4 .scopes { display: flex; gap: 16px; width: 100%; }
+.s4 .scope { border-radius: 18px; padding: 28px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.s4 .sn { font-size: 24px; font-weight: 800; letter-spacing: 3px; opacity: 0.75; }
+.s4 .st { font-size: 44px; font-weight: 800; margin-bottom: 2px; }
+.s4 .sd { font-size: 28px; line-height: 1.55; opacity: 0.88; }
+.s4 .diff { font-size: 15px; font-weight: 700; padding: 5px 12px; border-radius: 99px; display: inline-block; margin-top: 6px; width: fit-content; }
+.s4 .sc1 { background: #c8e6fa; color: #0d3b6e; }
+.s4 .sc1 .diff { background: rgba(13,59,110,0.12); color: #0d3b6e; }
+.s4 .sc2 { background: #fde8b8; color: #6b3a0d; }
+.s4 .sc2 .diff { background: rgba(107,58,13,0.12); color: #6b3a0d; }
+.s4 .sc3 { background: var(--green9); color: white; flex: 2; }
+.s4 .bar-wrap { margin-top: 12px; }
+.s4 .bar-bg { height: 8px; background: rgba(255,255,255,0.15); border-radius: 99px; }
+.s4 .bar-fill { height: 100%; background: var(--green3); border-radius: 99px; width: 80%; }
+.s4 .pct-label { font-size: 50px; font-weight: 900; color: var(--green3); margin-top: 10px; }
+
+/* ── S5 Global ── */
+.s5 .cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; width: 100%; }
+.s5 .card { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 36px 40px; opacity: 0; }
+.s5 .card.revealed { animation: fadeUp 0.45s both; }
+.s5 .year { font-size: 72px; font-weight: 900; color: var(--green5); margin-bottom: 12px; line-height: 1; }
+.s5 .ct { font-size: 32px; color: var(--sub); line-height: 1.6; }
+.s5 .ct strong { color: var(--green9); }
+.s5 .paris { grid-column: span 3; background: var(--green9); color: white; border: none; display: flex; align-items: center; gap: 28px; padding: 32px 44px; }
+.s5 .paris .icon { font-size: 56px; flex-shrink: 0; }
+.s5 .paris .text { font-size: 36px; font-weight: 800; color: var(--green3); }
+.s5 .today-card { background: #fef3c7; border-color: #f59e0b; }
+.s5 .today-card .year { color: #92400e; }
+.s5 .today-card .ct { color: #78350f; }
+
+/* ── S6 Before/After ── */
+.s6 { flex-direction: row; padding: 0; gap: 0; align-items: stretch; }
+.s6 .half { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; padding: 130px 60px 60px; }
+.s6 .before { background: white; border-left: 1px solid var(--border); }
+.s6 .after { background: var(--green9); }
+.s6 .hl { font-size: 34px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 48px; }
+.s6 .before .hl { color: #c0392b; }
+.s6 .after .hl { color: var(--green3); }
+.s6 .hh { font-size: 62px; font-weight: 800; margin-bottom: 36px; }
+.s6 .before .hh { color: var(--green9); }
+.s6 .after .hh { color: white; }
+.s6 .points { list-style: none; display: flex; flex-direction: column; gap: 24px; }
+.s6 .pt { display: flex; align-items: flex-start; gap: 16px; font-size: 36px; line-height: 1.5; }
+.s6 .before .pt { color: var(--sub); }
+.s6 .after .pt { color: rgba(255,255,255,0.85); }
+.s6 .pi { width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; margin-top: 4px; font-weight: 700; }
+.s6 .before .pi { background: #fde8e8; color: #c0392b; }
+.s6 .after .pi { background: rgba(149,213,178,0.2); color: var(--green3); }
+.s6 .vs { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 44px; height: 44px; border-radius: 50%; background: var(--cream); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: var(--green9); z-index: 10; }
+
+/* ── S7 How it works ── */
+.s7 { gap: 0; justify-content: center; }
+
+/* ── S8 Tech ── */
+.s8 { background: var(--cream); }
+.s8 .flow { display: flex; align-items: center; gap: 0; width: 100%; margin-bottom: 20px; }
+.s8 .step { flex: 1; background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 28px 16px; text-align: center; opacity: 0; }
+.s8 .arr { font-size: 32px; color: var(--green5); padding: 0 8px; flex-shrink: 0; opacity: 0; }
+.s8 .step.revealed { animation: fadeUp 0.35s both; }
+.s8 .arr.revealed  { animation: fadeIn 0.25s both; }
+.s8 .si { font-size: 52px; margin-bottom: 12px; }
+.s8 .st { font-size: 28px; font-weight: 700; color: var(--green9); margin-bottom: 6px; }
+.s8 .sd { font-size: 22px; color: var(--muted); line-height: 1.4; }
+.s8 .notes { display: flex; gap: 14px; width: 100%; opacity: 0; }
+.s8 .notes.revealed { animation: fadeUp 0.45s both; }
+.s8 .note { flex: 1; background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 24px 24px; }
+.s8 .nt { font-size: 28px; font-weight: 700; color: var(--green7); margin-bottom: 8px; }
+.s8 .nd { font-size: 22px; color: var(--muted); line-height: 1.4; }
+
+/* ── S9 Video ── */
+.s9 { align-items: center; text-align: center; }
+.s9 h2 { text-align: center; }
+.s9 video { width: min(900px,90vw); border-radius: 16px; box-shadow: 0 12px 48px rgba(27,67,50,0.18); margin-top: 8px; }
+
+/* ── S10 Roadmap (single centre-line, alternating up/down) ── */
+.s10 .road-wrap { width: 100%; }
+.s10 .road-items {
+  display: flex; height: 340px; align-items: stretch; position: relative;
+}
+/* Single horizontal line through all dot centres */
+.s10 .road-items::before {
+  content: ''; position: absolute;
+  left: calc(100% / 12); right: calc(100% / 12);
+  top: 50%; transform: translateY(-50%);
+  height: 4px; border-radius: 99px;
+  background: linear-gradient(to left, var(--border), var(--green5), var(--green9));
+}
+.s10 .ms { flex: 1; display: flex; flex-direction: column; align-items: center; z-index: 1; }
+.s10 .ms-top { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; padding: 8px 6px 0; text-align: center; }
+.s10 .ms-bot { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; padding: 0 6px 8px; text-align: center; }
+/* Vertical stems connecting text to the line */
+.s10 .up .ms-top::after  { content: ''; display: block; width: 2px; height: 22px; background: var(--green5); align-self: center; flex-shrink: 0; }
+.s10 .dn .ms-bot::before { content: ''; display: block; width: 2px; height: 22px; background: var(--green5); align-self: center; flex-shrink: 0; }
+.s10 .dot { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; background: var(--cream); flex-shrink: 0; }
+.s10 .curr .dot { background: var(--green5); box-shadow: 0 0 0 7px rgba(82,183,136,0.2); }
+.s10 .md { font-size: 24px; font-weight: 700; color: var(--green5); }
+.s10 .mt { font-size: 28px; font-weight: 800; color: var(--green9); }
+.s10 .ms-desc { font-size: 20px; color: var(--muted); line-height: 1.3; }
+.s10 .today-badge { background: var(--green5); color: white; font-size: 18px; font-weight: 900; padding: 4px 16px; border-radius: 99px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- ═══ S1: TITLE ═══ -->
+<div class="slide s1 active">
+
+  <div style="display:flex; flex-direction:column; align-items:center; gap:0; width:100%; margin-top:100px;">
+    <div class="logo-area">
+      <div style="width:280px; height:280px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; background:white; box-shadow:0 4px 32px rgba(27,67,50,0.15); border:3px solid var(--green3);">
+        <img class="logo" src="images/logo.png"
+             onerror="this.src='https://storage.googleapis.com/green_excal/carbontrack-logo.png'" alt="logo">
+      </div>
+    </div>
+    <h1><span class="green">C</span>arb<span class="green">O</span><sub style="font-size:0.45em;color:var(--green5);">2</sub>nTrack</h1>
+    <h2 style="font-size: 32px; font-weight: 700; color: var(--sub); margin-top: 10px;">פגישת מנכ"ל נתיבי ישראל</h2>
+    <div class="partners-bar" style="margin-top:80px; padding: 18px 40px; width:100%; display:flex; align-items:center; justify-content:center; gap:56px; flex-wrap:wrap;">
+      <img src="images/NetiviIsrael.svg.png" alt="נתיבי ישראל" style="height:100px; max-width:220px; object-fit:contain; mix-blend-mode:multiply;">
+      <img src="images/Google_2015_logo.svg.png" alt="Google" style="height:80px; max-width:200px; object-fit:contain; mix-blend-mode:multiply;">
+      <img src="images/Israel_National_Digital_Agency_logo.png" alt="רשות הדיגיטל" style="height:100px; max-width:220px; object-fit:contain; mix-blend-mode:multiply;">
+      <img src="images/sti-logo.webp" alt="STI" style="height:90px; max-width:200px; object-fit:contain; mix-blend-mode:multiply;">
+      <img src="images/yazamut_logo_white.webp" alt="יזמות" style="height:90px; max-width:200px; object-fit:contain; filter: drop-shadow(0 0 2px rgba(160,60,0,0.85)) drop-shadow(0 0 2px rgba(160,60,0,0.85));">
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S2: HOOK ═══ -->
+<div class="slide" style="justify-content:center; align-items:center; text-align:center;">
+  <div style="display:flex; flex-direction:column; align-items:center; gap:64px; max-width:1400px; width:100%;">
+
+    <div style="display:flex; align-items:center; justify-content:center; gap:0; width:100%;">
+
+      <div style="display:flex; flex-direction:column; align-items:center; gap:20px; flex:1;">
+        <div style="font-size:100px; line-height:1;">🏗️</div>
+        <div style="font-size:46px; font-weight:800; color:var(--green9);">חומרי בנייה</div>
+      </div>
+
+      <div style="font-size:72px; color:var(--green5); font-weight:300; flex-shrink:0; padding:0 8px;">←</div>
+
+      <div style="display:flex; flex-direction:column; align-items:center; gap:20px; flex:1;">
+        <div style="font-size:100px; line-height:1;">☁️</div>
+        <div style="font-size:46px; font-weight:800; color:var(--green9);">פליטות CO₂</div>
+      </div>
+
+      <div style="font-size:72px; color:var(--green5); font-weight:300; flex-shrink:0; padding:0 8px;">←</div>
+
+      <div style="display:flex; flex-direction:column; align-items:center; gap:20px; flex:1;">
+        <div style="font-size:100px; line-height:1;">🌍</div>
+        <div style="font-size:46px; font-weight:800; color:var(--green9);">פגיעה באטמוספירה</div>
+      </div>
+
+    </div>
+
+    <div style="width:140px; height:2px; background:var(--border); border-radius:2px;"></div>
+
+    <div class="hook-quote" style="font-size:100px; font-weight:900; color:var(--green9); line-height:1.2; letter-spacing:-1px;">
+      אי אפשר לצמצם<br>את מה שלא מודדים
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ S3: TEAM ═══ -->
+<div class="slide s2">
+  <div class="top">
+    <div class="label">הצוות</div>
+<p class="sub" style="font-size:32px;max-width:760px;color:var(--sub);line-height:1.6;font-weight:600;">סטודנטים להנדסת חשמל ומחשבים</p>
+  </div>
+  <div class="team-grid">
+    <div class="member">
+      <div class="photo-wrap">
+        <img src="images/asaf.jpg" alt="אסף שדה" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="photo-fallback" style="display:none">א</div>
+      </div>
+      <div class="info">
+        <div class="name">אסף שדה</div>
+        <div class="unit">לוחם יחידת אגוז · משרת מילואים פעיל</div>
+      </div>
+    </div>
+    <div class="member">
+      <div class="photo-wrap">
+        <img src="images/gal.jpg" alt="גל הראל" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="photo-fallback" style="display:none">ג</div>
+      </div>
+      <div class="info">
+        <div class="name">גל הראל</div>
+        <div class="unit">יחידה 9900 · משרתת מילואים פעילה</div>
+      </div>
+    </div>
+    <div class="member">
+      <div class="photo-wrap">
+        <img src="images/mika.jpg" alt="מיקה הרפז" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="photo-fallback" style="display:none">מ</div>
+      </div>
+      <div class="info">
+        <div class="name">מיקה הרפז</div>
+        <div class="unit">יחידה 8200 · מודיעין אותות · משרתת מילואים פעילה</div>
+      </div>
+    </div>
+    <div class="member">
+      <div class="photo-wrap">
+        <img src="images/shira.jpg" alt="שירה זיגדון" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="photo-fallback" style="display:none">ש</div>
+      </div>
+      <div class="info">
+        <div class="name">שירה זיגדון</div>
+        <div class="unit">יחידה 8200 · חוקרת RF · משרתת מילואים פעילה</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S3: PROBLEM ═══ -->
+<div class="slide s3">
+  <div class="problem-label">הבעיה</div>
+  <div class="big">81M טון</div>
+  <p class="stat-sub">CO₂ נפלטים מדי שנה בישראל</p>
+  <div class="facts-top">
+    <div class="fact">
+      <div class="fn">שינויים קיצוניים במזג האוויר</div>
+      <div class="ft">גלי חום, הצפות ונזקים של מיליונים בכל חורף</div>
+    </div>
+    <div class="fact">
+      <div class="fn">2,500</div>
+      <div class="ft">ישראלים מתים מדי שנה כתוצאה ישירה מזיהום אוויר</div>
+    </div>
+  </div>
+  <div class="fact-infra">
+    <div style="font-size:90px; line-height:1; flex-shrink:0;">🏗️</div>
+    <div style="text-align:right;">
+      <div style="font-size:80px; font-weight:900; color:var(--green3); direction:ltr;">יותר מ-10%</div>
+      <div style="font-size:32px; color:rgba(255,255,255,0.85); margin-top:10px;">מסך הפליטות הישראליות מגיע מענף התשתיות בלבד</div>
+      <div style="font-size:26px; color:var(--green3); margin-top:10px; font-weight:700;">← זה הנתח שאנחנו באים לטפל בו</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S4: GHG ═══ -->
+<div class="slide s4">
+  <div class="label">המדידה</div>
+  <h2 class="title">פרוטוקול GHG — כיצד מודדים?</h2>
+  <div class="scopes">
+
+    <div style="display:flex; flex-direction:column; gap:14px; flex:2;">
+      <div style="display:flex; gap:16px; flex:1;">
+        <div class="scope sc1" style="flex:1;">
+          <div class="sn">SCOPE 1</div>
+          <div class="st">פליטות ישירות</div>
+          <div class="sd">שריפת דלק ישירה בציוד הארגון.</div>
+        </div>
+        <div class="scope sc2" style="flex:1;">
+          <div class="sn">SCOPE 2</div>
+          <div class="st">אנרגיה נרכשת</div>
+          <div class="sd">חשמל וחום נרכש מספקים.</div>
+        </div>
+      </div>
+      <div style="font-size:34px; font-weight:800; color:#111; text-align:center;">✓ קל למדידה</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:14px; flex:2;">
+      <div class="scope sc3" style="flex:1;">
+        <div class="sn" style="color:var(--green3)">SCOPE 3 — הבעיה האמיתית</div>
+        <div class="st" style="color:white;font-size:44px">שרשרת האספקה</div>
+        <div class="sd" style="color:#ffffff">ייצור חומרים, הובלה, קבלני משנה — וזה בדיוק מה שאנחנו פותרים.</div>
+        <div class="bar-wrap">
+          <div class="pct-label">70%–90% מסך הפליטות</div>
+          <div class="bar-bg"><div class="bar-fill"></div></div>
+        </div>
+      </div>
+      <div style="font-size:34px; font-weight:800; color:#111; text-align:center;">✗ קשה למדידה</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ S5: GLOBAL ═══ -->
+<div class="slide s5">
+  <div class="label">ההקשר העולמי</div>
+  <h2 class="title">ישראל מחויבת — חסר הכלי</h2>
+  <div class="cards">
+    <div class="card paris">
+      <div class="icon">🕊️</div>
+      <div class="text">הסכם פריז 2015</div>
+    </div>
+    <div class="card"><div class="year">2030</div><div class="ct">ישראל: צמצום פליטות ב-<strong>כ-30%</strong> ביחס ל-2015</div></div>
+    <div class="card"><div class="year">2050</div><div class="ct">יעד <strong>Net Zero</strong> — ניטרליות פחמנית מלאה</div></div>
+    <div class="card today-card"><div class="year">היום</div><div class="ct" style="color:#78350f">אין כלי מדידה מעשי — <strong>CarbonTrack ממלאת את הפער</strong></div></div>
+  </div>
+</div>
+
+<!-- ═══ S6: BEFORE/AFTER ═══ -->
+<div class="slide s6">
+  <div class="half before">
+    <div class="hl">❌ ללא CarbonTrack</div>
+    <div class="hh">המצב היום</div>
+    <div style="text-align:center; margin:0 0 32px;">
+      <div style="font-size:200px; font-weight:900; color:#e07b7b; line-height:1;">0</div>
+      <div style="font-size:30px; font-weight:700; color:var(--sub);">חברות תשתית ישראליות מחשבות Scope 3</div>
+    </div>
+    <ul class="points">
+      <li class="pt"><div class="pi">✗</div>חברות בינלאומיות — לא מותאמות לשוק התשתיות הישראלי</li>
+    </ul>
+  </div>
+  <div class="vs">VS</div>
+  <div class="half after">
+    <div class="hl">✅ עם CarbonTrack</div>
+    <div class="hh" style="color:white">העתיד הקרוב</div>
+    <ul class="points">
+      <li class="pt"><div class="pi">✓</div>Scope 3 מלא לפי GHG Protocol</li>
+      <li class="pt"><div class="pi">✓</div>תוצאות בזמן אמת</li>
+      <li class="pt"><div class="pi">✓</div>חישוב מבוסס AI, לא הצהרה בלבד</li>
+      <li class="pt"><div class="pi">✓</div>מעקב רגולטורי מפוקח</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══ VIDEO (slide 7) ═══ -->
+<div class="slide s9">
+  <div class="label">הדגמה</div>
+  <h2 class="title">ראו איך זה עובד</h2>
+  <video id="demo-video" controls preload="metadata" style="width:min(900px,90vw);border-radius:16px;box-shadow:0 12px 48px rgba(27,67,50,0.18);margin-top:8px">
+    <source src="images/carbontrack_cut.mp4?v=11" type="video/mp4">
+  </video>
+</div>
+
+<!-- ═══ WHAT IF ═══ -->
+<div class="slide" style="padding:16px 20px;justify-content:center;align-items:center;background:var(--cream);">
+  <div class="label" style="align-self:flex-start; margin-bottom:6px;">סימולטור What-If</div>
+  <img src="images/WHAT-IF.png" style="width:100%;height:auto;max-height:95vh;object-fit:contain;border-radius:16px;box-shadow:0 12px 48px rgba(27,67,50,0.18);">
+</div>
+
+<!-- ═══ AI HELPER ═══ -->
+<div class="slide" style="padding:16px 20px;justify-content:center;align-items:center;background:var(--cream);">
+  <div class="label" style="align-self:flex-start; margin-bottom:6px;">עוזר AI</div>
+  <img src="images/AI.png" style="width:100%;height:auto;max-height:95vh;object-fit:contain;border-radius:16px;box-shadow:0 12px 48px rgba(27,67,50,0.18);">
+</div>
+
+<!-- ═══ S8: HOW IT WORKS ═══ -->
+<div class="slide s7">
+  <div class="label">הפתרון</div>
+  <h2 class="title" style="margin-bottom:28px">איך זה עובד?</h2>
+  <div style="display:flex; gap:24px; width:100%; align-items:center; justify-content:center;">
+
+    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 28px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:16px; aspect-ratio:1/1;">
+      <div style="height:120px; display:flex; align-items:center; justify-content:center;">
+        <img src="images/papers.jpg" style="max-height:120px; width:auto; mix-blend-mode:multiply; object-fit:contain;" alt="Stack of papers">
+      </div>
+      <div style="font-size:38px; font-weight:900; color:#000; text-align:center;">העלאת כתב כמויות</div>
+      <div style="font-size:26px; font-weight:600; color:#000; text-align:center; line-height:1.5;">מסמך המפרט את כלל העבודות והחומרים הנדרשים למיזם.</div>
+    </div>
+
+    <div style="display:flex; align-items:center; font-size:44px; color:var(--green5); flex-shrink:0;">←</div>
+
+    <div style="flex:1; background:var(--green9); border-radius:22px; padding:32px 28px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:16px; aspect-ratio:1/1;">
+      <div style="height:120px; display:flex; align-items:center; justify-content:center;">
+        <div style="font-size:80px; line-height:1;">🔢</div>
+      </div>
+      <div style="font-size:38px; font-weight:900; color:white; text-align:center;">חישוב פליטה</div>
+      <div style="font-size:26px; font-weight:600; color:rgba(255,255,255,0.85); text-align:center; line-height:1.5;">ע"י מקדמי המרה בינלאומיים</div>
+      <div style="background:rgba(149,213,178,0.18); border:1.5px solid var(--green3); border-radius:8px; padding:8px 16px; font-size:17px; font-weight:700; color:var(--green3);">✓ GHG Protocol Approved</div>
+    </div>
+
+    <div style="display:flex; align-items:center; font-size:44px; color:var(--green5); flex-shrink:0;">←</div>
+
+    <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 28px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:16px; aspect-ratio:1/1;">
+      <div style="height:120px; display:flex; align-items:center; justify-content:center;">
+        <div style="font-size:80px; line-height:1;">📊</div>
+      </div>
+      <div style="font-size:38px; font-weight:900; color:#000; text-align:center;">דאשבורד נתונים</div>
+      <div style="font-size:26px; font-weight:600; color:#000; text-align:center; line-height:1.5;">ניתוח חי לפי פרויקט, חומר וקבלן</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ S10: VALUE PROPOSITION FOR CEO ═══ -->
+<div class="slide s11" style="justify-content:flex-start; padding-top:40px;">
+  <div class="label">הערך האסטרטגי</div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:28px; width:100%; flex:1; min-height:0;">
+
+    <!-- הערך לנתיבי ישראל -->
+    <div style="display:flex; flex-direction:column; gap:12px; min-height:0;">
+      <div style="text-align:center; font-size:26px; font-weight:900; color:var(--green9); letter-spacing:-0.5px;">ההזדמנות של נתיבי ישראל</div>
+      <div style="background:var(--green9); border-radius:22px; padding:28px 32px; display:flex; flex-direction:column; justify-content:space-evenly; flex:1; min-height:0;">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="font-size:36px; flex-shrink:0;">🏆</div>
+          <div style="font-size:23px; font-weight:800; color:white; line-height:1.3;">מובילות טכנולוגית וחדשנות בענף התשתיות</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="font-size:32px; flex-shrink:0;">⚡</div>
+          <div style="font-size:22px; color:rgba(255,255,255,0.9); line-height:1.4;">מוצר עובד שמותאם לשיטות העבודה הקיימות בחברה</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="font-size:32px; flex-shrink:0;">🌿</div>
+          <div style="font-size:22px; color:rgba(255,255,255,0.9); line-height:1.4;">עמידה ביעדי ESG לאומיים ובינלאומיים בקלות</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="font-size:32px; flex-shrink:0;">📊</div>
+          <div style="font-size:22px; color:rgba(255,255,255,0.9); line-height:1.4;">שליטה בנתונים והצעת חלופות חסכוניות וירוקות</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- למה עכשיו -->
+    <div style="display:flex; flex-direction:column; gap:12px; min-height:0;">
+      <div style="text-align:center; font-size:26px; font-weight:900; color:var(--green9); letter-spacing:-0.5px;">למה עכשיו?</div>
+      <div style="background:white; border:2px solid var(--border); border-radius:22px; padding:28px 32px; display:flex; flex-direction:column; justify-content:space-evenly; flex:1; min-height:0;">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="font-size:36px; flex-shrink:0;">⏰</div>
+          <div style="font-size:23px; font-weight:800; color:var(--green9); line-height:1.3;">הרגולציה מתקרבת והדדליין דוחק</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="font-size:32px; flex-shrink:0;">📍</div>
+          <div style="font-size:22px; color:var(--sub); line-height:1.4;">הפיילוט איתנו כבר רץ בשטח ומוכיח את עצמו</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="font-size:32px; flex-shrink:0;">🌍</div>
+          <div style="font-size:22px; color:var(--sub); line-height:1.4;">הפחתת סיכונים רגולטוריים ושיפור תדמיתי מיידי</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="font-size:32px; flex-shrink:0;">🚀</div>
+          <div style="font-size:22px; color:var(--sub); line-height:1.4;">הזדמנות להוביל את השוק במקום להיות מובלים</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- ═══ סוף S10 ═══ -->
+
+<!-- ═══ S11: ROADMAP ═══ -->
+<div class="slide s10">
+  <div class="label">מפת דרכים</div>
+  <h2 class="title">מה עשינו ולאן אנחנו הולכים</h2>
+  <div class="road-wrap">
+    <div class="road-items">
+
+      <div class="ms done up">
+        <div class="ms-top"><div class="md">ינו׳ 2026</div><div class="mt">PoC ראשוני</div></div>
+        <div class="dot">✅</div>
+        <div class="ms-bot"></div>
+      </div>
+
+      <div class="ms done dn">
+        <div class="ms-top"></div>
+        <div class="dot">✅</div>
+        <div class="ms-bot"><div class="md">מרץ 2026</div><div class="mt">AI Integration</div></div>
+      </div>
+
+      <div class="ms done up">
+        <div class="ms-top"><div class="md">אפר׳ 2026</div><div class="mt">Dashboard MVP</div></div>
+        <div class="dot">✅</div>
+        <div class="ms-bot"></div>
+      </div>
+
+      <div class="ms curr dn">
+        <div class="ms-top"><div class="today-badge">📍 היום</div></div>
+        <div class="dot">🔧</div>
+        <div class="ms-bot"><div class="md">מאי 2026</div><div class="mt">Pilot נתיבי ישראל</div></div>
+      </div>
+
+      <div class="ms future up">
+        <div class="ms-top"><div class="md">2026</div><div class="mt">הטמעה בנתיבי ישראל</div></div>
+        <div class="dot">⚙️</div>
+        <div class="ms-bot"></div>
+      </div>
+
+      <div class="ms future dn">
+        <div class="ms-top"></div>
+        <div class="dot">🏗️</div>
+        <div class="ms-bot"><div class="md">2027</div><div class="mt">חברות תשתית נוספות</div><div class="ms-desc">רכבת ישראל, מקורות ועוד</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S13: CONVERGENCE (animation only) ═══ -->
+<style>
+@keyframes s13-tr { 0%{transform:translate(520px,-520px);opacity:0} 100%{transform:translate(0,0);opacity:1} }
+@keyframes s13-tl { 0%{transform:translate(-520px,-520px);opacity:0} 100%{transform:translate(0,0);opacity:1} }
+@keyframes s13-b  { 0%{transform:translateY(520px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+@keyframes s13-logo { 0%{opacity:0;transform:translate(-50%,-50%) scale(0.7)} 100%{opacity:1;transform:translate(-50%,-50%) scale(1)} }
+.sconv .c1,.sconv .c2,.sconv .c3,.sconv .cg { animation:none; opacity:0; }
+.sconv.active .c1 { animation:s13-tr 1s ease-out .1s both; }
+.sconv.active .c2 { animation:s13-tl 1s ease-out .4s both; }
+.sconv.active .c3 { animation:s13-b  1s ease-out .7s both; }
+.sconv.active .cg { animation:s13-logo .8s ease-out 1.4s both; }
+</style>
+<div class="slide sconv" style="justify-content:center;align-items:center;overflow:hidden;">
+  <div style="position:relative;width:640px;height:580px;">
+
+    <!-- 💰 תקציבי ענק — top-right -->
+    <div class="c1" style="position:absolute;width:260px;height:260px;border-radius:50%;
+         background:rgba(52,168,83,0.13);border:3px solid rgba(52,168,83,0.45);
+         top:10px;right:10px;
+         display:flex;align-items:center;justify-content:center;">
+      <span style="font-size:100px;line-height:1;">💰</span>
+    </div>
+
+    <!-- 🏛️ מחויבות מדינית — top-left -->
+    <div class="c2" style="position:absolute;width:260px;height:260px;border-radius:50%;
+         background:rgba(27,67,50,0.13);border:3px solid rgba(27,67,50,0.38);
+         top:10px;left:10px;
+         display:flex;align-items:center;justify-content:center;">
+      <span style="font-size:100px;line-height:1;">🏛️</span>
+    </div>
+
+    <!-- 🤖 טכנולוגיית AI — bottom-center -->
+    <div class="c3" style="position:absolute;width:260px;height:260px;border-radius:50%;
+         background:rgba(82,183,136,0.13);border:3px solid rgba(82,183,136,0.42);
+         bottom:10px;left:190px;
+         display:flex;align-items:center;justify-content:center;">
+      <span style="font-size:100px;line-height:1;">🤖</span>
+    </div>
+
+    <!-- CarbonTrack logo — intersection point -->
+    <div class="cg" style="position:absolute;top:43%;left:50%;
+         width:150px;height:150px;border-radius:50%;overflow:hidden;
+         background:white;border:3px solid var(--green3);
+         box-shadow:0 4px 32px rgba(27,67,50,0.18);">
+      <img src="images/logo.png" style="width:100%;height:100%;object-fit:cover;
+           image-rendering:crisp-edges;filter:contrast(1.08) saturate(1.1);" alt="CarbonTrack">
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ S12: CLOSING ═══ -->
+<div class="slide s12">
+  <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:60px;">
+    <div style="flex:1">
+      <div class="label" style="margin-bottom:28px">מוזמנים להתרשם!</div>
+      <div style="font-size:64px;font-weight:900;color:var(--green9);line-height:1.15;margin-bottom:20px">
+        אי אפשר לצמצם<br>את מה שלא מודדים
+      </div>
+      <div style="font-size:28px;font-weight:700;color:var(--green5);margin-bottom:32px">CarbonTrack — נתיבי ישראל</div>
+    </div>
+    <div style="flex-shrink:0;background:white;border-radius:24px;padding:28px;border:2px solid var(--border);box-shadow:0 8px 32px rgba(27,67,50,0.10);text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px">
+      <div style="font-size:13px;font-weight:800;letter-spacing:3px;color:var(--green9)">SCAN ME</div>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=https%3A%2F%2Fshirazigdon.github.io%2Fcarbontrack%2Fpresentation.html&color=1b4332&bgcolor=ffffff&qzone=1"
+           style="width:280px;height:280px;border-radius:8px" alt="QR Code">
+      <div style="margin-top:10px; font-size:16px; color:var(--green9); font-weight:700; text-align:center; line-height:1.7;">
+        שם משתמש: example@netivei.co.il<br>סיסמה: 123456
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<div class="slide-badge" id="badge"></div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const badgeEl = document.getElementById('badge');
+let cur = 0;
+const total = slides.length;
+
+const animSteps = {
+  1: ['.hook-quote'],
+  3: ['.facts-top .fact:nth-child(1)', '.facts-top .fact:nth-child(2)', '.fact-infra'],
+  5: ['.cards .card:nth-child(1)','.cards .card:nth-child(2)','.cards .card:nth-child(3)','.cards .card:nth-child(4)'],
+  11: [
+    ['.flow .step:nth-child(1)','.flow .arr:nth-child(2)','.flow .step:nth-child(3)','.flow .arr:nth-child(4)','.flow .step:nth-child(5)','.flow .arr:nth-child(6)','.flow .step:nth-child(7)','.flow .arr:nth-child(8)','.flow .step:nth-child(9)'],
+    '.notes'
+  ]
+};
+const stepCounts = {};
+
+function resetAnims(idx) {
+  if (!animSteps[idx]) return;
+  animSteps[idx].forEach(item => {
+    const sels = Array.isArray(item) ? item : [item];
+    sels.forEach(sel => {
+      const el = slides[idx].querySelector(sel);
+      if (el) el.classList.remove('revealed');
+    });
+  });
+  stepCounts[idx] = 0;
+}
+
+function revealNext(idx) {
+  if (!animSteps[idx]) return false;
+  const step = stepCounts[idx] || 0;
+  if (step >= animSteps[idx].length) return false;
+  const item = animSteps[idx][step];
+  const sels = Array.isArray(item) ? item : [item];
+  sels.forEach(sel => {
+    const el = slides[idx].querySelector(sel);
+    if (el) el.classList.add('revealed');
+  });
+  stepCounts[idx] = step + 1;
+  return true;
+}
+
+const demoVideo = document.getElementById('demo-video');
+const videoSlideIdx = demoVideo ? Array.from(slides).findIndex(s => s.contains(demoVideo)) : -1;
+
+if (demoVideo) {
+  demoVideo.addEventListener('ended', () => {
+    // if (document.fullscreenElement) document.exitFullscreen();
+    // goTo(cur + 1);
+  });
+}
+
+function goTo(n) {
+  // Leave video slide: pause and reset
+  if (cur === videoSlideIdx && demoVideo) {
+    demoVideo.pause();
+    demoVideo.currentTime = 0;
+    if (document.fullscreenElement) document.exitFullscreen();
+  }
+
+  resetAnims(cur);
+  slides[cur].classList.remove('active');
+  cur = (n + total) % total;
+  slides[cur].classList.add('active');
+  badgeEl.textContent = `${cur+1} / ${total}`;
+
+  // Enter video slide: fullscreen + play
+  if (cur === videoSlideIdx && demoVideo) {
+    demoVideo.currentTime = 0;
+    demoVideo.requestFullscreen()
+      .then(() => demoVideo.play())
+      .catch(() => demoVideo.play());
+  }
+}
+
+function go(d) {
+  if (d > 0 && revealNext(cur)) return;
+  goTo(cur + d);
+}
+
+let zoomFactor = 1.0;
+
+function resizeDeck() {
+  const deck = document.querySelector('.deck');
+  const base = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+  deck.style.transform = `translate(-50%, -50%) scale(${base * zoomFactor})`;
+}
+window.addEventListener('resize', resizeDeck);
+resizeDeck();
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowLeft'||e.key==='ArrowDown') go(1);
+  if (e.key==='ArrowRight'||e.key==='ArrowUp') go(-1);
+  // Zoom in/out with + / -
+  if (e.key==='+' || e.key==='=') { zoomFactor = Math.min(zoomFactor + 0.05, 2.0); resizeDeck(); }
+  if (e.key==='-') { zoomFactor = Math.max(zoomFactor - 0.05, 0.4); resizeDeck(); }
+  if (e.key==='0') { zoomFactor = 1.0; resizeDeck(); }
+});
+goTo(0);
+</script>
+</body>
+</html>
