@@ -10,5 +10,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY main.py .
+COPY catalog_classifier.py .
 
 CMD exec gunicorn --bind :${PORT} --workers 1 --threads 2 --timeout 0 main:app

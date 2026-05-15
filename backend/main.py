@@ -675,13 +675,12 @@ def _fit_catalog_classifier_from_bq() -> None:
             SELECT short_text, category,
                    COALESCE(reliability_score, 0.9) AS confidence,
                    COALESCE(excluded, FALSE) AS excluded
-            FROM `{_BQ_DETAILS_TABLE_FULL}`
+            FROM `{BQ_DETAILS_TABLE}`
             WHERE short_text IS NOT NULL
-              AND (
-                    (category IS NOT NULL AND category != '' AND category != 'Unknown')
-                    OR excluded = TRUE
-              )
-              AND COALESCE(reliability_score, 0.9) >= 0.7
+              AND category IS NOT NULL AND category != '' AND category != 'Unknown'
+              AND COALESCE(excluded, FALSE) = FALSE
+              AND COALESCE(reliability_score, 0.9) >= 0.85
+              AND (matched_by IS NULL OR matched_by NOT LIKE '%vertex_ai%')
             ORDER BY calculation_date DESC
             LIMIT 30000
         """
@@ -1304,10 +1303,21 @@ def parse_boq_prefixes(boq_code: Optional[str]) -> List[str]:
     return seen
 
 
+# Hebrew prefix letters (ב,כ,ל,מ,ש,ה,ו) attach directly to the following word with no space,
+# so \b cannot match the root boundary.  "לניקוי" has no \b between ל and נ.
+# We generate a second, "prefix-separated" form ("ל ניקוי") so that \b-anchored patterns
+# still catch prefixed service verbs without needing to duplicate every pattern.
+_HEB_PREFIX_SEP = re.compile(r'(?:(?<=\s)|^)([בכלמשהו]{1,2})([א-ת])', re.UNICODE | re.MULTILINE)
+
+
 def should_exclude(text: str) -> Tuple[bool, Optional[str], Optional[str]]:
     text = normalize_text(text)
     if not text:
         return True, "empty_material_text", None
+
+    # Prefix-separated copy: "לניקוי תעלות" → "ל ניקוי תעלות"
+    # Used only for EXCLUDE_PATTERNS so that prefix-attached service verbs still match.
+    text_sep = _HEB_PREFIX_SEP.sub(r'\1 \2', text)
 
     for pattern in FINANCIAL_ADJUSTMENT_PATTERNS:
         if re.search(pattern, text, flags=re.IGNORECASE):
@@ -1326,7 +1336,7 @@ def should_exclude(text: str) -> Tuple[bool, Optional[str], Optional[str]]:
         return False, None, None
 
     for pattern in _EXCLUDE_PATTERNS_COMPILED:
-        if pattern.search(text):
+        if pattern.search(text) or pattern.search(text_sep):
             return True, "exclude_pattern_non_material", pattern
 
     return False, None, None
@@ -3388,27 +3398,8 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
             "exclusion_code": exclusion_code,
         }, None
 
-    # ── Catalog Similarity Classifier (replaces most of hard_classification_override) ──
-    # Searches k-nearest neighbours in historical classifications using TF-IDF cosine similarity.
-    # Returns a result only when the top-k neighbors agree with high confidence.
-    if catalog_classifier.is_ready:
-        cat_sim, cat_conf, cat_reason = catalog_classifier.classify(text)
-        if cat_sim != "":  # "" means "no confident match"
-            is_exclude = cat_sim is None
-            logger.debug("CatalogSim: %s conf=%.2f | %s", cat_sim or "EXCLUDE", cat_conf, cat_reason[:120])
-            return cat_sim, {
-                "method": "catalog_similarity",
-                "reason": cat_reason,
-                "confidence": cat_conf,
-                "excluded": is_exclude,
-                "review_required": cat_conf < 0.80,
-                "inferred_uom": "unknown",
-                "matched_by": "catalog_similarity",
-                "exclusion_code": "CATALOG_SIM" if is_exclude else None,
-            }, None
-
-    # Run precise semantic hard-overrides before BOQ forced-category and catalog matching.
-    # Description-based rules (HDPE, geocell, etc.) must win over broad BOQ chapter defaults.
+    # ── Hard override first (fast, deterministic, precise) ──────────────────────
+    # Regex rules fire before TF-IDF: cheaper, no risk of catalog poisoning.
     hard = hard_classification_override(text)
     if hard:
         category, reason = hard
@@ -3425,6 +3416,25 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
             "catalog_mapping": None,
             "boq_mapping": None,
         }, None
+
+    # ── Catalog Similarity Classifier (statistical fallback for unknown items) ──
+    # Only reached when no deterministic rule matched. Searches k-NN in
+    # historical classifications using TF-IDF cosine similarity.
+    if catalog_classifier.is_ready:
+        cat_sim, cat_conf, cat_reason = catalog_classifier.classify(text)
+        if cat_sim != "":  # "" means "no confident match"
+            is_exclude = cat_sim is None
+            logger.debug("CatalogSim: %s conf=%.2f | %s", cat_sim or "EXCLUDE", cat_conf, cat_reason[:120])
+            return cat_sim, {
+                "method": "catalog_similarity",
+                "reason": cat_reason,
+                "confidence": cat_conf,
+                "excluded": is_exclude,
+                "review_required": cat_conf < 0.80,
+                "inferred_uom": "unknown",
+                "matched_by": "catalog_similarity",
+                "exclusion_code": "CATALOG_SIM" if is_exclude else None,
+            }, None
 
     if boq_code:
         code_norm = str(boq_code).strip()

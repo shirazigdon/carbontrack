@@ -35,9 +35,9 @@ logger = logging.getLogger("calc-carbon")
 
 # ── Tuning knobs ─────────────────────────────────────────────────────────────
 TOP_K = 7           # how many neighbors to check
-MIN_AGREEMENT = 0.6 # fraction of neighbors that must agree (e.g. 5/7 ≈ 0.71)
+MIN_AGREEMENT = 0.75 # fraction of neighbors that must agree (e.g. 6/7 ≈ 0.86)
 MIN_CONFIDENCE = 0.75  # minimum avg confidence of agreeing neighbors
-MIN_SIMILARITY = 0.35  # discard neighbors with cosine sim below this
+MIN_SIMILARITY = 0.55  # discard neighbors with cosine sim below this — raised to cut false matches
 MIN_CATALOG_SIZE = 50  # don't classify until catalog has this many entries
 EXCLUDE_LABEL = "__EXCLUDE__"  # internal label for excluded items
 
