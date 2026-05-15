@@ -5201,28 +5201,6 @@ def classify_text_endpoint() -> Any:
         return jsonify({"error": str(exc)}), 500
 
 
-@app.post("/classify-text")
-def classify_text_endpoint() -> Any:
-    """Single-item classification for A/B testing vs the shira branch."""
-    try:
-        body = request.get_json(force=True) or {}
-        text = body.get("text", "").strip()
-        boq_code = body.get("boq_code", "")
-        if not text:
-            return jsonify({"error": "text is required"}), 400
-        category, meta, _ = classify_category_smart(text, boq_code or None)
-        return jsonify({
-            "text": text,
-            "category": category,
-            "excluded": meta.get("excluded", False),
-            "method": meta.get("method", ""),
-            "confidence": meta.get("confidence", 0),
-            "reason": meta.get("reason", ""),
-            "review_required": meta.get("review_required", False),
-        }), 200
-    except Exception as exc:
-        logger.exception("classify-text failed")
-        return jsonify({"error": str(exc)}), 500
 
 
 @app.route("/", methods=["POST"])
