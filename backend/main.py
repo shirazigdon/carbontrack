@@ -5722,7 +5722,12 @@ def emissions():
     try:
         project_filter = request.args.get("project")
         run_filter = request.args.get("run_id")
-        limit = min(int(request.args.get("limit", 5000)), 10000)
+        # When filtered by project/run, allow up to 50k rows (typical project ≤ 10k).
+        # Unfiltered queries are capped at 10k to avoid Cloud Run 32MB response limit.
+        has_filter = bool(project_filter or run_filter)
+        default_limit = 50000 if has_filter else 5000
+        max_limit = 50000 if has_filter else 10000
+        limit = min(int(request.args.get("limit", default_limit)), max_limit)
 
         where_clauses = []
         if project_filter:
