@@ -2874,9 +2874,11 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         return "Crushed Stone", "Hard override: quarry aggregate type A/B/C → Crushed Stone"
 
     # ── Block F: Infrastructure material items from expanded BOQ scope ────────
-    # תא בקרה מלבני = rectangular control chamber (cast-in-place concrete)
+    # תא בקרה מלבני יצוק = cast-in-place rectangular chamber → Structural Concrete
+    # Without "יצוק/יציקה", the chamber is a precast unit → fall through to Precast rule below
     if re.search(r"תא\s*בקרה\s*מלבני", text, flags=re.IGNORECASE):
-        return "Structural Concrete", "Hard override: rectangular control chamber → Structural Concrete"
+        if re.search(r"יצוק|יציקה", text, flags=re.IGNORECASE):
+            return "Structural Concrete", "Hard override: cast-in-place rectangular chamber → Structural Concrete"
 
     # קו מים מפלדה = steel water main → Galvanized Steel
     if re.search(r"קו\s*מים\s*מפלדה", text, flags=re.IGNORECASE):
@@ -3176,6 +3178,39 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     # פס השוואת פוטנציאלים מנחושת (copper equipotential bonding bar) → Copper Wire
     if re.search(r"פס\s+השוואת\s+פוטנציאלים\s+(?:עשוי\s+מ)?נחושת", text, flags=re.IGNORECASE):
         return "Copper Wire", "Hard override: copper equipotential bonding bar → Copper Wire"
+
+    # ── Paving items misclassified as Precast Concrete ───────────────────────
+    # Curb stones / tactile tiles / stone cladding / granolite → Paving
+    if re.search(
+        r"אבן\s+(?:שפה|הפרדה|עליה\s+לרכב|כניסה\s+לרכב)|"
+        r"אריחי?\s+(?:טקטיל|ריצוף|בטון\s+(?:מחוספס|ניקוז))|"
+        r"חיפוי\s+(?:גרנוליט|מדרגות|שברי\s+אבן\b)|"
+        r"גרנוליט\b|"
+        r"מדרגה\s+(?:גושנית|נגישה\b)|"
+        r"אלמנט\s+(?:תיעול\s+ל?מדרכה|שפת?\s+רציף|סף\s+רציף)|"
+        r"אלמנט\s+שפ[הת]\b",
+        text, flags=re.IGNORECASE
+    ):
+        return "Paving", "Hard override: paving element (curb/tile/cladding) → Paving"
+
+    # ── Galvanized steel metal fabrication items (misclassified as Steel Rebar) ──
+    if re.search(
+        r"אלמנטי?\s+פלדה\s+(?:שונים|מגולוונ|מפרופיל)|"
+        r"כבל\s+אבטחה.*מגולוון|"
+        r"מאחז\s+יד\b|"
+        r"מדרך\s+רשת\s+פריק|"
+        r"מזחלת\s+מים.*(?:מגולוון|פח)|"
+        r"מכלול\s+ברגי\s+עיגון\s+ל?עמוד|"
+        r"מעקה\s+(?:מתכת|פלדה|גלוון)|"
+        r"עמודון\s+סימון|"
+        r"חלון\s+(?:ממוגן|מיגון)\b",
+        text, flags=re.IGNORECASE
+    ):
+        return "Galvanized Steel", "Hard override: metal fabrication / galvanized element → Galvanized Steel"
+
+    # עמודי פלדה (steel columns) → Structural Steel
+    if re.search(r"^עמודי?\s+פלדה\b", text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: steel columns → Structural Steel"
 
     # צינור בדיקה מפלדה (steel inspection pipe) → Galvanized Steel
     if re.search(r"צינור\s+בדיקה\s+מפלדה|צינור\s+מפלדה\s+ל?בדיקה", text, flags=re.IGNORECASE):
@@ -3537,7 +3572,8 @@ _ELEC_UNKNOWN_RE: list = [re.compile(p, re.IGNORECASE | re.UNICODE) for p in [
     r"זרוע\s+תותב",              # speaker / camera mounting arm
     r"מתג\s+קצה",                # edge switch (network)
     r"רמקול",                    # speaker unit (physical item, not PA service)
-    r"מא[''\"ʼ]ז",               # MCB / MCCB circuit breaker
+    r"מא[''\"ʼ״׳]{1,2}ז",         # MCB / MCCB circuit breaker (all quote variants)
+    r"ג[''\"ʼ״׳]{1,2}ת\b",        # ג"ת abbreviation for גוף תאורה (luminaire)
     r"מערכת\s+שידור\s+הודעות",   # recorded-announcement broadcast system
     r"מעגל\s+גישה\s+למערכת\s+הודעות",  # access circuit for announcement system
     r"מערכת\s+מיתוג\s+מוצאים",   # output switching system
