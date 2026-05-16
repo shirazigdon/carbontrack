@@ -3684,6 +3684,21 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
                 "inferred_uom": "unknown", "matched_by": "boq_prefix_override",
             }, None
 
+        # Text-based override: items that physically belong to the lighting-pole material
+        # ecosystem but fall inside always_exclude BOQ chapters (e.g. 08.04.57 = LED fixtures)
+        if re.search(
+            r"(?:ארגז\s+הסתעפות.*ואבטחה|ארגז\s+כבלים)\s+מותקן\s+על\s+עמוד|"
+            r"(?:עמוד\s+תאורה|זרוע\s+(?:יחידה|כפולה|שלישיה|רבעיה))\s+(?:ב?גובה|מ(?:הדגם|סוג|תוצ|פלדה|גולוון))|"
+            r"משטח\s+שרות\s+ו?טיפול.*(?:לעמוד|עמוד)\b",
+            text, flags=re.IGNORECASE
+        ):
+            return "Galvanized Steel", {
+                "method": "hard_override",
+                "reason": "Pre-BOQ-exclude override: lighting pole material in always_exclude chapter",
+                "confidence": 0.97, "excluded": False, "review_required": False,
+                "inferred_uom": "unit", "matched_by": "pre_boq_exclude_override",
+            }, None
+
         if prefix_2 in BOQ_PREFIX_EXCLUDE or prefix_5 in BOQ_SUBPREFIX_EXCLUDE or prefix_8 in BOQ_SUBPREFIX_EXCLUDE:
             return None, {
                 "method": "boq_prefix_exclude",
@@ -3714,7 +3729,7 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
     # Pre-exclude material override: supply/install/service in lighting-pole ecosystem → Galvanized Steel
     # (must fire before should_exclude because these items contain service verbs: הובלה, התקנה, חיבור, צביעה)
     if re.search(
-        r"(?:טעינה[,\s]+הובלה[,\s]+ופריקה?)\s+(?:של\s+)?(?:ו?(?:התקנת?|הרכבת?)\s+)?(?:עמוד\s+תאורה|זרוע\s+(?:יחידה|כפולה|שלישיה|רבעיה))|"
+        r"(?:טעינה[,\s]+הובלה[,\s]+ופריק[הת]?)\s+(?:של\s+)?(?:ו?(?:התקנת?|הרכבת?)\s+)?(?:עמוד\s+תאורה|זרוע\s+(?:יחידה|כפולה|שלישיה|רבעיה))|"
         r"(?:בירגי?\s+יסוד|בורג\s+עיגון|בורגי\s+יסוד)\s+ל?עמוד\s+תאורה|"
         r"(?:צלחת|חגורת?)\s*(?:דקורטיב[ית]*|ל?עמוד\s+תאורה)|"
         r"כתר\s+\w+\s+ל?עמוד\s+תאורה|"
