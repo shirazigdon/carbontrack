@@ -3667,6 +3667,26 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
             "boq_mapping": None,
         }, None
 
+    # ── BOQ chapter default: electrical equipment / PA / fire-detection → Unknown ──
+    # Items in these chapters are physical equipment with no standard carbon factor.
+    # Must run BEFORE catalog so TF-IDF cannot drift them into Copper Wire.
+    if boq_code:
+        _boq_parts = str(boq_code).strip().split(".")
+        _boq_p2 = _boq_parts[0]                              # "08", "35", "36"
+        _boq_p5 = ".".join(_boq_parts[:2]) if len(_boq_parts) > 1 else _boq_p2  # "08.05"
+        _ELEC_CHAPTER_PREFIXES_2 = {"35", "36", "34"}        # all PA / fire / HVAC chapters
+        _ELEC_CHAPTER_PREFIXES_5 = {"08.05", "08.03"}        # elec install + comms equipment
+        if _boq_p2 in _ELEC_CHAPTER_PREFIXES_2 or _boq_p5 in _ELEC_CHAPTER_PREFIXES_5:
+            return "Unknown", {
+                "method": "boq_chapter_default",
+                "reason": f"BOQ chapter {_boq_p5} is electrical/PA/fire-detection equipment — no standard carbon factor",
+                "confidence": 0.85,
+                "excluded": False,
+                "review_required": True,
+                "inferred_uom": "unit",
+                "matched_by": "boq_chapter_unknown",
+            }, None
+
     # ── Catalog Similarity Classifier (statistical fallback for unknown items) ──
     # Only reached when no deterministic rule matched. Searches k-NN in
     # historical classifications using TF-IDF cosine similarity.
