@@ -2892,7 +2892,31 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"כבל\s*חסין\s*אש", text, flags=re.IGNORECASE):
         return "Copper Wire (Cable)", "Hard override: fire-resistant cable → Copper Wire (Cable)"
 
-    # ── Block G: Remaining misclassification fixes ────────────────────────────
+    # ── Block G: EXCLUDE items currently misclassified as materials ─────────────
+    # Non-material items: chemical toilet, furniture, services, pest control
+    if re.search(
+        r"בית\s+שימוש\s+כימי|בית\s+שימוש\s+ניידת?|בית\s+שימוש\s+מטיפוס|"
+        r"וילון\s+ומחיצה\s+מטיפוס|מחיצה\s+מטיפוס|"
+        r"עמדה?\s+כיבוי\s+אש\s+מטיפוס|"
+        r"הדברת?\s+(?:שיטה|עצים?|עשבי?)\s+(?:מכחילה|בגרלון|בסולר|בסומיטיון)|"
+        r"גלוון\s+אלמנטי?\s+(?:פלדה|ברזל)\s+(?:קיימים?|ישנים?)|"
+        r"ריסוס\s+(?:הדברה|שטח|עצים?)\b",
+        text, flags=re.IGNORECASE
+    ):
+        return None, "Hard override: non-material item (toilet/furniture/service) → EXCLUDE"
+
+    # ── Block G2: Fill Material items currently EXCLUDEd ─────────────────────
+    if re.search(
+        r"קרקע\s+חקלאית\b|"
+        r"(?:ביטול|מילוי|מילוא|השלמת?\s+מילוי)\s+(?:שוחה|בור)\s+.*(?:חול|עפר|מילוי)|"
+        r"(?:מילוי|מילוא)\s+(?:בחול|בעפר|בחומר)\s+.*(?:מהודק|לפי\s+מפמ|מובא)|"
+        r"מילוא\s+מובא\s+מחומר\s+קוהוזיבי|"
+        r"החלפת?\s+החומר\s+(?:החפור|הנחפר)\s+ב?(?:חול|עפר|מילוי)",
+        text, flags=re.IGNORECASE
+    ):
+        return "Fill Material", "Hard override: fill material (sand/soil) → Fill Material"
+
+    # ── Block G3: Remaining misclassification fixes ───────────────────────────
 
     # Street furniture misclassified as Precast Concrete by AI
     if re.search(r"אשפתון\s+(?:מפח|דגם|מנוקב)|פח\s+מנוקב.{0,15}אשפתון", text, flags=re.IGNORECASE):
@@ -3118,8 +3142,17 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"תריס\s+רפפה", text, flags=re.IGNORECASE):
         return "Aluminum", "Hard override: roller shutter → Aluminum"
 
+    # מגש אביזרים / מגש מפלסטיק לפנסים (accessory tray for luminaires) → HDPE Granulate
+    if re.search(
+        r"מגש\s+(?:אביזרים?\s+(?:פלסטי|מפלסטיק|פרשפן|מפח|מ?גלוון)|"
+        r"(?:מפלסטיק|פלסטי)\s+ל(?:שלושה\s+)?פנסים?|"
+        r"אביזרים?\s+(?:עד\s+\d+|ל[- ]?\d+)\s*(?:ממ|פנס))",
+        text, flags=re.IGNORECASE
+    ):
+        return "HDPE Granulate", "Hard override: plastic accessory tray for luminaires → HDPE Granulate"
+
     # מופות לחיבור צנרת ... פוליאמיד/פוליאתילן (polyamide fittings) → HDPE Granulate
-    if re.search(r"מופות?\s+לחיבור\s+צנרת.*(?:פוליאמיד|פוליאתילן|PE|PA)\b", text, flags=re.IGNORECASE):
+    if re.search(r"מופות?\s+לחיבור\s+צנרת.*(?:פוליאמ|פוליאתיל|PE\b|PA\b)", text, flags=re.IGNORECASE):
         return "HDPE Granulate", "Hard override: polyamide pipe fittings → HDPE Granulate"
 
     # שרוול מצינור פי.וי.סי / PVC (PVC sleeve pipe) → PVC Pipe
@@ -3127,7 +3160,10 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         return "PVC Pipe", "Hard override: PVC sleeve → PVC Pipe"
 
     # תא בקרה מלבני / עגול BOQ 51.05.x → Precast Concrete (concrete inspection chamber)
+    # But NOT if it's a telecom/commercial metal control box
     if re.search(r"תא\s+בק(?:רה|\.)\s*(?:לבני|מל(?:בני)?|עגול|מרובע|\d{2,3}[Xx×])", text, flags=re.IGNORECASE):
+        if re.search(r"תקשורת\s+מסחרית|תאורה\s+מסחרית|לתקשורת|פח\b|מתכת\b", text, flags=re.IGNORECASE):
+            return "Galvanized Steel", "Hard override: metal/telecom control box (rectangular) → Galvanized Steel"
         return "Precast Concrete", "Hard override: concrete inspection chamber → Precast Concrete"
 
     # תא בקרה (metal control/junction box, NOT concrete chamber) → Galvanized Steel
@@ -3182,28 +3218,45 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     # ── Paving items misclassified as Precast Concrete ───────────────────────
     # Curb stones / tactile tiles / stone cladding / granolite → Paving
     if re.search(
-        r"אבן\s+(?:שפה|הפרדה|עליה\s+לרכב|כניסה\s+לרכב)|"
+        r"אבן[-\s]+(?:שפה|הפרדה|עליה\s+לרכב|כניסה\s+לרכב)|"
         r"אריחי?\s+(?:טקטיל|ריצוף|בטון\s+(?:מחוספס|ניקוז))|"
-        r"חיפוי\s+(?:גרנוליט|מדרגות|שברי\s+אבן\b)|"
+        r"חיפוי\s+(?:גרנוליט|מדרגות|שברי\s+אבן\b|אבן\b)|"
+        r"חיפוי\s+בשברי\s+אבן|"
         r"גרנוליט\b|"
         r"מדרגה\s+(?:גושנית|נגישה\b)|"
+        r"מדרגות\s+(?:אבן|גרנוליט|שיש)\b|"
         r"אלמנט\s+(?:תיעול\s+ל?מדרכה|שפת?\s+רציף|סף\s+רציף)|"
-        r"אלמנט\s+שפ[הת]\b",
+        r"אלמנט\s+שפ[הת]\b|"
+        r"פס\s+(?:מוביל|זיהוי|הפרדה)\b.*(?:נגישות?|ריצוף|מדרכה)|"
+        r"(?:נגישות?\s+)?פס\s+(?:מוביל|זיהוי)\b",
         text, flags=re.IGNORECASE
     ):
         return "Paving", "Hard override: paving element (curb/tile/cladding) → Paving"
 
-    # ── Galvanized steel metal fabrication items (misclassified as Steel Rebar) ──
+    # ── Galvanized steel metal fabrication items (misclassified as Steel Rebar / Precast) ──
     if re.search(
         r"אלמנטי?\s+פלדה\s+(?:שונים|מגולוונ|מפרופיל)|"
         r"כבל\s+אבטחה.*מגולוון|"
-        r"מאחז\s+יד\b|"
+        r"מאחז[יות]*\s+יד\b|"
         r"מדרך\s+רשת\s+פריק|"
         r"מזחלת\s+מים.*(?:מגולוון|פח)|"
         r"מכלול\s+ברגי\s+עיגון\s+ל?עמוד|"
         r"מעקה\s+(?:מתכת|פלדה|גלוון)|"
         r"עמודון\s+סימון|"
-        r"חלון\s+(?:ממוגן|מיגון)\b",
+        r"חלון\s+(?:ממוגן|מיגון)\b|"
+        r"גשרי?\s+שילוט\b|"
+        r"פסי?\s+הפרדה\s+מ(?:נירוסטה|פלדה|מתכת)|"
+        r"תעלות?\s+מים\s+מ?פח\b|"
+        r"פסי?\s+(?:ו?חיבור\s+)?מנירוסטה|"
+        r"מתקן\s+(?:סטנדרט\s+)?חנייה\s+ל?אופניים|"
+        r"מתקן\s+ל?(?:סבון\s+נוזלי|מגבת|נייר\s+טואלט).*(?:נירוסטה|מתכת|פלדה)|"
+        r"כיסוי\s+הגנה.*אנטי.*ונדל.*מ?פח|"
+        r"תעלת?\s+פח\s+מגולוון|"
+        r"תעלת?\s+(?:פח|מתכת)\s+(?:מגל|מגולוון|צבוע)|"
+        r"תעלות?\s+(?:תקשורת|CABLE\s+DUCT|כבלים?)\s+(?:ו?מכסים?)?|"
+        r"מכסה\s+ל?תא\s+(?:P\s+)?(?:מדרכתי|דרכתי|כבישי)|"
+        r"מיגון\s+ל?מכסה\s+שוחות?|"
+        r"השלמת?\s+אביזרים?\s+ב?שוחות?",
         text, flags=re.IGNORECASE
     ):
         return "Galvanized Steel", "Hard override: metal fabrication / galvanized element → Galvanized Steel"
@@ -3658,15 +3711,27 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
             "matched_by": "electrical_unknown",
         }, None
 
-    # Pre-exclude material override: supply of physical items that contain service verbs
-    # (הובלה/הצבת/התקנת) but ARE the material, not a service on it.
+    # Pre-exclude material override: supply/install/service in lighting-pole ecosystem → Galvanized Steel
+    # (must fire before should_exclude because these items contain service verbs: הובלה, התקנה, חיבור, צביעה)
     if re.search(
-        r"(?:טעינה[,\s]+הובלה[,\s]+ופריקה|הספקת?)\s+(?:ו?(?:התקנת?|הרכבת?)\s+)?עמוד\s+תאורה",
+        r"(?:טעינה[,\s]+הובלה[,\s]+ופריקה|הספקת?)\s+(?:ו?(?:התקנת?|הרכבת?)\s+)?עמוד\s+תאורה|"
+        r"(?:בירגי?\s+יסוד|בורג\s+עיגון|בורגי\s+יסוד)\s+ל?עמוד\s+תאורה|"
+        r"(?:צלחת|חגורת?|כתר\s+נ)\s*(?:דקורטיב|לעמוד\s+תאורה)|"
+        r"(?:שקע|חיבור\s+חשמל)\s+.*משולב\s+ב?עמוד\s+תאורה|"
+        r"(?:התקנת?|הרכב[הת])\s+(?:דלת|זרוע|מאחז|כרגל|נורת?|פנס)\s+(?:על|ל)?\s*עמוד\s+תאורה\s+קיים|"
+        r"חיבור\s+הזנה\s+חדשה\s+ל?(?:בסיס|יסוד)\s+(?:של\s+)?עמוד\s+תאורה|"
+        r"(?:חיבור|הנחת?)\s+צנרת\s+חדשה\s+ל?תא\s+בקרה|"
+        r"צביעת?\s+עמוד\s+תאורה|"
+        r"(?:ארגז\s+הסתעפות.*ואבטחה|ארגז\s+כבלים)\s+מותקן\s+על\s+עמוד|"
+        r"(?:ארון\s+חשמל|ארון\s+מנייה).*עמוד\s+תאורה|"
+        r"העמדת?\s+עמוד\s+תאורה\s+קיים\s+שפורק|"
+        r"פנס\s+תאורה\s+מאושר|"
+        r"שסתום\s+אל[-\s]חוזר\s+ל?ביוב",
         text, flags=re.IGNORECASE
     ):
         return "Galvanized Steel", {
             "method": "hard_override",
-            "reason": "Pre-exclude override: lighting pole supply → Galvanized Steel",
+            "reason": "Pre-exclude override: lighting pole ecosystem item → Galvanized Steel",
             "confidence": 0.98, "excluded": False, "review_required": False,
             "inferred_uom": "unit", "matched_by": "pre_exclude_override",
         }, None
@@ -3710,8 +3775,8 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
         _boq_parts = str(boq_code).strip().split(".")
         _boq_p2 = _boq_parts[0]                              # "08", "35", "36"
         _boq_p5 = ".".join(_boq_parts[:2]) if len(_boq_parts) > 1 else _boq_p2  # "08.05"
-        _ELEC_CHAPTER_PREFIXES_2 = {"35", "36", "34"}        # all PA / fire / HVAC chapters
-        _ELEC_CHAPTER_PREFIXES_5 = {"08.05", "08.03"}        # elec install + comms equipment
+        _ELEC_CHAPTER_PREFIXES_2 = {"35", "36", "34"}                  # all PA / fire / HVAC chapters
+        _ELEC_CHAPTER_PREFIXES_5 = {"08.05", "08.03", "08.04"}         # elec install + comms + lighting infra equipment
         if _boq_p2 in _ELEC_CHAPTER_PREFIXES_2 or _boq_p5 in _ELEC_CHAPTER_PREFIXES_5:
             return "Unknown", {
                 "method": "boq_chapter_default",
