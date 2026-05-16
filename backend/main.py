@@ -851,6 +851,42 @@ EXCLUDE_PATTERNS = [
     r"\bחיתוך\b",               # cutting
     r"\bהידוק\b",               # tightening/compaction service
     r"\bהוצאות?\b",             # expenses/costs
+    # Water infrastructure equipment (not carbon-tracked materials)
+    r"\bמד\s+מים\b",            # water meter
+    r"\bשסתום\b",               # valve (any type)
+    r"\bהידרנט\b",              # hydrant
+    r"\bמגוף\b",                # shut-off valve
+    r"\bברזים?\s+כדוריים?\b",   # ball valve/cock
+    # Lighting/electrical equipment (electrical infrastructure, excluded by policy)
+    r"\bעמוד\s+תאורה\b",        # lighting pole
+    r"\bפנס\s+תאורה\b",         # lantern/lamp
+    r"\bנקודת\s+מאור\b",        # light point
+    r"\bשעון\s+אסטרונומי\b",    # astronomical clock
+    r"\bמרכזיי?[הת]\b",         # electrical switchboard/panel
+    r"\bמגן\s+מתח\b",            # surge/voltage protector
+    r"\bקופסאות?\s+מעבר\b",      # junction boxes (passage type)
+    r"\bמערכת\s+כליא\s+ברק\b",  # lightning protection system
+    # Installation/placement operations
+    r"\bהצבת\b",                # placing/setting-up
+    r"\bסתימת?\b",              # sealing/plugging
+    r"\bמישקי\b",               # joints (expansion/separation)
+    r"\bהשלמות?\s+יציקה\b",     # concrete completion/patching work
+    r"\bעוגן\s+ל?עמוד\b",       # pole anchor
+    # Pipe operations (service, not material)
+    r"\bחיבור\s+קו\s+ניקוז\b",  # drainage-line connection
+    r"\bהנמכת\s+צנרת\b",        # pipe lowering
+    r"\bחדירה\s+לתאים?\b",       # chamber penetration
+    r"\bמגשר\s+אופטי\b",         # fiber-optic coupler (splicing service)
+    r"\bתוספת\s+לשרוול\b",       # sleeve surcharge (service item)
+    # Landscaping/irrigation equipment
+    r"\bדישון\b",               # fertilisation
+    r"\bמחשב.*השקיי?ה\b",        # irrigation controller computer
+    r"\bבולדרים?\b",             # decorative boulders
+    # Tunneling/mining operations
+    r"\bכרייה\s+ותמוך\b",        # excavation and tunnel support
+    r"\bקדוח\s+ב",               # drilling-in (boring through surface)
+    # Metal accessories (excluded by policy)
+    r"\bברזל\s+[Zז]\s*מחורץ\b", # perforated Z-bar cable support
 ]
 
 # Pre-compiled for performance — used in should_exclude()
@@ -3038,6 +3074,121 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"כבל\s+תא[\"״]?מ\b|כבל\s+תח[\"״]?מ\b", text, flags=re.IGNORECASE):
         return "Aluminum", "Hard override: aluminum conductor cable → Aluminum"
 
+    # ── Block E (2025 accuracy fixes) ─────────────────────────────────────────
+
+    # עמוד עץ (wooden pole) → Wood — must fire before Galvanized Steel pole rule
+    if re.search(r"עמוד\s+עץ\b", text, flags=re.IGNORECASE):
+        return "Wood", "Hard override: wooden pole → Wood"
+
+    # גדר רשת מרותכת (welded wire fence) → Galvanized Steel
+    if re.search(r"גדר\s+רשת\s+מרותכת", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: welded wire fence → Galvanized Steel"
+
+    # בורגי-עיגון מגולוונים / ברגי עיגון מגולוונים → Galvanized Steel
+    if re.search(r"בורגי?\s*[–-]?\s*עיגון\s+מגולוונ", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: galvanized anchor bolts → Galvanized Steel"
+
+    # רב בריח מקודד (multi-bolt lock) → Galvanized Steel
+    if re.search(r"רב\s+בריח\s+מקודד", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: coded multi-bolt → Galvanized Steel"
+
+    # מערכת דלתות מפלדת אל-חלד (stainless-steel door system) → Galvanized Steel
+    if re.search(r"מערכת\s+דלתות\s+מ?פלדת\s+אל[–-]?חלד", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: stainless door system → Galvanized Steel"
+
+    # תקרת תותב/תלויה מ?מגשי פח (suspended ceiling from sheet-metal trays) → Galvanized Steel
+    if re.search(r"תקרת?\s+תותב.*מגשי?\s+פח|מגשי?\s+פח.*תקרת?\s+תותב", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: sheet-metal suspended ceiling → Galvanized Steel"
+
+    # חיפוי פח מחורר / אטום (perforated / solid sheet-metal cladding) → Galvanized Steel
+    if re.search(r"חיפוי\s+פח\s+(?:מחורר|אטום)", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: sheet-metal cladding → Galvanized Steel"
+
+    # סבכת קליטה לקולטן (grate/grille for drainage inlet) → Galvanized Steel
+    if re.search(r"סבכת?\s+קליטה", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: drainage inlet grate → Galvanized Steel"
+
+    # צינור פלדה קוטר פנימי (steel pipe by inner diameter) → Galvanized Steel
+    if re.search(r"צינור\s+פלדה\s+קוטר\s+פנימי", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: steel pipe by inner dia → Galvanized Steel"
+
+    # תריס רפפה (roller shutter) → Aluminum
+    if re.search(r"תריס\s+רפפה", text, flags=re.IGNORECASE):
+        return "Aluminum", "Hard override: roller shutter → Aluminum"
+
+    # מופות לחיבור צנרת ... פוליאמיד/פוליאתילן (polyamide fittings) → HDPE Granulate
+    if re.search(r"מופות?\s+לחיבור\s+צנרת.*(?:פוליאמיד|פוליאתילן|PE|PA)\b", text, flags=re.IGNORECASE):
+        return "HDPE Granulate", "Hard override: polyamide pipe fittings → HDPE Granulate"
+
+    # שרוול מצינור פי.וי.סי / PVC (PVC sleeve pipe) → PVC Pipe
+    if re.search(r"שרוול\s+מ?(?:צינור\s+)?(?:פי\.?וי\.?סי|PVC)", text, flags=re.IGNORECASE):
+        return "PVC Pipe", "Hard override: PVC sleeve → PVC Pipe"
+
+    # תא בקרה מלבני / עגול BOQ 51.05.x → Precast Concrete (concrete inspection chamber)
+    if re.search(r"תא\s+בק(?:רה|\.)\s*(?:לבני|מל(?:בני)?|עגול|מרובע|\d{2,3}[Xx×])", text, flags=re.IGNORECASE):
+        return "Precast Concrete", "Hard override: concrete inspection chamber → Precast Concrete"
+
+    # תא בקרה (metal control/junction box, NOT concrete chamber) → Galvanized Steel
+    if re.search(r"תא\s+בקרה\b", text, flags=re.IGNORECASE):
+        if not re.search(r"בטון|טרומ|precast", text, flags=re.IGNORECASE):
+            return "Galvanized Steel", "Hard override: metal control box → Galvanized Steel"
+
+    # חיפוי קירות/עמודים בלוחות אבן נסורה (stone slab cladding) → Paving
+    if re.search(r"חיפוי\s+(?:קירות?|עמודי?|חזית)\s+ב?לוחות?\s+אבן\s+נסורה", text, flags=re.IGNORECASE):
+        return "Paving", "Hard override: stone slab wall cladding → Paving"
+
+    # חציית משטח אספלט / ריצוף / בטונים (crossing paved surface = paving material involved) → Paving
+    if re.search(r"חציית?\s+משטח\s+(?:אספלט|ריצוף|בטונים?|מדרכה)", text, flags=re.IGNORECASE):
+        return "Paving", "Hard override: asphalt/paving surface crossing → Paving"
+
+    # טעינה/הובלה/פריקה של עמוד תאורה (supply transport of lighting pole = steel item) → Galvanized Steel
+    if re.search(r"(?:טעינה|הובלה|פריקה).*עמוד\s+תאורה|עמוד\s+תאורה.*(?:טעינה|הובלה|פריקה)", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: lighting pole transport (material supply) → Galvanized Steel"
+
+    # בריכת ביקורת לאלקטרודה (concrete inspection pit for grounding electrode) → Precast Concrete
+    if re.search(r"בריכת?\s+ביקורת\s+ל?אלקטרודה", text, flags=re.IGNORECASE):
+        return "Precast Concrete", "Hard override: electrode inspection pit → Precast Concrete"
+
+    # משטח שרות וטיפול לעמוד תאורה (service/treatment platform for lighting pole) → Galvanized Steel
+    if re.search(r"משטח\s+שרות\s+ו?טיפול.*עמוד\s+תאורה|עמוד\s+תאורה.*משטח\s+שרות", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: lighting-pole service platform → Galvanized Steel"
+
+    # מילוי מובא (imported fill material) → Crushed Stone
+    if re.search(r"מילוי\s+מובא\b", text, flags=re.IGNORECASE):
+        return "Crushed Stone", "Hard override: imported fill material → Crushed Stone"
+
+    # מילוי חוזר למבנים (structural backfill) → Fill Material
+    if re.search(r"מילוי\s+חוזר\s+ל?מבנים?", text, flags=re.IGNORECASE):
+        return "Fill Material", "Hard override: structural backfill → Fill Material"
+
+    # גושי בטון מזוין לעיגון / לתושבות (reinforced concrete anchor blocks) → Structural Concrete
+    if re.search(r"גושי?\s+בטון\s+מזוין\s+ל(?:עיגון|תושבות?)", text, flags=re.IGNORECASE):
+        return "Structural Concrete", "Hard override: reinforced concrete anchor block → Structural Concrete"
+
+    # דיוס המרווח / מילוי מרווח (spacer filling / joint grouting) → Cementitious Mortar
+    if re.search(r"דיוס\s+(?:ה)?מרווח|מילוי\s+מרווח", text, flags=re.IGNORECASE):
+        return "Cementitious Mortar", "Hard override: joint spacer / grout → Cementitious Mortar"
+
+    # הארקות (grounding connections) → Copper Wire (copper earth wire)
+    if re.search(r"^הארקות?\b|הארקות?\s+ל(?:מתקן|גנרטור|בניין)", text, flags=re.IGNORECASE):
+        return "Copper Wire", "Hard override: grounding system → Copper Wire"
+
+    # פס השוואת פוטנציאלים מנחושת (copper equipotential bonding bar) → Copper Wire
+    if re.search(r"פס\s+השוואת\s+פוטנציאלים\s+(?:עשוי\s+מ)?נחושת", text, flags=re.IGNORECASE):
+        return "Copper Wire", "Hard override: copper equipotential bonding bar → Copper Wire"
+
+    # צינור בדיקה מפלדה (steel inspection pipe) → Galvanized Steel
+    if re.search(r"צינור\s+בדיקה\s+מפלדה|צינור\s+מפלדה\s+ל?בדיקה", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: steel inspection pipe → Galvanized Steel"
+
+    # מערכת דלתות מפלדת אל-חלד (stainless steel door system) → Galvanized Steel
+    if re.search(r"מערכת\s+דלתות?\s+מפלדת?\s+אל[\s-]*חלד", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: stainless steel door system → Galvanized Steel"
+
+    # יסוד בטון לעמוד תאורה (concrete foundation for lighting pole) — manual groups with pole → Galvanized Steel
+    if re.search(r"יסוד\s+בטון(?:\s+מזויין)?\s+(?:ל?|ב[\-]?\d+\s+ל?)עמוד\s+תאורה", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: concrete foundation for lighting pole → Galvanized Steel"
+
     return None
 
 
@@ -3351,6 +3502,67 @@ BOQ_FORCED_CATEGORY: Dict[str, str] = {
 BOQ_SUBPREFIX_FORCE = BOQ_FORCED_CATEGORY
 BOQ_SUBPREFIX_CATEGORY = BOQ_FORCED_CATEGORY
 
+# Specific sub-item overrides that bypass an always_exclude chapter.
+# Keyed by prefix_8 (first 8 chars of the dot-joined 3-part prefix).
+BOQ_PREFIX_FORCE_OVERRIDE: Dict[str, str] = {
+    "51.02.01": "Crushed Stone",        # imported fill in structures/underpasses → treated as crushed stone
+    "51.02.02": "Crushed Stone",       # imported fill in bridges / retaining walls
+    "57.01.06": "Structural Concrete", # concrete anchor blocks in sewage chapter
+    "57.01.64": "Cementitious Mortar", # joint filling / grouting in sewage chapter
+}
+
+# Electrical/electronic PHYSICAL components: have material mass but no standard CO2 factor.
+# These are caught BEFORE should_exclude() so that broad patterns ("רמקול","עבודה" etc.)
+# don't accidentally exclude them.
+_ELEC_UNKNOWN_RE: list = [re.compile(p, re.IGNORECASE | re.UNICODE) for p in [
+    r"מאמ[''\"ʼ]ת",              # disconnect switch / isolating switch
+    r"מגענים?",                   # contactors / relays
+    r"ממסר\s+הגנה",              # protection relay (SEPAM etc.)
+    r"מנתק\s+בעומס",             # load-break switch
+    r"שעון\s+פיקוד",             # command / lighting timer
+    r"רב\s*מודד",                # power analyser / multi-meter (SATEC etc.)
+    r"קבל\s+תלת\s+קוטבי",        # 3-phase power-factor capacitor
+    r"יחידת\s+הגנה\s+תלת",       # 3-phase motor protection unit
+    r"לוח\s+חלוקה",              # distribution board / panel
+    r"מערכת\s+מטענים?",          # battery charger / UPS system
+    r"גוף\s+תאורת?\b",           # lighting fixture / luminaire
+    r"ממתג\s+רשת",               # managed network switch
+    r"רכזת\s+גלוי\s+אש",         # addressable fire detection panel
+    r"מערכת\s+כבוי",             # fire suppression system
+    r"התקן\s+קצה",               # ABC terminal / end device
+    r"מכלול\s+קליינט?",           # HMI client assembly
+    r"מגענים?\s+תלת\s+קוטבי",    # 3-pole contactor
+    r"נקודת\s+מוצא\s+למערכות?",  # system output point (PA, CCTV)
+    r"ממשק\s+לאיתות?",            # signalling interface
+    r"זרוע\s+תותב",              # speaker / camera mounting arm
+    r"מתג\s+קצה",                # edge switch (network)
+    r"רמקול",                    # speaker unit (physical item, not PA service)
+    r"מא[''\"ʼ]ז",               # MCB / MCCB circuit breaker
+    r"מערכת\s+שידור\s+הודעות",   # recorded-announcement broadcast system
+    r"מעגל\s+גישה\s+למערכת\s+הודעות",  # access circuit for announcement system
+    r"מערכת\s+מיתוג\s+מוצאים",   # output switching system
+    r"לוחות?\s+חלוקה.*מאמ",      # distribution board with disconnects
+    r"חבילת\s+בקרה",             # control package / software bundle
+    r"עיבוד\s+נתוני\s+עוצמת\s+רעש",  # noise data processing unit
+    r"מערכת\s+הארקת?\s+יסוד",    # foundation grounding system
+    r"מערכת\s+הארקה\b",          # grounding system (general)
+    r"עלות\s+חודשית",             # monthly fee line (no material)
+    r"נקודת\s+הפסקת\s+חירום",    # emergency stop point
+    r"נקודת\s+טלפון\s+ציבורי",   # public telephone point
+    r"כרטיס\s+\d+\s+כניסות",     # N-input card/module for control system
+    r"אביזר\s+בקרה\s+כתובתי",    # addressable control accessory (for lighting/fire)
+]]
+
+
+def _check_electrical_unknown(text: str) -> Optional[str]:
+    """Return a description string if the item is a physical electrical component
+    with no carbon factor (→ Unknown), else None."""
+    for rx in _ELEC_UNKNOWN_RE:
+        m = rx.search(text)
+        if m:
+            return m.group(0)
+    return None
+
 
 def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tuple[
     Optional[str], Dict[str, Any], Optional[Dict[str, Any]]]:
@@ -3373,6 +3585,16 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
                 "exclusion_code": "T_PREFIX",
             }, None
 
+        # Specific sub-item overrides take priority over always_exclude chapters
+        if prefix_8 in BOQ_PREFIX_FORCE_OVERRIDE:
+            forced = BOQ_PREFIX_FORCE_OVERRIDE[prefix_8]
+            return forced, {
+                "method": "boq_prefix_override",
+                "reason": f"BOQ prefix {prefix_8} forced to {forced} (override of always_exclude chapter)",
+                "confidence": 0.99, "excluded": False, "review_required": False,
+                "inferred_uom": "unknown", "matched_by": "boq_prefix_override",
+            }, None
+
         if prefix_2 in BOQ_PREFIX_EXCLUDE or prefix_5 in BOQ_SUBPREFIX_EXCLUDE or prefix_8 in BOQ_SUBPREFIX_EXCLUDE:
             return None, {
                 "method": "boq_prefix_exclude",
@@ -3384,6 +3606,34 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
                 "matched_by": "boq_prefix_exclude",
                 "exclusion_code": f"BOQ_{prefix_2}",
             }, None
+
+    # ── Pre-exclude: physical electrical/electronic components → Unknown ────────
+    # Must run BEFORE should_exclude() so broad patterns (רמקול, כריזה, עבודה...)
+    # don't accidentally exclude physical items that merely appear in those contexts.
+    _elec_reason = _check_electrical_unknown(text)
+    if _elec_reason:
+        return "Unknown", {
+            "method": "hard_override",
+            "reason": f"Electrical component, no standard carbon factor: {_elec_reason}",
+            "confidence": 0.90,
+            "excluded": False,
+            "review_required": True,
+            "inferred_uom": "unit",
+            "matched_by": "electrical_unknown",
+        }, None
+
+    # Pre-exclude material override: supply of physical items that contain service verbs
+    # (הובלה/הצבת/התקנת) but ARE the material, not a service on it.
+    if re.search(
+        r"(?:טעינה[,\s]+הובלה[,\s]+ופריקה|הספקת?)\s+(?:ו?(?:התקנת?|הרכבת?)\s+)?עמוד\s+תאורה",
+        text, flags=re.IGNORECASE
+    ):
+        return "Galvanized Steel", {
+            "method": "hard_override",
+            "reason": "Pre-exclude override: lighting pole supply → Galvanized Steel",
+            "confidence": 0.98, "excluded": False, "review_required": False,
+            "inferred_uom": "unit", "matched_by": "pre_exclude_override",
+        }, None
 
     excluded, exclusion_code, pattern = should_exclude(text)
     if excluded:
@@ -5724,9 +5974,8 @@ def emissions():
         run_filter = request.args.get("run_id")
         # When filtered by project/run, allow up to 50k rows (typical project ≤ 10k).
         # Unfiltered queries are capped at 10k to avoid Cloud Run 32MB response limit.
-        has_filter = bool(project_filter or run_filter)
-        default_limit = 50000 if has_filter else 5000
-        max_limit = 50000 if has_filter else 10000
+        default_limit = 50000
+        max_limit = 50000
         limit = min(int(request.args.get("limit", default_limit)), max_limit)
 
         where_clauses = []

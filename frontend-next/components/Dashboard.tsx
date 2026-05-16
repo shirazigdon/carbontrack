@@ -79,11 +79,11 @@ export function Dashboard() {
     });
   }, [emissions, selectedYear, selectedRegions, selectedProject, selectedContractor]);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (project?: string) => {
     setLoading(true);
     try {
       const [emRes, revRes, projRes] = await Promise.allSettled([
-        fetchEmissions(),
+        fetchEmissions(project),
         fetchReview(),
         fetchProjects(),
       ]);
@@ -139,7 +139,10 @@ export function Dashboard() {
             years,
             selectedYear,
             reliabilityThreshold,
-            onProjectChange: setSelectedProject,
+            onProjectChange: (p: string) => {
+              setSelectedProject(p);
+              loadData(p || undefined);
+            },
             onContractorChange: setSelectedContractor,
             onRegionsChange: setSelectedRegions,
             onYearChange: setSelectedYear,
@@ -176,7 +179,7 @@ export function Dashboard() {
                 <span className="hidden md:inline">{emissions.length.toLocaleString()} רשומות</span>
                 <span className="md:hidden">{emissions.length}</span>
               </div>
-              <button onClick={loadData}
+              <button onClick={() => loadData(selectedProject || undefined)}
                 className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all text-sm">
                 ↻
               </button>

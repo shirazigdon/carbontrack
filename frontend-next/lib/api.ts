@@ -75,7 +75,11 @@ export const changePassword = (email: string, new_password: string) =>
   req('/auth/change-password', { method: 'POST', body: JSON.stringify({ email, new_password }) });
 
 // Data
-export const fetchEmissions = () => req<{ items: EmissionRow[] }>('/emissions');
+export const fetchEmissions = (project?: string) => {
+  const params = new URLSearchParams({ limit: '50000' });
+  if (project) params.set('project', project);
+  return req<{ items: EmissionRow[] }>(`/emissions?${params.toString()}`);
+};
 export const fetchReview = (status = 'pending') => req<{ items: ReviewRow[] }>(`/review-items?status=${status}`);
 export const fetchProcessingStatus = () => req<{ run: ProcessingRun | null }>('/processing/status');
 export const fetchProjects = () => req<{ projects: string[] }>('/projects');
