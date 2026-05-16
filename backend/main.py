@@ -3152,7 +3152,7 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         return "HDPE Granulate", "Hard override: plastic accessory tray for luminaires → HDPE Granulate"
 
     # מופות לחיבור צנרת ... פוליאמיד/פוליאתילן (polyamide fittings) → HDPE Granulate
-    if re.search(r"מופות?\s+לחיבור\s+צנרת.*(?:פוליאמ|פוליאתיל|PE\b|PA\b)", text, flags=re.IGNORECASE):
+    if re.search(r"מופות?\s+לחיבור\s+צנרת.*(?:פוליא|PE\b|PA\b)", text, flags=re.IGNORECASE):
         return "HDPE Granulate", "Hard override: polyamide pipe fittings → HDPE Granulate"
 
     # שרוול מצינור פי.וי.סי / PVC (PVC sleeve pipe) → PVC Pipe
@@ -3253,7 +3253,7 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         r"כיסוי\s+הגנה.*אנטי.*ונדל.*מ?פח|"
         r"תעלת?\s+פח\s+מגולוון|"
         r"תעלת?\s+(?:פח|מתכת)\s+(?:מגל|מגולוון|צבוע)|"
-        r"תעלות?\s+(?:תקשורת|CABLE\s+DUCT|כבלים?)\s+(?:ו?מכסים?)?|"
+        r"תעלות?\s+(?:תקשורת|[\(\[]?CABLE[\s_]+DUCT[\)\]]?|כבלים?)\s*(?:ו?מכסים?)?|"
         r"מכסה\s+ל?תא\s+(?:P\s+)?(?:מדרכתי|דרכתי|כבישי)|"
         r"מיגון\s+ל?מכסה\s+שוחות?|"
         r"השלמת?\s+אביזרים?\s+ב?שוחות?",
