@@ -13,7 +13,7 @@ from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl.utils import get_column_letter
 
 API_BASE   = "https://calc-carbon-140293665526.me-west1.run.app"
-PROJECT    = "2025-1"
+PROJECT    = "2025-4"
 MANUAL_FILE = r"C:\Users\user\Documents\יזמות\זיהוי שגוי.xlsx"
 OUTPUT_FILE = r"C:\Users\user\Documents\יזמות\2025-בדיקת-דיוק-חדש.xlsx"
 

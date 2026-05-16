@@ -3714,18 +3714,23 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
     # Pre-exclude material override: supply/install/service in lighting-pole ecosystem → Galvanized Steel
     # (must fire before should_exclude because these items contain service verbs: הובלה, התקנה, חיבור, צביעה)
     if re.search(
-        r"(?:טעינה[,\s]+הובלה[,\s]+ופריקה|הספקת?)\s+(?:ו?(?:התקנת?|הרכבת?)\s+)?עמוד\s+תאורה|"
+        r"(?:טעינה[,\s]+הובלה[,\s]+ופריקה?)\s+(?:של\s+)?(?:ו?(?:התקנת?|הרכבת?)\s+)?(?:עמוד\s+תאורה|זרוע\s+(?:יחידה|כפולה|שלישיה|רבעיה))|"
         r"(?:בירגי?\s+יסוד|בורג\s+עיגון|בורגי\s+יסוד)\s+ל?עמוד\s+תאורה|"
-        r"(?:צלחת|חגורת?|כתר\s+נ)\s*(?:דקורטיב|לעמוד\s+תאורה)|"
+        r"(?:צלחת|חגורת?)\s*(?:דקורטיב[ית]*|ל?עמוד\s+תאורה)|"
+        r"כתר\s+\w+\s+ל?עמוד\s+תאורה|"
         r"(?:שקע|חיבור\s+חשמל)\s+.*משולב\s+ב?עמוד\s+תאורה|"
-        r"(?:התקנת?|הרכב[הת])\s+(?:דלת|זרוע|מאחז|כרגל|נורת?|פנס)\s+(?:על|ל)?\s*עמוד\s+תאורה\s+קיים|"
+        r"(?:התקנת?|הרכב[הת])\s+(?:דלת|זרוע|מאחז|כרגל|נורת?|פנס|לוח\s+חשמל)\s+(?:על|ל)?\s*עמוד\s+תאורה\s+קיים|"
         r"חיבור\s+הזנה\s+חדשה\s+ל?(?:בסיס|יסוד)\s+(?:של\s+)?עמוד\s+תאורה|"
         r"(?:חיבור|הנחת?)\s+צנרת\s+חדשה\s+ל?תא\s+בקרה|"
+        r"(?:לוח\s+חשמל|ארון\s+חשמל|ארון\s+מנייה)\s+ל?הזנות?\s+עמוד\s+תאורה|"
+        r"(?:לוח\s+חשמל|ארון\s+חשמל)\s+(?:חיצוני\s+)?צמוד\s+ל?עמוד|"
+        r"(?:לוח|ארון)\s+חשמל\s+(?:לתאורה|בקרה\s+ושליטה)\s+.*(?:עמוד|מנהרה|גשר|מעבר)|"
         r"צביעת?\s+עמוד\s+תאורה|"
-        r"(?:ארגז\s+הסתעפות.*ואבטחה|ארגז\s+כבלים)\s+מותקן\s+על\s+עמוד|"
-        r"(?:ארון\s+חשמל|ארון\s+מנייה).*עמוד\s+תאורה|"
+        r"(?:ארגז\s+הסתעפות.*ואבטחה|ארגז\s+כבלים)\s+מותקן\s+על\s+עמוד\s+(?:תאורה|אש|חשמל)|"
         r"העמדת?\s+עמוד\s+תאורה\s+קיים\s+שפורק|"
         r"פנס\s+תאורה\s+מאושר|"
+        r"מחזיק\s+דגלים?\s+(?:כפול|בודד|תלת)|"
+        r"משטח\s+שרות\s+ו?טיפול.*עמוד\s+תאורה|"
         r"שסתום\s+אל[-\s]חוזר\s+ל?ביוב",
         text, flags=re.IGNORECASE
     ):
@@ -3775,8 +3780,8 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
         _boq_parts = str(boq_code).strip().split(".")
         _boq_p2 = _boq_parts[0]                              # "08", "35", "36"
         _boq_p5 = ".".join(_boq_parts[:2]) if len(_boq_parts) > 1 else _boq_p2  # "08.05"
-        _ELEC_CHAPTER_PREFIXES_2 = {"35", "36", "34"}                  # all PA / fire / HVAC chapters
-        _ELEC_CHAPTER_PREFIXES_5 = {"08.05", "08.03", "08.04"}         # elec install + comms + lighting infra equipment
+        _ELEC_CHAPTER_PREFIXES_2 = {"35", "36", "34"}        # all PA / fire / HVAC chapters
+        _ELEC_CHAPTER_PREFIXES_5 = {"08.05", "08.03"}        # elec install + comms equipment
         if _boq_p2 in _ELEC_CHAPTER_PREFIXES_2 or _boq_p5 in _ELEC_CHAPTER_PREFIXES_5:
             return "Unknown", {
                 "method": "boq_chapter_default",
