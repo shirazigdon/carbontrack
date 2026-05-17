@@ -2244,6 +2244,9 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"החלפת\s+מכסה.{0,20}שוחה|החלפת\s+מסגרת.{0,20}שוחה", text, flags=re.IGNORECASE):
         return None, "Hard override: manhole cover replacement service → EXCLUDE"
 
+    # Reinforced polyester electrical cabinet = steel-framed enclosure → GalvSteel
+    if re.search(r"(?:ארון|ארגז)\s+(?:חשמל|טמ.?ס|בקרה).{0,40}פוליאסטר\s+משוריין", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: reinforced polyester cabinet → Galvanized Steel"
     # Electrical junction/control box made of polyester (not metal)
     if re.search(r"(?:ארון|ארגז)\s+(?:חשמל|טמ.?ס|בקרה).{0,30}פוליאסטר", text, flags=re.IGNORECASE):
         return None, "Hard override: polyester electrical cabinet → EXCLUDE"
@@ -2276,6 +2279,9 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         # Junction/security box mounted ON a wooden pole is still a steel box
         if re.search(r"ארגז\s+הסתעפות\s*ואבטחה", text, flags=re.IGNORECASE):
             return "Galvanized Steel", "Hard override: junction box on wooden pole → Galvanized Steel"
+        # Steel brace/prop pole for a wooden pole = GalvSteel hardware
+        if re.search(r"עמוד\s+משען", text, flags=re.IGNORECASE):
+            return "Galvanized Steel", "Hard override: steel brace pole for wooden pole → Galvanized Steel"
         return None, "Hard override: wooden pole supply/accessory → EXCLUDE"
 
     # ── Block D: Galvanized Steel items wrongly hitting Aluminum ─────────────
@@ -2634,6 +2640,9 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         return "Cementitious Mortar", "Hard override: hydraulic plaster → Cementitious Mortar"
     if re.search(r"מלט|מלת|טיט|מרגמה|רובה|דייס|צמנט", text, flags=re.IGNORECASE):
         return "Cementitious Mortar", "Hard override: cement/mortar detected"
+    # טיח = plaster/render (cementitious wall coating)
+    if re.search(r"\bטיח\b", text, flags=re.IGNORECASE):
+        return "Cementitious Mortar", "Hard override: plaster/render → Cementitious Mortar"
 
     # concrete trash cans = prefab non-structural items = EXCLUDE; metal ones → AI
     if re.search(r"אשפתון.*(?:מבטון|בטון\s*אדריכלי)|פח\s*אשפות?\s*מבטון", text, flags=re.IGNORECASE):
@@ -3661,7 +3670,6 @@ BOQ_PREFIX_EXCLUDE: set = {
 BOQ_TPREFIX_EXCLUDE_PATTERNS = [
     r"^T51\.01\.",
     r"^T51\.0[0-9]\.",
-    r"^T54\.",       # tunneling / TBM service operations
     r"^T24\.90\.",   # diamond-saw / special cutting operations
 ]
 BOQ_SUBPREFIX_EXCLUDE: set = {
@@ -3809,12 +3817,16 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
 
         # Text-based override: items that physically belong to the lighting-pole material
         # ecosystem but fall inside always_exclude BOQ chapters (e.g. 08.04.57 = LED fixtures)
-        # Skip wooden-pole context — those items should be EXCLUDE, not GalvSteel
-        if not re.search(r"\bעמוד\s+עץ\b", text, flags=re.IGNORECASE) and re.search(
-            r"(?:ארגז\s+הסתעפות.*ואבטחה|ארגז\s+כבלים)\s+מותקן\s+על\s+עמוד|"
-            r"(?:עמוד\s+תאורה|זרוע\s+(?:יחידה|כפולה|שלישיה|רבעיה))\s+(?:ב?גובה|מ(?:הדגם|סוג|תוצ|פלדה|גולוון))|"
-            r"משטח\s+שרות\s+ו?טיפול.*(?:לעמוד|עמוד)\b",
-            text, flags=re.IGNORECASE
+        # Skip wooden-pole context and disassembly/removal items — those should be EXCLUDE
+        if (
+            not re.search(r"\bעמוד\s+עץ\b", text, flags=re.IGNORECASE)
+            and not re.search(r"^(?:פירוק|הסרת|ניתוק)", text, flags=re.IGNORECASE)
+            and re.search(
+                r"(?:ארגז\s+הסתעפות.*ואבטחה|ארגז\s+כבלים)\s+מותקן\s+על\s+עמוד|"
+                r"(?:עמוד\s+תאורה|זרוע\s+(?:יחידה|כפולה|שלישיה|רבעיה))\s+(?:ב?גובה|מ(?:הדגם|סוג|תוצ|פלדה|גולוון))|"
+                r"משטח\s+שרות\s+ו?טיפול.*(?:לעמוד|עמוד)\b",
+                text, flags=re.IGNORECASE
+            )
         ):
             return "Galvanized Steel", {
                 "method": "hard_override",
@@ -3874,7 +3886,6 @@ def classify_category_smart(material_text: str, boq_code: Optional[str]) -> Tupl
         r"מגוף\s+(?:טריז|כדורי|פרפר)\s+(?:קצר\s+)?לביוב.{0,25}(?:ציר\s+)?נירוסטה|"
         r"צביעת?\s+עמוד\s+תאורה|"
         r"פנס\s+תאורה\b.{0,20}ל?עמוד\s+(?:HM|H\.?M)\b|"
-        r"ניתוק\s+כבל.{0,20}מ?עמוד\s+תאורה|"
         r"מגוף\s+[\"']?\d+[\"']?.{0,15}להשקיית?\s+פלגים",
         text, flags=re.IGNORECASE
     ):
