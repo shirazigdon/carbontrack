@@ -843,6 +843,7 @@ EXCLUDE_PATTERNS = [
     r"\bחפירת\s*מצעים\b",
     r"\bדחיסת?\s*(?:קרקע|עפר|מצע)\b",
     r"\bהכנת\s*(?:תשתית|קרקע)\b",
+    r"\bתשתית\b",               # standalone "infrastructure" = service/system, not a material
     # Service verbs that indicate non-material lines (protected by material indicator check)
     r"\bפיזור\b",               # spreading/distribution service
     r"\bאספקה\s*ופיזור\b",      # supply and distribution = service
