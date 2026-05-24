@@ -2721,11 +2721,11 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"אינסרט\s*להארכת?\s*זיון", text, flags=re.IGNORECASE):
         return "Galvanized Steel", "Hard override: rebar extension insert → Galvanized Steel"
 
-    # תוספת מחיר / תוספות מחיר — price supplement, not a physical material
-    # Exception: "תוספת מחיר לבטון/לאספלט/למצע" = material quality surcharge → let fall through
-    if re.search(r"תוספת?ות?\s+מחיר|תוספת\s+למחיר", text, flags=re.IGNORECASE):
-        if not re.search(r"תוספת\s+מחיר\s+ל(?:בטון|אספלט|מצע)", text, flags=re.IGNORECASE):
-            return None, "Hard override: תוספת מחיר → EXCLUDE (price supplement)"
+    # תוספת / תוספות / תו.מחיר — supplement / price addition (not a physical material)
+    # Exceptions: "תוספת מחיר לבטון/לאספלט/למצע/לריצוף" or "תוספת פיגמנט" or "תוספת זיון"
+    if re.search(r"\b(?:תו(?:ספ(?:ת|ות))?\.?\s*ל?מחיר|תוספ(?:ת|ות))\b", text, flags=re.IGNORECASE):
+        if not re.search(r"\b(?:בטון|אספלט|מצע|ריצוף|זיון|פיגמנט|פלד[הת]\s+ל?בטון)\b", text, flags=re.IGNORECASE):
+            return None, "Hard override: supplement/addition (תוספת/תו.מחיר) → EXCLUDE"
 
     # דיפון קשיח = rigid concrete base layer (road construction)
     if re.search(r"דיפון\s*קשיח", text, flags=re.IGNORECASE):
