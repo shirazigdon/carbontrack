@@ -2507,9 +2507,9 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     ):
         return None, "Hard override: fiber optic service operation → EXCLUDE"
 
-    # סיב אופטי X גידים בתעלת בטון = fiber in concrete conduit → Structural Concrete (not Copper Wire)
+    # סיב אופטי X גידים בתעלת בטון = fiber in concrete conduit → Copper Wire (Cable)
     if re.search(r"סיב\s*אופטי.{0,25}(?:ב)?תעלת?\s+בטון", text, flags=re.IGNORECASE):
-        return "Structural Concrete", "Hard override: optical fiber in concrete conduit → Structural Concrete"
+        return "Copper Wire (Cable)", "Hard override: optical fiber in concrete conduit → Copper Wire (Cable)"
 
     # סיב אופטי X גידים / כבל סיב אופטי = cable supply (no service verb) → Copper Wire
     if re.search(r"סיב\s*אופטי\s*\d+\s*גידים|כבל\s*סיב\s*אופטי", text, flags=re.IGNORECASE):
@@ -6312,24 +6312,82 @@ def emissions():
             where_clauses.append(f"run_id = '{safe_run}'")
         where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
 
-        # Always query the raw table — the view may lack newer columns
-        # (reliability_score, reliability_status, matched_by).
+        # Columns needed for client-facing UI and internal helper logic (like _fill_reliability_defaults)
+        desired_cols = [
+            "project_name", "contractor", "region", "year", "category",
+            "weight_kg", "emission_co2e", "reliability_score", "matched_by",
+            "short_text", "reliability_status", "scope", "conversion_assumption",
+            "measurement_year", "calculation_date",
+            # internal fields needed for _fill_reliability_defaults
+            "status", "classification_confidence", "assumed_uom", "excluded", "classification_method"
+        ]
+
         rows = None
+        # Try raw table first
         try:
+            actual_cols = get_table_columns(_BQ_DETAILS_TABLE_FULL)
+            select_cols = [c for c in desired_cols if c in actual_cols]
+            select_str = ", ".join(f"`{c}`" for c in select_cols)
             job = bq_client.query(
-                f"SELECT * FROM `{_BQ_DETAILS_TABLE_FULL}` {where_sql} ORDER BY calculation_date DESC LIMIT {limit}"
+                f"SELECT {select_str} FROM `{_BQ_DETAILS_TABLE_FULL}` {where_sql} ORDER BY calculation_date DESC LIMIT {limit}"
             )
             rows = [sanitize_for_json(dict(r.items())) for r in job.result()]
         except Exception:
             pass
+
         # Fall back to view only if table query failed
         if rows is None:
-            job = bq_client.query(
-                f"SELECT * FROM `{_BQ_DETAILS_VIEW_FULL}` {where_sql} ORDER BY calculation_date DESC LIMIT {limit}"
-            )
-            rows = [sanitize_for_json(dict(r.items())) for r in job.result()]
+            try:
+                actual_cols = get_table_columns(_BQ_DETAILS_VIEW_FULL)
+                select_cols = [c for c in desired_cols if c in actual_cols]
+                select_str = ", ".join(f"`{c}`" for c in select_cols)
+                job = bq_client.query(
+                    f"SELECT {select_str} FROM `{_BQ_DETAILS_VIEW_FULL}` {where_sql} ORDER BY calculation_date DESC LIMIT {limit}"
+                )
+                rows = [sanitize_for_json(dict(r.items())) for r in job.result()]
+            except Exception:
+                pass
+
+        # Absolute fallback to SELECT * if column checks fail completely
+        if rows is None:
+            try:
+                job = bq_client.query(
+                    f"SELECT * FROM `{_BQ_DETAILS_TABLE_FULL}` {where_sql} ORDER BY calculation_date DESC LIMIT {limit}"
+                )
+                rows = [sanitize_for_json(dict(r.items())) for r in job.result()]
+            except Exception:
+                job = bq_client.query(
+                    f"SELECT * FROM `{_BQ_DETAILS_VIEW_FULL}` {where_sql} ORDER BY calculation_date DESC LIMIT {limit}"
+                )
+                rows = [sanitize_for_json(dict(r.items())) for r in job.result()]
+
         rows = _fill_reliability_defaults(rows)
-        return jsonify({"items": rows}), 200
+
+        # Filter output to keep only the client-facing UI columns
+        client_cols = {
+            "project_name", "contractor", "region", "year", "category",
+            "weight_kg", "emission_co2e", "reliability_score", "matched_by",
+            "short_text", "reliability_status", "scope", "conversion_assumption",
+            "measurement_year", "calculation_date"
+        }
+        filtered_rows = [{k: v for k, v in r.items() if k in client_cols} for r in rows]
+
+        # Serialize to JSON bytes
+        import gzip
+        response_data = {"items": filtered_rows}
+        json_str = json.dumps(response_data, ensure_ascii=False)
+        json_bytes = json_str.encode("utf-8")
+
+        # Compress if supported by the client
+        from flask import Response
+        if "gzip" in request.headers.get("Accept-Encoding", ""):
+            compressed_data = gzip.compress(json_bytes)
+            response = Response(compressed_data, content_type="application/json")
+            response.headers["Content-Encoding"] = "gzip"
+            return response
+        else:
+            return Response(json_bytes, content_type="application/json")
+
     except Exception as exc:
         logger.exception("emissions failed")
         return jsonify({"error": str(exc)}), 500
