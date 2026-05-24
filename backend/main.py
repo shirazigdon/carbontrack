@@ -897,8 +897,13 @@ EXCLUDE_PATTERNS = [
     r"\bברזל\s+[Zז]\s*מחורץ\b", # perforated Z-bar cable support
 ]
 
-# Pre-compiled for performance — used in should_exclude()
-_EXCLUDE_PATTERNS_COMPILED = [re.compile(p, re.IGNORECASE) for p in EXCLUDE_PATTERNS]
+_EXCLUDE_PATTERNS_COMPILED = []
+for p in EXCLUDE_PATTERNS:
+    if p.startswith(r"\b"):
+        modified_p = r"\b[בוכלהמש]?" + p[2:]
+    else:
+        modified_p = p
+    _EXCLUDE_PATTERNS_COMPILED.append(re.compile(modified_p, re.IGNORECASE))
 
 MATERIAL_INDICATOR_PATTERNS = [
     r"בטון",
@@ -4871,6 +4876,8 @@ def insert_review_row(**kwargs) -> None:
         "review_status": kwargs.get("review_status", "pending"),
         **kwargs,
     }
+    if "review_reason" in row:
+        row["reason"] = row.get("review_reason")
     append_rows_json(BQ_REVIEW_QUEUE_TABLE, [row])
 
 
@@ -5943,7 +5950,12 @@ def review_items() -> Any:
         query = f"SELECT * FROM `{BQ_REVIEW_QUEUE_TABLE}` WHERE review_status = @status ORDER BY updated_at DESC LIMIT 500"
         job = bq_client.query(query, job_config=bigquery.QueryJobConfig(
             query_parameters=[bigquery.ScalarQueryParameter("status", "STRING", status)]))
-        rows = [sanitize_for_json(dict(r.items())) for r in job.result()]
+        rows = []
+        for r in job.result():
+            d = dict(r.items())
+            if "reason" in d:
+                d["review_reason"] = d.get("reason")
+            rows.append(sanitize_for_json(d))
         return jsonify({"items": rows}), 200
     except Exception as exc:
         logger.exception("Failed loading review items")
