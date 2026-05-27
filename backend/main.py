@@ -222,9 +222,11 @@ DEFAULT_CATEGORY_CONFIG: Dict[str, Dict[str, Any]] = {
         "default_uom": "m2_or_m3_or_unit",
     },
     "Wood": {
-        "climatiq_search": "softwood timber",
-        "density_kg_m3": 500.0,
-        "default_uom": "m3",
+        # Living planted trees / ornamental trees — carbon sink (negative emissions)
+        "climatiq_search": "tree planting carbon sequestration",
+        "density_kg_m3": 600.0,
+        "default_uom": "unit",
+        "kg_per_unit": 80.0,   # typical ornamental street tree dry-weight
     },
     "Cementitious Mortar": {
         "climatiq_search": "mortar",
@@ -279,8 +281,8 @@ DEFAULT_CATEGORY_CONFIG: Dict[str, Dict[str, Any]] = {
         "default_uom": "unit",
         "kg_per_unit": 5.0,
     },
-    "Urban Furniture": {
-        # Urban furniture with wood content: benches, seating, public elements
+    "Timber": {
+        # Processed/dead wood: benches, poles, boards, wooden furniture — positive emissions
         "climatiq_search": "softwood timber",
         "density_kg_m3": 500.0,
         "default_uom": "unit",
@@ -309,13 +311,13 @@ CATEGORY_EMISSION_OVERRIDES: Dict[str, float] = {
     "Steel Rebar":          1.990,  # ICE DB v3.0: Steel rebar — Climatiq returns 1.72 (13% low)
     "HDPE Granulate":       1.930,  # ICE DB v3.0: HDPE — Climatiq returns 1.795 (7% low)
     "Glass":                1.530,  # ICE DB v3.0: Float glass
-    "Wood":                 0.420,  # ICE DB v3.0: Softwood timber, kiln dried (cradle-to-gate)
+    "Wood":                -0.900,  # Planted/living trees — net carbon sequestration (biogenic carbon storage)
     "Concrete Pipe":        0.149,  # ICE DB v3.0: Precast concrete pipe (same as Structural Concrete)
     "Paving":               0.182,  # ICE DB v3.0: Precast concrete paving/kerbstones
     "Structural Steel":     2.890,  # ICE DB v3.0: Structural steel sections (same EF as galvanized)
     "Mechanical Equipment": 5.0,    # estimated — complex machinery, no standard ICE DB entry
     "Polymers, Plastics":   4.0,    # ICE DB v3.0: GRP/polyester composite
-    "Urban Furniture":      0.420,  # ICE DB v3.0: Softwood timber (wood-based furniture)
+    "Timber":               0.420,  # ICE DB v3.0: Softwood timber, kiln dried — processed/dead wood
 }
 
 # ==========================================================
@@ -1084,7 +1086,8 @@ Set category='EXCLUDE' and excluded=true for any line that is NOT a physical mat
 - **Structural Steel**: structural steel load-bearing elements: safety barriers/guardrails from steel (מעקה בטיחות מפלדה), sign bridges, steel poles, gates, ladders, anti-ram bollards. Distinct from Galvanized Steel (which is utility items like conduit, small fittings).
 - **Mechanical Equipment**: mechanical systems physically supplied: hydrants, fire-fighting valves, irrigation sprinklers, pumps. "הידרנט, ברז שריפה, ממטיר, משאבה".
 - **Polymers, Plastics**: polymer/plastic enclosures and products NOT classified as pipes: FRP/polyester cabinets (ארון מפוליאסטר), GRP protection boxes, polycarbonate enclosures.
-- **Urban Furniture**: urban furniture with significant wood content: benches, seating, combined concrete+wood elements. "ספסל מעץ, ספסל מבטון ועץ".
+- **Timber**: processed/dead wood products: wooden benches, wooden poles, wood boards, wooden urban furniture. "ספסל מעץ, ספסל מבטון ועץ, עמוד עץ, לוח עץ". Positive emissions (manufacturing energy).
+- **Wood**: living planted trees and ornamental trees only. "נטיעת עצים, עצי נוי, שתילת עצים". Negative emissions (carbon sequestration).
 
 ## Special rules
 - Grout (גראוט) → Cementitious Mortar. Geocell (גיאו-תא) → HDPE Granulate.
@@ -2345,7 +2348,7 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     # Match also with Hebrew ל prefix ("לעמוד עץ") by dropping the leading \b
     if re.search(r"עמוד\s+עץ\b", text, flags=re.IGNORECASE):
         if re.search(r"מותקן\s+ב(?:קרקע|קובייה|בסיס)", text, flags=re.IGNORECASE):
-            return "Wood", "Hard override: installed wooden pole → Wood"
+            return "Timber", "Hard override: installed wooden pole → Timber"
         # Junction/security box mounted ON a wooden pole is still a steel box
         if re.search(r"ארגז\s+הסתעפות\s*ואבטחה", text, flags=re.IGNORECASE):
             return "Galvanized Steel", "Hard override: junction box on wooden pole → Galvanized Steel"
@@ -2508,13 +2511,17 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"אדניות?\s+עץ\s+נוי|פרטי\s+נגרות\s+אורבנית", text, flags=re.IGNORECASE):
         return None, "Hard override: ornamental planter / urban carpentry → EXCLUDE"
 
-    # Urban furniture with wood: benches combining wood with concrete/metal → Urban Furniture
+    # Planted/ornamental trees → Wood (living, negative emissions — carbon sink)
+    if re.search(r"נטיעת?\s+עצ(?:ים|ייה)|שתילת?\s+עצ(?:ים|ייה)|עצ(?:י|ים)\s+(?:נוי|נוב|גן|רחוב)|עץ\s+נוי\b", text, flags=re.IGNORECASE):
+        return "Wood", "Hard override: planted/ornamental trees → Wood (carbon sink)"
+
+    # Timber: processed/dead wood products → Timber (positive emissions)
     if re.search(
         r"ספסל\s+(?:מבטון\s+ו)?עץ\b|ספסל\s+מעץ|ספסל\s+מקונסטרוקציית\s+פלדה\s+ולוחות\s+עץ|"
         r"עמוד\s+עץ\s+בגובה\b",
         text, flags=re.IGNORECASE
     ):
-        return "Urban Furniture", "Hard override: wooden urban furniture → Urban Furniture"
+        return "Timber", "Hard override: processed wood product → Timber"
 
     # טפסות עץ = formwork (temporary construction service) → EXCLUDE (before Wood rule fires)
     if re.search(r"טפסות?\s+(?:עץ|פלדה|עץ\s+ו.?או\s+פלדה)", text, flags=re.IGNORECASE):
@@ -2525,9 +2532,9 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         return "Paving", "Hard override: stone garden edging → Paving"
 
     if re.search(r"\bעץ\b|אורן|קורות\s*עץ|לביד|סנדוויץ", text, flags=re.IGNORECASE):
-        # עץ as secondary reference (wooden pole hardware, mixed materials) → skip Wood
+        # עץ as secondary reference (wooden pole hardware, mixed materials) → skip
         if not re.search(r"(?:ל|מ|על|עם)\s*עמוד[י]?\s*עץ|עמוד[י]?\s*(?:תאורה\s*)?(?:פלדה\s*(?:או\s*)?)?עץ|פלדה\s*(?:או\s*)?עץ|\bועץ\b", text, flags=re.IGNORECASE):
-            return "Wood", "Hard override: wood detected"
+            return "Timber", "Hard override: processed wood material detected → Timber"
 
     # תכנון וביצוע / ת.וביצוע = design+build contract → EXCLUDE
     if re.search(
@@ -2638,7 +2645,7 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"ספסל\s*(?:טרומי\s*)?(?:מבטון|בטון)", text, flags=re.IGNORECASE):
         # Wood component takes precedence for mixed-material benches
         if re.search(r"ו?עץ\b", text, flags=re.IGNORECASE):
-            return "Wood", "Hard override: concrete+wood bench → Wood"
+            return "Timber", "Hard override: concrete+wood bench → Timber"
         return "Precast Concrete", "Hard override: concrete bench → Precast Concrete"
     if re.search(r"תקרת\s*בטון\s*לתא\s*מעבר", text, flags=re.IGNORECASE):
         return "Precast Concrete", "Hard override: concrete ceiling for junction box → Precast Concrete"
@@ -3111,9 +3118,9 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"אשפתון\s+(?:מפח|דגם|מנוקב)|פח\s+מנוקב.{0,15}אשפתון", text, flags=re.IGNORECASE):
         return "Galvanized Steel", "Hard override: metal waste bin → Galvanized Steel"
 
-    # Bench with wood → Urban Furniture (must fire BEFORE metal bench rule to catch mixed wood+steel)
+    # Bench with wood → Timber (must fire BEFORE metal bench rule to catch mixed wood+steel)
     if re.search(r"ספסל\s+(?:מבטון\s+ו)?עץ\b|ספסל\s+מעץ\s+(?:ומתכת|ופלד)|ספסל\s+מקונסטרוקציית\s+פלדה\s+ולוחות\s+עץ", text, flags=re.IGNORECASE):
-        return "Urban Furniture", "Hard override: wood bench → Urban Furniture"
+        return "Timber", "Hard override: wood bench → Timber"
 
     if re.search(r"ספסל\s+(?:מפח\s+מנוקב|מתכת\s+עם|ממתכת\b)|ספסל\s+מ(?:קונסטרוקציית\s+)?פלדה\s+(?:ולוחות?|עם)", text, flags=re.IGNORECASE):
         return "Galvanized Steel", "Hard override: metal bench → Galvanized Steel"
@@ -3318,9 +3325,9 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"פילר\s+מונים\b|גומחה\s+\(?פילר\)?", text, flags=re.IGNORECASE):
         return "Precast Concrete", "Hard override: utility meter pillar/niche → Precast Concrete"
 
-    # עמוד עץ (wooden pole) → Wood — fallback (earlier rule normally fires first)
+    # עמוד עץ (wooden pole) → Timber — fallback (earlier rule normally fires first)
     if re.search(r"עמוד\s+עץ\b", text, flags=re.IGNORECASE):
-        return "Wood", "Hard override: wooden pole → Wood"
+        return "Timber", "Hard override: wooden pole → Timber"
 
     # גדר רשת מרותכת (welded wire fence) → Galvanized Steel
     if re.search(r"גדר\s+רשת\s+מרותכת", text, flags=re.IGNORECASE):
