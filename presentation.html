@@ -536,39 +536,6 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
   </div>
 </div>
 
-<!-- ═══ VALIDATION / בקרת איכות ═══ -->
-<div class="slide" style="justify-content:center; align-items:center;">
-  <div style="width:100%; max-width:1400px; display:flex; flex-direction:column; gap:40px;">
-    <div>
-      <div class="label">בדיקת אמינות (Validation)</div>
-      <h2 class="title" style="margin-bottom:0;">איך הוכחנו שהמודל באמת עובד ומדויק?</h2>
-    </div>
-    <div style="display:flex; gap:20px; width:100%;">
-      <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 24px; display:flex; flex-direction:column; gap:16px;">
-        <div style="font-size:52px; line-height:1;">📝</div>
-        <div style="font-size:24px; font-weight:800; color:var(--green9);">1. בניית קבוצת בקרה</div>
-        <div style="font-size:19px; color:var(--sub); line-height:1.4;">בנינו קבוצת בקרה (Test Set) של <strong>אלפי</strong> שורות, שסווגו <strong>ידנית על ידנו</strong> ובשיתוף מהנדסים מומחים.</div>
-      </div>
-      <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 24px; display:flex; flex-direction:column; gap:16px;">
-        <div style="font-size:52px; line-height:1;">🙈</div>
-        <div style="font-size:24px; font-weight:800; color:var(--green9);">2. מבחן "על עיוור"</div>
-        <div style="font-size:19px; color:var(--sub); line-height:1.4;">הזנו את השורות ל-Pipeline שלנו (TF-IDF + AI) מבלי לחשוף אליו את הפתרון הנכון, כדי לדמות סביבת אמת.</div>
-      </div>
-      <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 24px; display:flex; flex-direction:column; gap:16px;">
-        <div style="font-size:52px; line-height:1;">📊</div>
-        <div style="font-size:24px; font-weight:800; color:var(--green9);">3. מדידת ביצועים</div>
-        <div style="font-size:19px; color:var(--sub); line-height:1.4;">השווינו את התוצאות לתיוג הידני שלנו. בבדיקה מדדנו <strong>~92.5% דיוק סיווג</strong> בהרצה הראשונית.</div>
-      </div>
-      <div style="flex:1; background:var(--green9); border-radius:22px; padding:32px 24px; display:flex; flex-direction:column; gap:16px;">
-        <div style="font-size:52px; line-height:1;">🔄</div>
-        <div style="font-size:24px; font-weight:800; color:var(--green3);">4. שיפור איטרטיבי</div>
-        <div style="font-size:19px; color:rgba(255,255,255,0.85); line-height:1.4;">חזרנו על תהליך הבדיקה והשיפור <strong>מספר רב של פעמים</strong>, תוך טיפול במקרי קצה וחיזוק המודל עד להגעה לדיוק הרצוי.</div>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- ═══ סוף VALIDATION ═══ -->
-
 <!-- ═══ S10: WHY US / WHY NOW ═══ (מוסתר — להסיר את ה-comment כדי להחזיר)
 <div class="slide s11" style="justify-content:flex-start; padding-top:40px;">
   <div class="label">ההזדמנות</div>
@@ -752,6 +719,39 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
     </div>
   </div>
 </div>
+
+<!-- ═══ VALIDATION / בקרת איכות (מוסתר) ═══
+<div class="slide" style="justify-content:center; align-items:center;">
+  <div style="width:100%; max-width:1400px; display:flex; flex-direction:column; gap:40px;">
+    <div>
+      <div class="label">בדיקת אמינות (Validation)</div>
+      <h2 class="title" style="margin-bottom:0;">איך הוכחנו שהמודל באמת עובד ומדויק?</h2>
+    </div>
+    <div style="display:flex; gap:20px; width:100%;">
+      <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 24px; display:flex; flex-direction:column; gap:16px;">
+        <div style="font-size:52px; line-height:1;">📝</div>
+        <div style="font-size:24px; font-weight:800; color:var(--green9);">1. בניית קבוצת בקרה</div>
+        <div style="font-size:19px; color:var(--sub); line-height:1.4;">בנינו קבוצת בקרה (Test Set) של <strong>אלפי</strong> שורות, שסווגו <strong>ידנית על ידנו</strong> ובשיתוף מהנדסים מומחים.</div>
+      </div>
+      <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 24px; display:flex; flex-direction:column; gap:16px;">
+        <div style="font-size:52px; line-height:1;">🙈</div>
+        <div style="font-size:24px; font-weight:800; color:var(--green9);">2. מבחן "על עיוור"</div>
+        <div style="font-size:19px; color:var(--sub); line-height:1.4;">הזנו את השורות ל-Pipeline שלנו (TF-IDF + AI) מבלי לחשוף אליו את הפתרון הנכון, כדי לדמות סביבת אמת.</div>
+      </div>
+      <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 24px; display:flex; flex-direction:column; gap:16px;">
+        <div style="font-size:52px; line-height:1;">📊</div>
+        <div style="font-size:24px; font-weight:800; color:var(--green9);">3. מדידת ביצועים</div>
+        <div style="font-size:19px; color:var(--sub); line-height:1.4;">השווינו את התוצאות לתיוג הידני שלנו. בבדיקה מדדנו <strong>~92.5% דיוק סיווג</strong> בהרצה הראשונית.</div>
+      </div>
+      <div style="flex:1; background:var(--green9); border-radius:22px; padding:32px 24px; display:flex; flex-direction:column; gap:16px;">
+        <div style="font-size:52px; line-height:1;">🔄</div>
+        <div style="font-size:24px; font-weight:800; color:var(--green3);">4. שיפור איטרטיבי</div>
+        <div style="font-size:19px; color:rgba(255,255,255,0.85); line-height:1.4;">חזרנו על תהליך הבדיקה והשיפור <strong>מספר רב של פעמים</strong>, תוך טיפול במקרי קצה וחיזוק המודל עד להגעה לדיוק הרצוי.</div>
+      </div>
+    </div>
+  </div>
+</div>
+═══ סוף VALIDATION ═══ -->
 
 </div><!-- /deck -->
 
