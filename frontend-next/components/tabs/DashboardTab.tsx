@@ -78,8 +78,8 @@ export function DashboardTab({ data, reviewCount }: Props) {
       </div>
 
       {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-3 rounded-2xl p-5" style={{ background: '#ffffff', border: '1.5px solid #b7e4c7', boxShadow: '0 2px 12px rgba(27,67,50,0.07)' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-3xl p-6 lg:p-8" style={{ background: '#ffffff', border: '1.5px solid #b7e4c7', boxShadow: '0 4px 24px rgba(27,67,50,0.08)' }}>
           <div className="flex items-center justify-between mb-5">
             <div>
               <div className="font-semibold text-sm text-slate-800">פליטות לפי פרויקט</div>
@@ -94,7 +94,7 @@ export function DashboardTab({ data, reviewCount }: Props) {
               ))}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={Math.max(240, byProject.length*46)}>
+          <ResponsiveContainer width="100%" height={Math.max(360, byProject.length*46)}>
             <BarChart data={byProject} layout="vertical" margin={{left:8,right:60,top:36,bottom:4}}>
               <XAxis type="number" tick={{fontSize:10,fill:'#94a3b8'}} tickFormatter={v=>`${fmt(v)}`} axisLine={false} tickLine={false}/>
               <YAxis type="category" dataKey="name" width={130} tick={{fontSize:11,fill:'#475569'}} axisLine={false} tickLine={false}/>
@@ -108,16 +108,16 @@ export function DashboardTab({ data, reviewCount }: Props) {
           </ResponsiveContainer>
         </div>
 
-        <div className="lg:col-span-2 rounded-2xl p-5" style={{ background: '#ffffff', border: '1.5px solid #b7e4c7', boxShadow: '0 2px 12px rgba(27,67,50,0.07)' }}>
-          <div className="font-semibold text-sm text-slate-800 mb-1">פילוח לפי חומר</div>
-          <div className="text-xs text-slate-400 mb-3">אחוז מסך הפליטות</div>
-          <ResponsiveContainer width="100%" height={280}>
+        <div className="rounded-3xl p-6 lg:p-8" style={{ background: '#ffffff', border: '1.5px solid #b7e4c7', boxShadow: '0 4px 24px rgba(27,67,50,0.08)' }}>
+          <div className="font-semibold text-lg text-slate-800 mb-1">פילוח לפי חומר</div>
+          <div className="text-sm text-slate-500 mb-6">אחוז מסך הפליטות</div>
+          <ResponsiveContainer width="100%" height={360}>
             <PieChart>
-              <Pie data={byCategory} dataKey="value" nameKey="name" cx="50%" cy="45%" innerRadius={55} outerRadius={90} paddingAngle={2}>
+              <Pie data={byCategory} dataKey="value" nameKey="name" cx="50%" cy="45%" innerRadius={80} outerRadius={120} paddingAngle={2}>
                 {byCategory.map((_,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}
               </Pie>
-              <Tooltip formatter={(v)=>[`${fmt(Number(v)/1000,1)}t CO₂e`]} contentStyle={{fontFamily:'Heebo',fontSize:11,borderRadius:'10px',border:'1px solid #e2e8f0'}}/>
-              <Legend wrapperStyle={{fontSize:10,color:'#64748b'}}/>
+              <Tooltip formatter={(v)=>[`${fmt(Number(v)/1000,1)}t CO₂e`]} contentStyle={{fontFamily:'Heebo',fontSize:13,borderRadius:'10px',border:'1px solid #e2e8f0',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}/>
+              <Legend wrapperStyle={{fontSize:12,color:'#475569', paddingTop:'20px'}}/>
             </PieChart>
           </ResponsiveContainer>
         </div>
