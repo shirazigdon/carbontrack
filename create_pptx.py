@@ -268,7 +268,7 @@ txb(sl, 'גלי חום, הצפות ונזקים של מיליונים בכל ח�
 # Fact 2 (leftmost, i=1)
 fx2 = col_x(1, 2, gap=20)
 box(sl, fx2, fy, fw, fh, fill=WHITE, line=BORDER, lw=Pt(2))
-txb(sl, '2,500', fx2+px(20), fy+py(14), fw-px(30), py(80), size=fz(42), bold=True, color=G9)
+txb(sl, '5,510', fx2+px(20), fy+py(14), fw-px(30), py(80), size=fz(42), bold=True, color=G9)
 txb(sl, 'ישראלים מתים מדי שנה כתוצאה ישירה מזיהום אוויר',
     fx2+px(20), fy+py(98), fw-px(30), py(65), size=fz(28), color=MUTED)
 
