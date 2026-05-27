@@ -540,29 +540,29 @@ h2.title { font-size: 52px; font-weight: 800; line-height: 1.1; color: var(--gre
 <div class="slide" style="justify-content:center; align-items:center;">
   <div style="width:100%; max-width:1400px; display:flex; flex-direction:column; gap:40px;">
     <div>
-      <div class="label">וולידציה ובקרת איכות</div>
-      <h2 class="title" style="margin-bottom:0;">איך וידאנו שהמערכת מדויקת?</h2>
+      <div class="label">בדיקת אמינות (Validation)</div>
+      <h2 class="title" style="margin-bottom:0;">איך הוכחנו שהמודל באמת עובד ומדויק?</h2>
     </div>
     <div style="display:flex; gap:20px; width:100%;">
       <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 24px; display:flex; flex-direction:column; gap:16px;">
-        <div style="font-size:52px; line-height:1;">💾</div>
-        <div style="font-size:24px; font-weight:800; color:var(--green9);">1. Ground Truth</div>
-        <div style="font-size:19px; color:var(--sub); line-height:1.4;">בנינו בסיס נתונים של אלפי שורות מאומתות ע"י מהנדסים, המשמשות כעוגני סיווג ודאיים.</div>
+        <div style="font-size:52px; line-height:1;">📝</div>
+        <div style="font-size:24px; font-weight:800; color:var(--green9);">1. בניית קבוצת בקרה</div>
+        <div style="font-size:19px; color:var(--sub); line-height:1.4;">לקחנו מאות שורות מכתבי כמויות (Test Set) שלא היו במערכת, ותייגנו ידנית את הקטגוריות הנכונות.</div>
       </div>
       <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 24px; display:flex; flex-direction:column; gap:16px;">
-        <div style="font-size:52px; line-height:1;">🛡️</div>
-        <div style="font-size:24px; font-weight:800; color:var(--green9);">2. Guardrails</div>
-        <div style="font-size:19px; color:var(--sub); line-height:1.4;">כתבנו מאות חוקים דטרמיניסטיים ו-Overrides שמונעים מהמודל "להזות" (Hallucinations).</div>
+        <div style="font-size:52px; line-height:1;">🙈</div>
+        <div style="font-size:24px; font-weight:800; color:var(--green9);">2. מבחן "על עיוור"</div>
+        <div style="font-size:19px; color:var(--sub); line-height:1.4;">הזנו את השורות ל-Pipeline שלנו (TF-IDF + AI) מבלי לחשוף אליו את הפתרון הנכון, כדי לדמות סביבת אמת.</div>
       </div>
       <div style="flex:1; background:white; border:2px solid var(--border); border-radius:22px; padding:32px 24px; display:flex; flex-direction:column; gap:16px;">
-        <div style="font-size:52px; line-height:1;">🤖</div>
-        <div style="font-size:24px; font-weight:800; color:var(--green9);">3. Dual AI Review</div>
-        <div style="font-size:19px; color:var(--sub); line-height:1.4;">אימות כפול ע"י 2 סוכני AI עצמאיים. חוסר הסכמה ביניהם מוריד את ציון האמינות.</div>
+        <div style="font-size:52px; line-height:1;">📊</div>
+        <div style="font-size:24px; font-weight:800; color:var(--green9);">3. מדידת ביצועים</div>
+        <div style="font-size:19px; color:var(--sub); line-height:1.4;">השווינו את התוצאות לתיוג הידני שלנו. בבדיקה מדדנו <strong>~92.5% דיוק סיווג</strong> בהרצה הראשונית.</div>
       </div>
       <div style="flex:1; background:var(--green9); border-radius:22px; padding:32px 24px; display:flex; flex-direction:column; gap:16px;">
-        <div style="font-size:52px; line-height:1;">🧑‍💻</div>
-        <div style="font-size:24px; font-weight:800; color:var(--green3);">4. Human-in-Loop</div>
-        <div style="font-size:19px; color:rgba(255,255,255,0.85); line-height:1.4;">ניתוב אוטומטי של שורות עם ציון אמינות נמוך מ-85% לתור בדיקה אנושית במערכת.</div>
+        <div style="font-size:52px; line-height:1;">🛠️</div>
+        <div style="font-size:24px; font-weight:800; color:var(--green3);">4. שיפור ומקרי קצה</div>
+        <div style="font-size:19px; color:rgba(255,255,255,0.85); line-height:1.4;">בדקנו היכן המודל טעה, יישמנו תיקונים (Guardrails) ומנגנון Review ידני ל-7.5% הנותרים.</div>
       </div>
     </div>
   </div>
