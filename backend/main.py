@@ -256,6 +256,36 @@ DEFAULT_CATEGORY_CONFIG: Dict[str, Dict[str, Any]] = {
         "default_uom": "unit",
         "kg_per_unit": 5.0,
     },
+    "Structural Steel": {
+        # Load-bearing structural steel: safety barriers, sign bridges, steel poles, gates, ladders
+        "climatiq_search": "structural steel sections",
+        "density_kg_m3": 7850.0,
+        "default_uom": "ton_or_unit",
+        "kg_per_unit": 500.0,
+        "kg_per_meter": 50.0,
+        "kg_per_m2": 62.8,
+    },
+    "Mechanical Equipment": {
+        # Mechanical equipment: pumps, hydrants, valves, fire-fighting systems
+        "climatiq_search": "mechanical equipment",
+        "density_kg_m3": 5000.0,
+        "default_uom": "unit",
+        "kg_per_unit": 200.0,
+    },
+    "Polymers, Plastics": {
+        # Polymer/plastic products: FRP/polyester enclosures, polycarbonate boxes, GRP cabinets
+        "climatiq_search": "plastics",
+        "density_kg_m3": 1200.0,
+        "default_uom": "unit",
+        "kg_per_unit": 5.0,
+    },
+    "Urban Furniture": {
+        # Urban furniture with wood content: benches, seating, public elements
+        "climatiq_search": "softwood timber",
+        "density_kg_m3": 500.0,
+        "default_uom": "unit",
+        "kg_per_unit": 30.0,
+    },
 }
 
 ALLOWED_CATEGORIES = list(DEFAULT_CATEGORY_CONFIG.keys()) + ["Unknown", "EXCLUDE"]
@@ -282,6 +312,10 @@ CATEGORY_EMISSION_OVERRIDES: Dict[str, float] = {
     "Wood":                 0.420,  # ICE DB v3.0: Softwood timber, kiln dried (cradle-to-gate)
     "Concrete Pipe":        0.149,  # ICE DB v3.0: Precast concrete pipe (same as Structural Concrete)
     "Paving":               0.182,  # ICE DB v3.0: Precast concrete paving/kerbstones
+    "Structural Steel":     2.890,  # ICE DB v3.0: Structural steel sections (same EF as galvanized)
+    "Mechanical Equipment": 5.0,    # estimated — complex machinery, no standard ICE DB entry
+    "Polymers, Plastics":   4.0,    # ICE DB v3.0: GRP/polyester composite
+    "Urban Furniture":      0.420,  # ICE DB v3.0: Softwood timber (wood-based furniture)
 }
 
 # ==========================================================
@@ -1047,6 +1081,10 @@ Set category='EXCLUDE' and excluded=true for any line that is NOT a physical mat
 - **Cementitious Mortar**: grout, mortar, cement-slurry. "גראוט, מלט, טיח צמנטי".
 - **Lean Concrete**: low-strength blinding/leveling concrete. "בטון רזה/גיבוש".
 - **Electronics**: electronic components physically supplied as materials in civil infrastructure: smart controllers, electronic panels, sensor units, electronic junction boxes. "בקר אלקטרוני, מנגנון אלקטרוני, לוח בקרה חכם".
+- **Structural Steel**: structural steel load-bearing elements: safety barriers/guardrails from steel (מעקה בטיחות מפלדה), sign bridges, steel poles, gates, ladders, anti-ram bollards. Distinct from Galvanized Steel (which is utility items like conduit, small fittings).
+- **Mechanical Equipment**: mechanical systems physically supplied: hydrants, fire-fighting valves, irrigation sprinklers, pumps. "הידרנט, ברז שריפה, ממטיר, משאבה".
+- **Polymers, Plastics**: polymer/plastic enclosures and products NOT classified as pipes: FRP/polyester cabinets (ארון מפוליאסטר), GRP protection boxes, polycarbonate enclosures.
+- **Urban Furniture**: urban furniture with significant wood content: benches, seating, combined concrete+wood elements. "ספסל מעץ, ספסל מבטון ועץ".
 
 ## Special rules
 - Grout (גראוט) → Cementitious Mortar. Geocell (גיאו-תא) → HDPE Granulate.
@@ -2359,6 +2397,14 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     ):
         return None, "Hard override: traffic-signal/ITS control component → EXCLUDE"
 
+    # Prestressing cables / strands (כבלי דריכה) → Steel Rebar (not Copper Wire)
+    if re.search(r"כבלי?\s+דריכה\s+(?:מ-?\s*\d|ב?גדילים|עורק\s+עגול)", text, flags=re.IGNORECASE):
+        return "Steel Rebar", "Hard override: prestressing cable/strands → Steel Rebar"
+
+    # Ethernet patch cable / network bridge cable → EXCLUDE (not copper wire material supply)
+    if re.search(r"מגשר\s+(?:Ethernet|רשת|רב.?מודד)\s+(?:באורך|מסוג|\d)", text, flags=re.IGNORECASE):
+        return None, "Hard override: Ethernet patch cable → EXCLUDE"
+
     # Cable trays / raceways made of galvanized steel (misclassified as Copper Wire)
     if re.search(
         r"תעלות?\s+כבלים\s+מחורצות?\s+מפח\s+מגולוון"
@@ -2458,6 +2504,18 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"תומך\s*(?:לעץ|ל?עצים)|כריתת?\s*(?:עץ|עצים)|גיזום\s*עץ", text, flags=re.IGNORECASE):
         return None, "Hard override: tree maintenance / prop → EXCLUDE"
 
+    # אדניות עץ נוי / פרטי נגרות אורבנית = ornamental planters/urban carpentry → EXCLUDE
+    if re.search(r"אדניות?\s+עץ\s+נוי|פרטי\s+נגרות\s+אורבנית", text, flags=re.IGNORECASE):
+        return None, "Hard override: ornamental planter / urban carpentry → EXCLUDE"
+
+    # Urban furniture with wood: benches combining wood with concrete/metal → Urban Furniture
+    if re.search(
+        r"ספסל\s+(?:מבטון\s+ו)?עץ\b|ספסל\s+מעץ|ספסל\s+מקונסטרוקציית\s+פלדה\s+ולוחות\s+עץ|"
+        r"עמוד\s+עץ\s+בגובה\b",
+        text, flags=re.IGNORECASE
+    ):
+        return "Urban Furniture", "Hard override: wooden urban furniture → Urban Furniture"
+
     # טפסות עץ = formwork (temporary construction service) → EXCLUDE (before Wood rule fires)
     if re.search(r"טפסות?\s+(?:עץ|פלדה|עץ\s+ו.?או\s+פלדה)", text, flags=re.IGNORECASE):
         return None, "Hard override: formwork (temporary) → EXCLUDE"
@@ -2489,7 +2547,7 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         return None, "Hard override: asphalt milling/roughening → EXCLUDE"
     if re.search(r"פתיחת\s*(?:כביש|מדרכה|אספלט)", text, flags=re.IGNORECASE):
         return None, "Hard override: pavement opening/cutting → EXCLUDE"
-    if re.search(r"ניסור\s*(?:אספלט|כביש|בטון)", text, flags=re.IGNORECASE):
+    if re.search(r"ניסור\s*(?:ו?פינוי\s*)?(?:קיר\s*)?(?:אספלט|כביש|בטון)", text, flags=re.IGNORECASE):
         return None, "Hard override: concrete/asphalt saw-cutting → EXCLUDE"
     # תוספת לכל X ס"מ / תוספת לכל יחידה = unit price supplement → EXCLUDE
     if re.search(r"תוספת\s+לכל\s+\d|תוספת\s+ל?(?:כל|יחידת?)\s+(?:\d|ס.?מ)", text, flags=re.IGNORECASE):
@@ -2513,9 +2571,9 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     ):
         return None, "Hard override: fiber optic service operation → EXCLUDE"
 
-    # סיב אופטי X גידים בתעלת בטון = fiber in concrete conduit → Copper Wire (Cable)
+    # סיב אופטי X גידים בתעלת בטון = fiber in concrete conduit → Structural Concrete (the conduit is the material)
     if re.search(r"סיב\s*אופטי.{0,25}(?:ב)?תעלת?\s+בטון", text, flags=re.IGNORECASE):
-        return "Copper Wire (Cable)", "Hard override: optical fiber in concrete conduit → Copper Wire (Cable)"
+        return "Structural Concrete", "Hard override: optical fiber in concrete conduit → Structural Concrete"
 
     # סיב אופטי X גידים / כבל סיב אופטי = cable supply (no service verb) → Copper Wire
     if re.search(r"סיב\s*אופטי\s*\d+\s*גידים|כבל\s*סיב\s*אופטי", text, flags=re.IGNORECASE):
@@ -2577,7 +2635,7 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         return "Precast Concrete", "Hard override: block-built pit → Precast Concrete"
     if re.search(r"(?:גומחת?|יסוד)\s*בטון.*(?:תא\s*מנייה|פילר\s*מונים)", text, flags=re.IGNORECASE):
         return "Precast Concrete", "Hard override: concrete niche for meter box → Precast Concrete"
-    if re.search(r"ספסל\s*(?:מבטון|בטון)", text, flags=re.IGNORECASE):
+    if re.search(r"ספסל\s*(?:טרומי\s*)?(?:מבטון|בטון)", text, flags=re.IGNORECASE):
         # Wood component takes precedence for mixed-material benches
         if re.search(r"ו?עץ\b", text, flags=re.IGNORECASE):
             return "Wood", "Hard override: concrete+wood bench → Wood"
@@ -2651,7 +2709,11 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"(?:צינור|קורגל)\s*(?:פלסטי|גמיש)\s*(?:דו.?שכבתי|שרשורי)?|פלסטי\s*שרשורי", text, flags=re.IGNORECASE):
         return "HDPE Granulate", "Hard override: plastic corrugated pipe → HDPE Granulate"
 
-    # חול מיוצב = stabilized sand = aggregate material = Crushed Stone (not Fill)
+    # חול מיוצב בצמנט = cement-stabilized sand → Cementitious Mortar (cement is the dominant binder)
+    if re.search(r"חול\s*מיוצב\s+ב?צמנט", text, flags=re.IGNORECASE):
+        return "Cementitious Mortar", "Hard override: cement-stabilized sand → Cementitious Mortar"
+
+    # חול מיוצב (without cement) = stabilized sand = aggregate material = Crushed Stone (not Fill)
     if re.search(r"חול\s*מיוצב", text, flags=re.IGNORECASE):
         return "Crushed Stone", "Hard override: stabilized sand → Crushed Stone"
     # מילוי מובא לגשרים/מבנים = brought fill for structures = Crushed Stone
@@ -2708,27 +2770,35 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         if not re.search(r"יסוד\s*(?:מ)?בטון(?!\s*(?:עגול|מעוגל))", text, flags=re.IGNORECASE):
             return "Galvanized Steel", "Hard override: steel pole → Galvanized Steel"
 
-    # קונסטרוקציית פלדה מגולוונת / מבנה פלדה / פרופילי פלדה → Galvanized Steel
+    # גשרי שילוט מפלדה = steel sign bridges → Structural Steel (before generic steel framework rule)
+    if re.search(r"גשרי?\s*שילוט\s*(?:מ)?פלד", text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: steel sign bridge (early catch) → Structural Steel"
+
+    # קונסטרוקציית פלדה מגולוונת / מבנה פלדה / פרופילי פלדה → Structural Steel (load-bearing framework)
     if re.search(
         r"קונסטרוקציית?\s*פלדה|מבנה\s*(?:פלדה|מ?פלד)|פרופיל(?:ים)?\s*פלדה"
-        r"|עמוד(?:י|ים)?\s*(?:HEA|HEB|IPE|UNP|IPB)\b|גשרי?\s*שילוט\s*מ?פלדה"
+        r"|עמוד(?:י|ים)?\s*(?:HEA|HEB|IPE|UNP|IPB)\b"
         r"|קיר\s*אקוסטי.*פלדה|פלדה.*קיר\s*אקוסטי",
         text, flags=re.IGNORECASE
     ):
-        return "Galvanized Steel", "Hard override: structural steel framework → Galvanized Steel"
+        return "Structural Steel", "Hard override: structural steel framework → Structural Steel"
 
     # משטח יצוק מבטון = cast concrete slab (primary material is concrete, not rebar)
-    if re.search(r"משטח\s*(?:יצוק|בטון)\s*(?:מ)?בטון|משטח\s*מבטון\s*(?:מזויין|ל)", text, flags=re.IGNORECASE):
+    if re.search(r"משטח\s*(?:יצוק\s*)?(?:מ)?בטון|משטח\s*(?:יצוק|בטון)\s*(?:מ)?בטון", text, flags=re.IGNORECASE):
         return "Structural Concrete", "Hard override: cast concrete slab → Structural Concrete"
-    # מייתד כימי = chemical dowel rod (cast into concrete) → Structural Concrete
-    if re.search(r"מייתד|מוט\s*מייתד", text, flags=re.IGNORECASE):
-        return "Structural Concrete", "Hard override: chemical dowel → Structural Concrete"
-    # אינסרט להארכת זיון = rebar extension insert (steel coupler sleeve) → Galvanized Steel
+    # מייתדים / מוטות מייתדים = steel/chemical dowels → Steel Rebar (Galvanized Steel if coated)
+    if re.search(r"מוט(?:ות)?\s*מייתד(?:ים)?.*מגולוון", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: galvanized dowel → Galvanized Steel"
+    if re.search(r"מייתד|מוט(?:ות)?\s*מייתד(?:ים)?", text, flags=re.IGNORECASE):
+        return "Steel Rebar", "Hard override: chemical/steel dowel → Steel Rebar"
+    # אינסרט להארכת זיון = rebar extension insert (steel coupler sleeve) → Steel Rebar
     if re.search(r"אינסרט\s*להארכת?\s*זיון", text, flags=re.IGNORECASE):
-        return "Galvanized Steel", "Hard override: rebar extension insert → Galvanized Steel"
+        return "Steel Rebar", "Hard override: rebar extension coupler insert → Steel Rebar"
 
     # תוספת / תוספות / תו.מחיר — supplement / price addition (not a physical material)
     # Exceptions: "תוספת מחיר לבטון/לאספלט/למצע/לריצוף" or "תוספת פיגמנט" or "תוספת זיון"
+    if re.search(r"תוספת\s*מחיר\s*לביצוע", text, flags=re.IGNORECASE):
+        return None, "Hard override: execution surcharge → EXCLUDE"
     if re.search(r"\b(?:תו(?:ספ(?:ת|ות))?\.?\s*ל?מחיר|תוספ(?:ת|ות))\b", text, flags=re.IGNORECASE):
         if not re.search(r"\b(?:בטון|אספלט|מצע|ריצוף|זיון|פיגמנט|פלד[הת]\s+ל?בטון)\b", text, flags=re.IGNORECASE):
             return None, "Hard override: supplement/addition (תוספת/תו.מחיר) → EXCLUDE"
@@ -2804,12 +2874,12 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"שימוש\s+חוזר\s+ב(?:אבן|ריצוף|מרצפות?|אספלט)", text, flags=re.IGNORECASE):
         return "Paving", "Hard override: reuse of paving/stone material → Paving"
 
-    # חציית משטח אספלט ו/או פירוק ריצוף → Paving (material involved)
+    # חציית משטח אספלט ו/או פירוק ריצוף = road crossing / paving demolition = service → EXCLUDE
     if re.search(r"חציית\s+משטח\s+(?:אספלט|בטונים?).{0,20}(?:ו/או\s+)?פירוק\s+ריצוף", text, flags=re.IGNORECASE):
-        return "Paving", "Hard override: asphalt cutting + paving removal → Paving"
+        return None, "Hard override: asphalt crossing + paving removal service → EXCLUDE"
 
     if re.search(r"פרט\s+תפר\s+(?:ב)?ריצוף|פרט\s+תפר\s+גמר", text, flags=re.IGNORECASE):
-        return "Fill Material", "Hard override: paving joint detail → Fill Material"
+        return None, "Hard override: paving expansion joint detail → EXCLUDE"
 
     # נקז מחורץ עם אבן שפה = precast slotted drain with kerb stone
     if re.search(r"נקז\s+מחורץ\s+עם\s+אבן\s+שפה\s+טרומי", text, flags=re.IGNORECASE):
@@ -2855,8 +2925,9 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         return None, "Hard override: waste removal → EXCLUDE"
 
     # נקז בקירות / נקז אורכי → PVC Pipe
-    if re.search(r"נקז[ים]*\s*(?:בקירות|אורכי)\s*(?:בקוטר|כולל|שרשורי)", text, flags=re.IGNORECASE) and not re.search(r"מחורר", text, flags=re.IGNORECASE):
-        return "PVC Pipe", "Hard override: wall drain → PVC Pipe"
+    if re.search(r"נקז(?:ים)?\s*(?:בקירות(?:\s*בטון)?|אורכי)\s*(?:PVC|P\.V\.C|מצינור|בקוטר|כולל|שרשורי)", text, flags=re.IGNORECASE):
+        if not re.search(r"מחורר", text, flags=re.IGNORECASE):
+            return "PVC Pipe", "Hard override: wall drain → PVC Pipe"
 
     # מוליך הארקה מנחושת → Copper Wire
     if re.search(r"מוליך\s*הארקה.*נחושת|הארקה.*נחושת.*שזור|(?:אלקטרודות|מוטות)\s*הארקה.*נחושת", text, flags=re.IGNORECASE):
@@ -2880,6 +2951,9 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     # galvanized steel drainage pipe must be caught before generic צינור ניקוז → PVC
     if re.search(r"צינור\s*(?:ניקוז|פלדה)\s*(?:פלדה\s*)?מגולוון", text, flags=re.IGNORECASE):
         return "Galvanized Steel", "Hard override: galvanized steel drainage pipe → Galvanized Steel"
+    # עטיפת בטון לצינור ניקוז = concrete jacket around existing drainage pipe → Structural Concrete
+    if re.search(r"עטיפת?\s+בטון.{0,30}(?:לצינור|צינור\s+ניקוז)", text, flags=re.IGNORECASE):
+        return "Structural Concrete", "Hard override: concrete encasement of drainage pipe → Structural Concrete"
     if re.search(r"צינור\s*ניקוז(?!\s*(?:PE\b|פולי|מריפל))", text, flags=re.IGNORECASE):
         return "PVC Pipe", "Hard override: drainage pipe → PVC Pipe"
 
@@ -2964,12 +3038,20 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"שלט|תמרור", text, flags=re.IGNORECASE):
         return "Galvanized Steel", "Hard override: sign/sign support → Galvanized Steel"
 
+    # קיר מבלוק כורכרי (masonry wall from kurkar blocks) → Cementitious Mortar (before generic kurkar rule)
+    if re.search(r"קיר\s+מבלוק\s+כורכרי", text, flags=re.IGNORECASE):
+        return "Cementitious Mortar", "Hard override: kurkar masonry block wall → Cementitious Mortar"
+
+    # ציפוי/חומר מנקז כורכרי = kurkar coating or drainage material → Crushed Stone (before generic kurkar rule)
+    if re.search(r"(?:חומר\s+מנקז|ציפוי\s+כורכרי)\s+(?:מובא\s+)?(?:מאחורי|על\s+גבי)", text, flags=re.IGNORECASE):
+        return "Crushed Stone", "Hard override: kurkar drainage/coating material → Crushed Stone"
+
     # בלוק כורכרי / לוחות כורכר = kurkar limestone block → Precast Concrete
     if re.search(r"בלוק\s*כורכר|כורכרי|לוחות?\s*כורכר", text, flags=re.IGNORECASE):
         return "Precast Concrete", "Hard override: kurkar limestone block → Precast Concrete"
 
     # קורות טרומיות = precast beams → Precast Concrete (before generic beam→Structural check)
-    if re.search(r"קורות?\s*טרומ|לוח(?:ות)?\s*טרומ|כלונסאות?\s*טרומ|אלמנטים?\s*טרומ|תקרה\s*טרומ", text, flags=re.IGNORECASE):
+    if re.search(r"קורות?\s*טרומ|לוח(?:ות)?\s*טרומ|כלונסאות?\s*טרומ|אלמנטים?\s*טרומ|תקרה\s*טרומ|עמוד(?:ים)?\s*טרומ|ע\.טרומיים", text, flags=re.IGNORECASE):
         return "Precast Concrete", "Hard override: precast elements → Precast Concrete"
 
     # קורות רוחב / דיאפרגמה / ניצבים מבטון = concrete structural elements → Structural Concrete
@@ -3029,20 +3111,21 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"אשפתון\s+(?:מפח|דגם|מנוקב)|פח\s+מנוקב.{0,15}אשפתון", text, flags=re.IGNORECASE):
         return "Galvanized Steel", "Hard override: metal waste bin → Galvanized Steel"
 
+    # Bench with wood → Urban Furniture (must fire BEFORE metal bench rule to catch mixed wood+steel)
+    if re.search(r"ספסל\s+(?:מבטון\s+ו)?עץ\b|ספסל\s+מעץ\s+(?:ומתכת|ופלד)|ספסל\s+מקונסטרוקציית\s+פלדה\s+ולוחות\s+עץ", text, flags=re.IGNORECASE):
+        return "Urban Furniture", "Hard override: wood bench → Urban Furniture"
+
     if re.search(r"ספסל\s+(?:מפח\s+מנוקב|מתכת\s+עם|ממתכת\b)|ספסל\s+מ(?:קונסטרוקציית\s+)?פלדה\s+(?:ולוחות?|עם)", text, flags=re.IGNORECASE):
         return "Galvanized Steel", "Hard override: metal bench → Galvanized Steel"
-
-    if re.search(r"ספסל\s+(?:מבטון\s+ו)?עץ\b|ספסל\s+מעץ\s+ומתכת", text, flags=re.IGNORECASE):
-        return "Wood", "Hard override: wood/metal bench → Wood"
 
     if re.search(r"תושבת\s+לספסל\b", text, flags=re.IGNORECASE):
         return "Galvanized Steel", "Hard override: bench bracket → Galvanized Steel"
 
     if re.search(r"סולמות?\s+עלייה\s+לגשרי?\s+שילוט", text, flags=re.IGNORECASE):
-        return "Galvanized Steel", "Hard override: sign bridge access ladder → Galvanized Steel"
+        return "Structural Steel", "Hard override: sign bridge access ladder → Structural Steel"
 
-    if re.search(r"עמוד\s+קבוע\s+נגד\s+התפרצות", text, flags=re.IGNORECASE):
-        return "Galvanized Steel", "Hard override: anti-intrusion bollard → Galvanized Steel"
+    if re.search(r"עמוד\s+קבוע\s+נגד\s+(?:התפרצות|חדירה)", text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: anti-ram bollard → Structural Steel"
 
     if re.search(r"עמודים?\s+בחתך\s+עגול\s+בקטרים?", text, flags=re.IGNORECASE):
         return "Structural Concrete", "Hard override: circular concrete columns → Structural Concrete"
@@ -3186,9 +3269,9 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"חול\s+דיונות\s+ל?מילוי", text, flags=re.IGNORECASE):
         return "Fill Material", "Hard override: dune sand for fill → Fill Material"
 
-    # קולטן ניקוז = road-side drainage inlet (precast concrete unit)
+    # קולטן ניקוז = road-side drainage inlet → Concrete Pipe (part of drainage pipe system)
     if re.search(r"קולטן\s+(?:ל)?ניקוז", text, flags=re.IGNORECASE):
-        return "Precast Concrete", "Hard override: precast drainage inlet → Precast Concrete"
+        return "Concrete Pipe", "Hard override: drainage inlet → Concrete Pipe"
 
     # ביים עם אגרגט גס = road base with coarse aggregate → Crushed Stone
     if re.search(r"ביים\s+(?:שונים\s+)?(?:(?:עם|ב)\s+)?אגרגט\s+גס", text, flags=re.IGNORECASE):
@@ -3333,7 +3416,7 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         return "Fill Material", "Hard override: structural backfill → Fill Material"
 
     # גושי בטון מזוין לעיגון / לתושבות (reinforced concrete anchor blocks) → Structural Concrete
-    if re.search(r"גושי?\s+בטון\s+מזוין\s+ל(?:עיגון|תושבות?)", text, flags=re.IGNORECASE):
+    if re.search(r"גושי?\s+בטון\s+מזוין\s+ל(?:עיגון|תושבות?|.*תושבות?)", text, flags=re.IGNORECASE):
         return "Structural Concrete", "Hard override: reinforced concrete anchor block → Structural Concrete"
 
     # דיוס המרווח / מילוי מרווח (spacer filling / joint grouting) → Cementitious Mortar
@@ -3366,6 +3449,157 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     ):
         return "Paving", "Hard override: paving element (curb/tile/cladding) → Paving"
 
+    # ── Structural Steel: load-bearing steel structures (safety barriers, sign bridges, gates) ──
+
+    # Safety guardrails/barriers from steel (מעקה בטיחות מפלדה, מע.בטיחות, H1/H2/N2 barriers)
+    if re.search(
+        r"מ(?:עקה|ע\.?)\s*בטיחות\s+(?:מ)?פלד|"
+        r"מ\.?\s*ב(?:טי|ט\.?)\s+(?:דו\s*צדדי\s+)?מפלדה|"
+        r"מעקה\s+בטיחות\s+מפלדה|"
+        r"מ\.ב\.?\s*(?:H[12]|N[12]|W\d|VI\d)|"
+        r"מ(?:ע|עקה)\s*(?:בטיחות\s+)?(?:מפלדה\s+)?(?:H[12]|N[12]|W\d|VI\d)|"
+        r"Easy\s*Rail|S\.?\s*RAIL\s*ECO|"
+        r"תפרי\s+המעבר\s+של\s+מעקות\s+הבטיחות|"
+        r"מעבר\s+מעקה\s+(?:S\.?\s*RAIL|E\.\s*RAIL)",
+        text, flags=re.IGNORECASE
+    ):
+        return "Structural Steel", "Hard override: safety barrier/guardrail from steel → Structural Steel"
+
+    # Sign bridges from steel (גשרי שילוט מפלדה / גשר שילוט אלקטרוני)
+    if re.search(r"גשרי?\s+שילוט\s+(?:מ)?פלד|גשר\s+שילוט\s+אלקטרוני", text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: steel sign bridge → Structural Steel"
+
+    # Steel poles (large structural, octagonal/conical) → Structural Steel
+    if re.search(
+        r"עמוד(?:י)?\s+(?:מ)?פלדה\s+(?:מתומן|קוני|בחתך\s+מתומן|בחתך\s+עגול\s+בגובה)|"
+        r"עמוד\s+(?:מ)?פלדה\s+(?:מסוג|בקוטר|בגובה\s+(?:1[5-9]|[2-9]\d))|"
+        r"^עמודי?\s+פלדה\b",
+        text, flags=re.IGNORECASE
+    ):
+        return "Structural Steel", "Hard override: structural steel pole → Structural Steel"
+
+    # Bicycle shelter / sports facility from steel profiles (סככת אופניים מפלדה, מגרש ספורט מפרופילים)
+    if re.search(r"סככת?\s+אופני[יםם]\s+מפלד|מגרש\s+ספורט\s+(?:בגובה.{0,15})?(?:\d\s+)?פרופילים", text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: steel shelter/sports facility → Structural Steel"
+
+    # Vehicle gates from steel (שער דו כנפי לרכב / שער לרכב בגדר)
+    if re.search(r"שער\s+דו\s+כנפי\s+לרכב|שער\s+לרכב\s+(?:ב?גדר|מפלד)|שער\s+(?:מ)?פלדה\s+ל?רכב", text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: steel vehicle gate → Structural Steel"
+
+    # Emergency structural supports from steel profiles (תמיכות חירום מפרופילים)
+    if re.search(r"תמיכות?\s+חירום\s+מפרופילים", text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: emergency steel structural support → Structural Steel"
+
+    # Structural steel roofing/cladding of platform canopies (סיכוך/כיסוי קונסטרוקציית פלדה)
+    if re.search(r"(?:סיכוך|כיסוי)\s+קונסטרוקציית?\s+(?:ה)?פלד[הות]?\s+(?:של\s+)?גגוני", text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: steel canopy cladding → Structural Steel"
+
+    # Pedestrian bridge handrails combined from galvanized steel (מעקה לגשרי הולכי רגל)
+    if re.search(r"מעקה\s+לגשרי?\s+הולכי\s+רגל\s+(?:משולב\s+)?מ?(?:פלד|גלוון)", text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: pedestrian bridge railing → Structural Steel"
+
+    # Decorative fence from RHS profiles (גדר דקורטיבית מפרופילי RHS)
+    if re.search(r"גדר\s+דקורטיבית\s+מפרופילי?\s+(?:RHS|פלדה)", text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: decorative steel fence (RHS profiles) → Structural Steel"
+
+    # Grating / walkway grate from steel (מכלול סבכת מדרך מתועשת, שבכה מטיפוס, רשת לקליטת מי נגר)
+    if re.search(
+        r"מכלול\s+סבכת?\s+מדרך\s+מתועשת|"
+        r"רשת\s+לקליטת?\s+מי\s+נגר\b|"
+        r"שבכ[הות]\s+מטיפוס\b",
+        text, flags=re.IGNORECASE
+    ):
+        return "Structural Steel", "Hard override: steel grating/grate/mesh → Structural Steel"
+
+    # Large steel sleeve pipe (שרוול צינור פלדה "16+)
+    if re.search(r'שרוול[-\s]+צינור\s+פלד[הות]?\s+"(?:1[6-9]|[2-9]\d)', text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: large steel sleeve pipe → Structural Steel"
+
+    # Products from MS/MA series that are structural (turnstile, gate, bollard, bench, barrier)
+    if re.search(
+        r"(?:פשפש|קרוסלה|מחסום\s+רוח|מי\s+קר|טבעת)\s+מטיפוס\s+MS-|"
+        r"מחסום\s+רוח\s+מטיפוס\s+MA-",
+        text, flags=re.IGNORECASE
+    ):
+        return "Structural Steel", "Hard override: MS/MA series structural product → Structural Steel"
+
+    # Cast iron items (מיצקת ברזל: אבן צד, מלכודת אבנים, מכסה)
+    if re.search(
+        r"(?:אבן\s+צד|מלכודת\s+אבנים|מכסה\s+(?:עגול|מלבני)?)\s+מיצקת?\s+ברזל|"
+        r"מיצקת?\s+ברזל\b",
+        text, flags=re.IGNORECASE
+    ):
+        return "Structural Steel", "Hard override: cast iron element → Structural Steel"
+
+    # Security window (חלון מיגון לחדר ביטחון) → Structural Steel
+    if re.search(r"חלון\s+מיגון\s+לחדר\s+ביטחון", text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: security window (protected room) → Structural Steel"
+
+    # ── Aluminum: profiles/facades/shutters from aluminum or stainless ──
+
+    # Roller shutters / operable shutters from aluminum (תריס גלילה מטיפוס MD-xxx / MA-xxx)
+    if re.search(r"תריס\s+(?:גלילה|רפפה)\s+(?:קבוע\s+)?מטיפוס\s+(?:MD|MA)-", text, flags=re.IGNORECASE):
+        return "Aluminum", "Hard override: aluminum roller/louvre shutter → Aluminum"
+
+    # AL-series building elements (curtain wall type, platform screen elements)
+    if re.search(
+        r"(?:ויטרינת?\s+קיר\s+מסך|מערכת\s+משולבת|אלמנט\s+הסתרה)\s+מטיפוס\s+AL-|"
+        r"קירות\s+מסך\s+בחזיתות\s+(?:המבנה|התחנה)",
+        text, flags=re.IGNORECASE
+    ):
+        return "Aluminum", "Hard override: AL-series curtain wall / façade element → Aluminum"
+
+    # Glazed aluminum/stainless handrail (מעקה פלב"מ מזוגג מטיפוס MA-xxx)
+    if re.search(r'מעקה\s+פלב"מ\s+מזוגג\s+מטיפוס', text, flags=re.IGNORECASE):
+        return "Aluminum", "Hard override: glazed stainless railing → Aluminum"
+
+    # Stainless steel door system (מערכת דלתות מפלדת אל-חלד / פלב"מ)
+    if re.search(r"מערכת\s+דלתות?\s+מ(?:פלדת?\s+אל[\s-]*חלד|פלב.?מ)", text, flags=re.IGNORECASE):
+        return "Aluminum", "Hard override: stainless steel door system → Aluminum"
+
+    # Stainless separation strips / fittings (פסי הפרדה מנירוסטה, מתקן נוזלי מנירוסטה)
+    if re.search(
+        r"פסי?\s+הפרדה\s+מנירוסטה\b|"
+        r"מתקן\s+נוזלי\s+מנירוסטה|"
+        r"מחסום\s+לרכב\s+מתפרץ\s+מנירוסטה",
+        text, flags=re.IGNORECASE
+    ):
+        return "Aluminum", "Hard override: stainless steel fitting/barrier → Aluminum"
+
+    # Anti-slip device (טובלרון מתקן עשוי פלב"מ) → Aluminum
+    if re.search(r'טובלרון.{0,20}פלב"מ', text, flags=re.IGNORECASE):
+        return "Aluminum", "Hard override: stainless anti-slip device → Aluminum"
+
+    # ── Polymers, Plastics: polyester/FRP enclosures ──
+
+    # Polyester/FRP protection cabinet (ארון הגנה מפוליאסטר FGI / ארון טלפונים מפוליאסטר)
+    if re.search(
+        r"ארון\s+הגנה\s+מפוליאסטר|"
+        r"ארון\s+טלפונים\s+מפוליאסטר\s+משוריין|"
+        r"ארון\s+(?:הגנה\s+)?FGI\s+\d|"
+        r'ארון\s+דגם\s+"?0"?\s+FGI',
+        text, flags=re.IGNORECASE
+    ):
+        return "Polymers, Plastics", "Hard override: polyester/FRP cabinet → Polymers, Plastics"
+
+    # PP-R / polypropylene fiber pipes (צנרת PP-R faser) → PVC Pipe (closest category for plastic piping)
+    if re.search(r"צנרת\s+PP[-\s]*R\s+(?:faser|fiber)\b", text, flags=re.IGNORECASE):
+        return "PVC Pipe", "Hard override: PP-R fiber pipe → PVC Pipe"
+
+    # ── Mechanical Equipment: hydrants, fire valves ──
+
+    # Fire hydrant (הידרנט - currently EXCLUDE, should be Mechanical Equipment)
+    if re.search(r"הידרנט\s+(?:כפול\s+)?['\"]?\d|הידרנט\s+['\"]?\d|הידרנט\s+ב?קוטר", text, flags=re.IGNORECASE):
+        return "Mechanical Equipment", "Hard override: fire hydrant → Mechanical Equipment"
+
+    # External fire hydrant with anchor (ברז שריפה חיצוני + גוש עיגון)
+    if re.search(r"ברז\s+שריפה\s+חיצוני", text, flags=re.IGNORECASE):
+        return "Mechanical Equipment", "Hard override: external fire hydrant valve → Mechanical Equipment"
+
+    # Irrigation sprinkler (ממטיר גיחה / ממטיר לטווחים)
+    if re.search(r"ממטיר\s+(?:גיחה|לטווחים|מסוג)", text, flags=re.IGNORECASE):
+        return "HDPE Granulate", "Hard override: irrigation sprinkler (plastic body) → HDPE Granulate"
+
     # ── Galvanized steel metal fabrication items (misclassified as Steel Rebar / Precast) ──
     if re.search(
         r"אלמנטי?\s+פלדה\s+(?:שונים|מגולוונ|מפרופיל)|"
@@ -3377,7 +3611,6 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
         r"מעקה\s+(?:מתכת|פלדה|גלוון)|"
         r"עמודון\s+סימון|"
         r"חלון\s+(?:ממוגן|מיגון)\b|"
-        r"גשרי?\s+שילוט\b|"
         r"פסי?\s+הפרדה\s+מ(?:נירוסטה|פלדה|מתכת)|"
         r"תעלות?\s+מים\s+מ?פח\b|"
         r"פסי?\s+(?:ו?חיבור\s+)?מנירוסטה|"
@@ -3394,7 +3627,7 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     ):
         return "Galvanized Steel", "Hard override: metal fabrication / galvanized element → Galvanized Steel"
 
-    # עמודי פלדה (steel columns) → Structural Steel
+    # עמודי פלדה (steel columns) → Structural Steel (catch-all for remaining steel column forms)
     if re.search(r"^עמודי?\s+פלדה\b", text, flags=re.IGNORECASE):
         return "Structural Steel", "Hard override: steel columns → Structural Steel"
 
@@ -3402,13 +3635,135 @@ def hard_classification_override(material_text: str) -> Optional[Tuple[str, str]
     if re.search(r"צינור\s+בדיקה\s+מפלדה|צינור\s+מפלדה\s+ל?בדיקה", text, flags=re.IGNORECASE):
         return "Galvanized Steel", "Hard override: steel inspection pipe → Galvanized Steel"
 
-    # מערכת דלתות מפלדת אל-חלד (stainless steel door system) → Galvanized Steel
-    if re.search(r"מערכת\s+דלתות?\s+מפלדת?\s+אל[\s-]*חלד", text, flags=re.IGNORECASE):
-        return "Galvanized Steel", "Hard override: stainless steel door system → Galvanized Steel"
-
-    # יסוד בטון לעמוד תאורה (concrete foundation for lighting pole) — manual groups with pole → Galvanized Steel
+    # יסוד בטון לעמוד תאורה (concrete foundation for lighting pole) → Structural Concrete
     if re.search(r"יסוד\s+בטון(?:\s+מזויין)?\s+(?:ל?|ב[\-]?\d+\s+ל?)עמוד\s+תאורה", text, flags=re.IGNORECASE):
-        return "Galvanized Steel", "Hard override: concrete foundation for lighting pole → Galvanized Steel"
+        return "Structural Concrete", "Hard override: concrete foundation for lighting pole → Structural Concrete"
+
+    # ברזיות נגישות / מאריכי גומה לעץ / פילרים מתועשים → Precast Concrete
+    if re.search(r"(?:ברזית|ברזיה|מאריך\s*גומה).*מבטון\s*טרום|פילרים\s*מתועשים\s*מבטון", text, flags=re.IGNORECASE):
+        return "Precast Concrete", "Hard override: precast fountain/tree-pit/pillar → Precast Concrete"
+
+    # בסיס בטון לארון / תושבות לסמכים / מעצורי גזירה / ראש אי → Structural Concrete
+    if re.search(r"בסיס\s*בטון\s*(?:אליו\s*יותקן|עבור|ל)(?:ארון|מנגנון)", text, flags=re.IGNORECASE):
+        return "Structural Concrete", "Hard override: concrete base for cabinet → Structural Concrete"
+    if re.search(r"תושב(?:ת|ות)\s*(?:לסמכים\s*)?מבטון|ראש\s*אי\s*מבטון|מעצורי\s*גזירה.*מבטון", text, flags=re.IGNORECASE):
+        return "Structural Concrete", "Hard override: concrete bearing support/island head/shear key → Structural Concrete"
+
+    # בלוק קצה / אלמנט מעבר למעקה בטון
+    if re.search(r"(?:בלוק|יחידת)\s*קצה\s*(?:בטון|מבטון|למעקה)|אלמנט\s*מעבר\s*בין\s*מעק(?:ה|ות)|מעבר\s*מצמד\s*מעקות\s*בטון", text, flags=re.IGNORECASE):
+        return "Structural Concrete", "Hard override: concrete guardrail end/transition → Structural Concrete"
+        
+    # מכסה מפלדה מגולוון / פרט גמל מים
+    if re.search(r"מכסה\s+מפלדה\b.*מגולוון", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: galvanized steel cover → Galvanized Steel"
+    if re.search(r"פרט\s*['\"]?גמל['\"]?\s*עילי", text, flags=re.IGNORECASE):
+        return "Galvanized Steel", "Hard override: water pipe loop (גמל) → Galvanized Steel"
+
+    # מכסה משולב בטון / מכסה שוחה מבטון
+    if re.search(r"מכסה\s*שוחה.*מבטון", text, flags=re.IGNORECASE):
+        return "Precast Concrete", "Hard override: precast concrete manhole cover → Precast Concrete"
+    if re.search(r"מכסה\s*משולב\s*בטון\s*יצקת", text, flags=re.IGNORECASE):
+        return "Structural Concrete", "Hard override: cast concrete integrated cover → Structural Concrete"
+
+    # פירוק ברזיות
+    if re.search(r"פירוק\s*ברזיות", text, flags=re.IGNORECASE):
+        return None, "Hard override: dismantling water fountains → EXCLUDE"
+
+    # ── Additional fixes from QA review (ניסיון 4) ──────────────────────────────
+
+    # Concrete jacket/protection for existing drainage pipe → Structural Concrete
+    if re.search(r"עטיפת?\s+בטון.{0,25}(?:לצינור|צינור\s+ניקוז)", text, flags=re.IGNORECASE):
+        return "Structural Concrete", "Hard override: concrete pipe jacket → Structural Concrete"
+
+    # Protection of waterproofing by a concrete layer → Structural Concrete
+    if re.search(r"הגנה\s+על\s+(?:ה)?איטום.{0,20}(?:שכבת?\s+בטון|בטון\s+שכבה)", text, flags=re.IGNORECASE):
+        return "Structural Concrete", "Hard override: concrete protection layer over waterproofing → Structural Concrete"
+
+    # Precast concrete control pit/box (תא בקרה לחשמל בקוטר X ס"מ ובעומק Y) → Precast Concrete
+    if re.search(r"תא\s+בקרה\s+(?:לחשמל|לתקשורת)\s+(?:בקו|בקוטר|בקוט\.)", text, flags=re.IGNORECASE):
+        return "Precast Concrete", "Hard override: precast electrical/comm inspection pit → Precast Concrete"
+
+    # ACP cladding / aluminum composite panels (סיכוך בלוח A.C.P) → Aluminum
+    if re.search(r"(?:סיכוך|חיפוי)\s+(?:ב)?לוח(?:ות)?\s+A\.?C\.?P", text, flags=re.IGNORECASE):
+        return "Aluminum", "Hard override: ACP aluminum composite cladding → Aluminum"
+
+    # CADWELD grounding joint (חיבור מוליכי הארקה בשיטת CADWELD) → Copper Wire
+    if re.search(r"(?:חיבור|CADWELD).{0,20}(?:CADWELD|הארקה)", text, flags=re.IGNORECASE):
+        return "Copper Wire (Cable)", "Hard override: CADWELD grounding joint → Copper Wire"
+
+    # Waterproofing expansion joint (תפרי התפשטות בין קטעי קיר) → Waterproofing
+    if re.search(r"תפרי?\s+(?:ה)?התפשטות\s+(?:בין|של)\s+קטעי?\s+(?:קיר|גדר)", text, flags=re.IGNORECASE):
+        return "Waterproofing", "Hard override: expansion joint seal → Waterproofing"
+
+    # Asphalt mix designations (תא"צ, תא"מ, SMA, פסי האטה) that contain aggregate → Asphalt
+    if re.search(
+        r'תא["’״]?(?:צ|מ)\s*\d+|'
+        r'ת\.?א\.?(?:צ|מ)[\s.]\d+|'
+        r'\bSMA\b|'
+        r'פסי?\s+האטה\s+מאספלט',
+        text, flags=re.IGNORECASE
+    ):
+        return "Asphalt", "Hard override: asphalt mix designation (תא\"צ/תא\"מ/SMA) → Asphalt"
+
+    # PVC / anti-static vinyl flooring tiles (ריצוף ביריעות פי.וי.סי) → PVC Pipe
+    if re.search(r"ריצוף\s+ביריעות?\s+(?:פי\.?וי\.?סי|PVC)", text, flags=re.IGNORECASE):
+        return "PVC Pipe", "Hard override: PVC vinyl flooring tile → PVC Pipe"
+
+    # Masonry wall from kurkar limestone blocks (קיר מבלוק כורכרי) → Cementitious Mortar
+    if re.search(r"קיר\s+מבלוק\s+כורכרי", text, flags=re.IGNORECASE):
+        return "Cementitious Mortar", "Hard override: kurkar masonry block wall → Cementitious Mortar"
+
+    # Draining material behind retaining walls / kurkar coating → Crushed Stone
+    if re.search(r"(?:חומר\s+מנקז|ציפוי\s+כורכרי)\s+(?:מובא\s+)?(?:מאחורי|על\s+גבי)", text, flags=re.IGNORECASE):
+        return "Crushed Stone", "Hard override: drainage/kurkar material behind wall → Crushed Stone"
+
+    # Polypropylene pull rope (חבל משיכה מפוליפרופילן) → EXCLUDE (installation aid, not permanent material)
+    if re.search(r"חבל\s+משיכה\s+מ?פוליפרופילן", text, flags=re.IGNORECASE):
+        return None, "Hard override: polypropylene pull rope → EXCLUDE"
+
+    # Dustbin/waste bin (אשפתון, פח אשפה) → EXCLUDE
+    if re.search(r"\bאשפתון\b|פח\s+אשפה\b", text, flags=re.IGNORECASE):
+        return None, "Hard override: waste bin → EXCLUDE"
+
+    # Service / probe excavation (חפירות גישוש) → EXCLUDE
+    if re.search(r"חפירות?\s+גישוש\b", text, flags=re.IGNORECASE):
+        return None, "Hard override: probe excavation for utility detection → EXCLUDE"
+
+    # HPL cladding (חיפוי קירות טרספה HPL) → EXCLUDE (HPL panels are specialty interior finish)
+    if re.search(r"(?:חיפוי|לוחות?)\s+(?:טרספה\s+)?HPL\b", text, flags=re.IGNORECASE):
+        return None, "Hard override: HPL laminate cladding → EXCLUDE"
+
+    # Flashing joint profiles (פרופילים לפוגות של טיח) → EXCLUDE
+    if re.search(r"פרופילים\s+ל?פוגות\s+(?:של\s+)?טיח", text, flags=re.IGNORECASE):
+        return None, "Hard override: plaster reveal profiles → EXCLUDE"
+
+    # Coping stones from reinforced concrete (נדבכי ראש מבטון מזויין) → Precast Concrete
+    if re.search(r"נדבכי?\s+ראש.{0,20}מבטון\s+מזויין", text, flags=re.IGNORECASE):
+        return "Precast Concrete", "Hard override: reinforced concrete coping blocks → Precast Concrete"
+
+    # Mechanical coupler for reinforcement (מחבר מכני עם ברגים נגזרים) → Structural Steel
+    if re.search(r"מחבר\s+מכני\s+עם\s+ברגים\s+נגזרים", text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: mechanical rebar coupler → Structural Steel"
+
+    # Leveling sill for armored earth wall (מפתן פילוס לקיר קרקע משורין) → Structural Steel
+    if re.search(r"מפתן\s+פילוס\s+לקיר\s+קרקע\s+משורין", text, flags=re.IGNORECASE):
+        return "Structural Steel", "Hard override: leveling sill for armored earth wall → Structural Steel"
+
+    # Cast-in-place inspection manhole (שוחה בנויה X×Y×Z ס"מ כוללת חיזוקים) → Structural Concrete
+    if re.search(r"שוחה\s+בנויה\s+\d+", text, flags=re.IGNORECASE):
+        return "Structural Concrete", "Hard override: cast-in-place manhole chamber → Structural Concrete"
+
+    # Plastic isolation/waterproof membrane (חיפוי/בידוד מחומר פלסטי) → Waterproofing
+    if re.search(r"(?:חיפוי|בידוד)\s+(?:R[<>]\w+,?\s+)?(?:ה)?בידוד\s+מחומר\s+פלסטי", text, flags=re.IGNORECASE):
+        return "Waterproofing", "Hard override: plastic insulation/membrane layer → Waterproofing"
+
+    # ביטום ירוק / פלסטומר (waterproofing compound/material) → Waterproofing
+    if re.search(r"פלסטומר\s+(?:AD|בט)\d+|ירוק\s+פלסטומר", text, flags=re.IGNORECASE):
+        return "Waterproofing", "Hard override: plastomer waterproofing compound → Waterproofing"
+
+    # Precast concrete retaining wall system (קיר תמך / גדר רוטרפלור מדגם) → Precast Concrete
+    if re.search(r"קיר\s+תמך.{0,20}(?:מדגם|גדר|רוטרפלור)|גדר\s+רוטרפלור\s+מדגם", text, flags=re.IGNORECASE):
+        return "Precast Concrete", "Hard override: precast retaining wall system → Precast Concrete"
 
     return None
 
@@ -6475,6 +6830,51 @@ def ai_chat():
 
 
 # ====================================================================
+# PROJECTS LIST ENDPOINT
+# ====================================================================
+@app.get("/projects")
+def projects_list():
+    try:
+        query = f"SELECT DISTINCT project_name FROM `{_BQ_DETAILS_TABLE_FULL}` WHERE project_name IS NOT NULL ORDER BY project_name"
+        job = bq_client.query(query)
+        names = [r["project_name"] for r in job.result()]
+        return jsonify({"projects": names}), 200
+    except Exception as exc:
+        logger.exception("projects failed")
+        return jsonify({"error": str(exc)}), 500
+
+
+# ====================================================================
+# FILE UPLOAD ENDPOINT — uploads file to GCS, then triggers processing
+# ====================================================================
+@app.route("/upload", methods=["POST"])
+def upload_file_endpoint():
+    try:
+        if "file" not in request.files:
+            return jsonify({"error": "no file provided"}), 400
+
+        f = request.files["file"]
+        if not f.filename:
+            return jsonify({"error": "empty filename"}), 400
+
+        bucket_name = request.form.get("bucket", "green_excal")
+        dest_name = f.filename
+
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(dest_name)
+        blob.upload_from_file(f.stream, content_type=f.content_type or "application/octet-stream")
+
+        logger.info(f"Uploaded {dest_name} to gs://{bucket_name}/{dest_name}")
+        return jsonify({"ok": True, "bucket": bucket_name, "file": dest_name}), 200
+    except Exception as exc:
+        logger.exception("upload failed")
+        return jsonify({"error": str(exc)}), 500
+
+
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
 # PROJECTS LIST ENDPOINT
 # ====================================================================
 @app.get("/projects")
