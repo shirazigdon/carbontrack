@@ -51,6 +51,7 @@ export function DashboardTab({ data, reviewCount }: Props) {
     return map;
   }, [data]);
 
+
   const byCategoryFactor = useMemo(() => {
     const map: Record<string,{e:number;w:number}> = {};
     data.forEach(r => {
@@ -93,8 +94,8 @@ export function DashboardTab({ data, reviewCount }: Props) {
               ))}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={Math.max(200, byProject.length*46)}>
-            <BarChart data={byProject} layout="vertical" margin={{left:8,right:60,top:24,bottom:4}}>
+          <ResponsiveContainer width="100%" height={Math.max(240, byProject.length*46)}>
+            <BarChart data={byProject} layout="vertical" margin={{left:8,right:60,top:36,bottom:4}}>
               <XAxis type="number" tick={{fontSize:10,fill:'#94a3b8'}} tickFormatter={v=>`${fmt(v)}`} axisLine={false} tickLine={false}/>
               <YAxis type="category" dataKey="name" width={130} tick={{fontSize:11,fill:'#475569'}} axisLine={false} tickLine={false}/>
               <Tooltip
@@ -110,9 +111,9 @@ export function DashboardTab({ data, reviewCount }: Props) {
         <div className="lg:col-span-2 rounded-2xl p-5" style={{ background: '#ffffff', border: '1.5px solid #b7e4c7', boxShadow: '0 2px 12px rgba(27,67,50,0.07)' }}>
           <div className="font-semibold text-sm text-slate-800 mb-1">פילוח לפי חומר</div>
           <div className="text-xs text-slate-400 mb-3">אחוז מסך הפליטות</div>
-          <ResponsiveContainer width="100%" height={260}>
+          <ResponsiveContainer width="100%" height={280}>
             <PieChart>
-              <Pie data={byCategory} dataKey="value" nameKey="name" cx="50%" cy="48%" innerRadius={55} outerRadius={90} paddingAngle={2}>
+              <Pie data={byCategory} dataKey="value" nameKey="name" cx="50%" cy="45%" innerRadius={55} outerRadius={90} paddingAngle={2}>
                 {byCategory.map((_,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}
               </Pie>
               <Tooltip formatter={(v)=>[`${fmt(Number(v)/1000,1)}t CO₂e`]} contentStyle={{fontFamily:'Heebo',fontSize:11,borderRadius:'10px',border:'1px solid #e2e8f0'}}/>
@@ -126,8 +127,8 @@ export function DashboardTab({ data, reviewCount }: Props) {
       <div className="rounded-2xl p-5" style={{ background: '#ffffff', border: '1.5px solid #b7e4c7', boxShadow: '0 2px 12px rgba(27,67,50,0.07)' }}>
         <div className="font-semibold text-sm text-slate-800 mb-1">זיהום יחסי לפי חומר (פקטור פליטה)</div>
         <div className="text-xs text-slate-400 mb-5">ק"ג CO₂e לכל ק"ג חומר (10 המזהמים ביותר)</div>
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={byCategoryFactor} margin={{left:8,right:16,top:24,bottom:4}}>
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart data={byCategoryFactor} margin={{left:8,right:16,top:36,bottom:4}}>
             <XAxis dataKey="name" tick={{fontSize:10,fill:'#475569'}} axisLine={false} tickLine={false} />
             <YAxis tick={{fontSize:10,fill:'#94a3b8'}} axisLine={false} tickLine={false} />
             <Tooltip
