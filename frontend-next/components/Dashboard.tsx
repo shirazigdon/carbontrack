@@ -83,7 +83,7 @@ export function Dashboard({ demoMode = false }: { demoMode?: boolean }) {
     if (demoMode) {
       const rows = project ? DEMO_EMISSIONS.filter(r => r.project_name === project) : DEMO_EMISSIONS;
       setEmissions(rows);
-      setProjects([...new Set(DEMO_EMISSIONS.map(r => r.project_name))]);
+      setProjects(Array.from(new Set(DEMO_EMISSIONS.map(r => r.project_name))));
       setLoading(false);
       return;
     }
