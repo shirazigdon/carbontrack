@@ -31,15 +31,15 @@ export function IsraelMap({ north, center, south }: IsraelMapProps) {
             <stop offset="100%" stopColor="rgb(27,94,32)" />
           </linearGradient>
         </defs>
-        <path className="reg" fill={nc} d="M 90,10 L 115,8 L 140,12 L 160,22 L 170,40 L 168,58 L 155,70 L 148,80 L 138,88 L 125,95 L 112,100 L 100,103 L 88,100 L 78,92 L 68,82 L 60,70 L 55,58 L 55,45 L 58,30 L 70,18 Z" />
-        <text className="rl" x="112" y="48">צפון</text>
-        <text className="rs" x="112" y="68">{fmt(north)}</text>
-        <path className="reg" fill={cc} d="M 88,100 L 100,103 L 112,100 L 125,95 L 138,88 L 148,80 L 152,100 L 155,118 L 150,135 L 145,150 L 140,165 L 136,178 L 125,185 L 112,188 L 100,186 L 88,183 L 78,175 L 72,162 L 68,148 L 65,132 L 65,115 L 68,105 Z" />
-        <text className="rl" x="110" y="138">מרכז</text>
-        <text className="rs" x="110" y="158">{fmt(center)}</text>
-        <path className="reg" fill={sc} d="M 78,175 L 88,183 L 100,186 L 112,188 L 125,185 L 136,178 L 140,195 L 142,212 L 140,230 L 138,250 L 134,270 L 130,290 L 125,310 L 118,330 L 112,355 L 108,380 L 105,405 L 102,425 L 99,445 L 97,465 L 95,490 L 92,510 L 88,490 L 85,468 L 82,445 L 78,420 L 74,395 L 70,370 L 65,348 L 60,325 L 55,302 L 52,278 L 50,255 L 50,230 L 52,208 L 55,192 L 62,182 L 72,178 Z" />
-        <text className="rl" x="96" y="340">דרום</text>
-        <text className="rs" x="96" y="360">{fmt(south)}</text>
+        <path className="reg" fill={nc} d="M 124,25 Q 132,10 140,15 L 156,25 Q 164,40 156,60 Q 148,80 152,115 L 112,115 Q 114,90 112,75 L 122,70 L 122,60 L 124,25 Z" />
+        <text className="rl" x="134" y="65">צפון</text>
+        <text className="rs" x="134" y="85">{fmt(north)}</text>
+        <path className="reg" fill={cc} d="M 112,115 L 152,115 Q 156,145 152,165 L 146,185 L 148,215 L 92,205 Q 96,175 112,115 Z" />
+        <text className="rl" x="122" y="155">מרכז</text>
+        <text className="rs" x="122" y="175">{fmt(center)}</text>
+        <path className="reg" fill={sc} d="M 92,205 L 148,215 Q 140,280 132,360 Q 124,440 120,500 L 116,500 Q 88,360 76,260 Q 84,225 92,205 Z" />
+        <text className="rl" x="112" y="340">דרום</text>
+        <text className="rs" x="112" y="360">{fmt(south)}</text>
         <rect x="18" y="18" width="72" height="12" rx="6" fill="url(#lgnd)" />
         <text style={{ fontFamily: 'Heebo,sans-serif', fontSize: 12, fill: '#4b5563' }} x="18" y="42">פחות</text>
         <text style={{ fontFamily: 'Heebo,sans-serif', fontSize: 12, fill: '#4b5563' }} x="64" y="42">יותר</text>
