@@ -51,6 +51,21 @@ export function DashboardTab({ data, reviewCount }: Props) {
     return map;
   }, [data]);
 
+  const byCategoryFactor = useMemo(() => {
+    const map: Record<string,{e:number;w:number}> = {};
+    data.forEach(r => {
+      const c = r.category || 'Unknown';
+      map[c] = map[c] || { e: 0, w: 0 };
+      map[c].e += r.emission_co2e || 0;
+      map[c].w += r.weight_kg || 0;
+    });
+    return Object.entries(map)
+      .map(([name, { e, w }]) => ({ name, factor: w > 0 ? e / w : 0 }))
+      .filter(item => item.name !== 'Unknown' && item.factor > 0)
+      .sort((a, b) => b.factor - a.factor)
+      .slice(0, 10);
+  }, [data]);
+
   return (
     <div className="space-y-5">
       {/* KPI row */}
@@ -79,7 +94,7 @@ export function DashboardTab({ data, reviewCount }: Props) {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={Math.max(200, byProject.length*46)}>
-            <BarChart data={byProject} layout="vertical" margin={{left:8,right:60,top:4,bottom:4}}>
+            <BarChart data={byProject} layout="vertical" margin={{left:8,right:60,top:24,bottom:4}}>
               <XAxis type="number" tick={{fontSize:10,fill:'#94a3b8'}} tickFormatter={v=>`${fmt(v)}`} axisLine={false} tickLine={false}/>
               <YAxis type="category" dataKey="name" width={130} tick={{fontSize:11,fill:'#475569'}} axisLine={false} tickLine={false}/>
               <Tooltip
@@ -105,6 +120,24 @@ export function DashboardTab({ data, reviewCount }: Props) {
             </PieChart>
           </ResponsiveContainer>
         </div>
+      </div>
+
+      {/* Relative Pollution Chart */}
+      <div className="rounded-2xl p-5" style={{ background: '#ffffff', border: '1.5px solid #b7e4c7', boxShadow: '0 2px 12px rgba(27,67,50,0.07)' }}>
+        <div className="font-semibold text-sm text-slate-800 mb-1">זיהום יחסי לפי חומר (פקטור פליטה)</div>
+        <div className="text-xs text-slate-400 mb-5">ק"ג CO₂e לכל ק"ג חומר (10 המזהמים ביותר)</div>
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={byCategoryFactor} margin={{left:8,right:16,top:24,bottom:4}}>
+            <XAxis dataKey="name" tick={{fontSize:10,fill:'#475569'}} axisLine={false} tickLine={false} />
+            <YAxis tick={{fontSize:10,fill:'#94a3b8'}} axisLine={false} tickLine={false} />
+            <Tooltip
+              formatter={(v)=>[`${Number(v).toFixed(3)} kg/kg`,'']}
+              contentStyle={{fontFamily:'Heebo',fontSize:12,borderRadius:'12px',border:'1px solid #e2e8f0',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}
+            />
+            <Bar dataKey="factor" fill="#e8a87c" radius={[6,6,0,0]}
+                label={{position:'top',fontSize:10,fill:'#64748b',formatter:(v: unknown)=>Number(v).toFixed(2)}}/>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Map row */}
