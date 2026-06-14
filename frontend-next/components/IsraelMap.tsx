@@ -9,34 +9,41 @@ export function IsraelMap({ north, center, south }: IsraelMapProps) {
 
   return (
     <div className="flex justify-center items-center py-2">
-      <div style={{ position: 'relative', width: '150px', height: '400px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 8px 24px rgba(27,67,50,0.15)', border: '2px solid #e2e8f0', backgroundColor: '#e2e8f0' }}>
-        <img 
-          src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Israel_relief_location_map.jpg/512px-Israel_relief_location_map.jpg" 
-          alt="מפת ישראל" 
-          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} 
+      <svg viewBox="0 0 130 360" width="130" height="360" style={{ overflow: 'visible' }}>
+        <defs>
+          <filter id="map-shadow">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.12"/>
+          </filter>
+        </defs>
+
+        {/* North region — Galilee & Golan */}
+        <path
+          d="M18,8 L65,2 L108,10 L112,32 L110,55 L112,78 L107,98 L98,105 L18,105 L8,80 L10,55 L8,32 Z"
+          fill="rgba(82,183,136,0.22)" stroke="#52b788" strokeWidth="1.5" strokeLinejoin="round"
+          filter="url(#map-shadow)"
         />
-        
-        {/* Overlay Darkening slightly to make labels pop */}
-        <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(27,67,50,0.1)' }} />
+        {/* Center region — Sharon & Judea */}
+        <path
+          d="M18,105 L98,105 L100,128 L97,150 L100,175 L95,200 L22,200 L18,175 L15,150 L18,128 Z"
+          fill="rgba(91,155,213,0.22)" stroke="#5b9bd5" strokeWidth="1.5" strokeLinejoin="round"
+          filter="url(#map-shadow)"
+        />
+        {/* South region — Negev */}
+        <path
+          d="M22,200 L95,200 L88,230 L78,262 L67,300 L58,345 L55,357 L50,357 L47,345 L38,300 L27,262 L17,230 Z"
+          fill="rgba(232,168,124,0.22)" stroke="#e8a87c" strokeWidth="1.5" strokeLinejoin="round"
+          filter="url(#map-shadow)"
+        />
 
-        {/* North */}
-        <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)', padding: '6px 14px', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '1px solid rgba(255,255,255,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: '#475569' }}>צפון</span>
-          <span style={{ fontSize: '14px', fontWeight: 900, color: '#059669' }}>{fmt(north)}</span>
-        </div>
+        <text x="58" y="50" textAnchor="middle" fontSize="10" fontWeight="800" fill="#1b4332" fontFamily="Heebo, Arial, sans-serif">צפון</text>
+        <text x="58" y="66" textAnchor="middle" fontSize="13" fontWeight="900" fill="#059669" fontFamily="Heebo, Arial, sans-serif">{fmt(north)}</text>
 
-        {/* Center */}
-        <div style={{ position: 'absolute', top: '45%', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)', padding: '6px 14px', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '1px solid rgba(255,255,255,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: '#475569' }}>מרכז</span>
-          <span style={{ fontSize: '14px', fontWeight: 900, color: '#059669' }}>{fmt(center)}</span>
-        </div>
+        <text x="57" y="148" textAnchor="middle" fontSize="10" fontWeight="800" fill="#1e40af" fontFamily="Heebo, Arial, sans-serif">מרכז</text>
+        <text x="57" y="164" textAnchor="middle" fontSize="13" fontWeight="900" fill="#2563eb" fontFamily="Heebo, Arial, sans-serif">{fmt(center)}</text>
 
-        {/* South */}
-        <div style={{ position: 'absolute', top: '75%', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)', padding: '6px 14px', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '1px solid rgba(255,255,255,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: '#475569' }}>דרום</span>
-          <span style={{ fontSize: '14px', fontWeight: 900, color: '#059669' }}>{fmt(south)}</span>
-        </div>
-      </div>
+        <text x="52" y="272" textAnchor="middle" fontSize="10" fontWeight="800" fill="#78350f" fontFamily="Heebo, Arial, sans-serif">דרום</text>
+        <text x="52" y="288" textAnchor="middle" fontSize="13" fontWeight="900" fill="#d97706" fontFamily="Heebo, Arial, sans-serif">{fmt(south)}</text>
+      </svg>
     </div>
   );
 }

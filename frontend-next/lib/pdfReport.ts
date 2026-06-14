@@ -24,13 +24,14 @@ export function exportExecPdf(data: EmissionRow[], userName: string): void {
   const avgRel  = data.length ? data.reduce((s, r) => s + (r.reliability_score || 0), 0) / data.length : 0;
   const today   = new Date().toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  // By project
-  const projMap: Record<string, number> = {};
-  data.forEach(r => { const p = r.project_name || '?'; projMap[p] = (projMap[p] || 0) + (r.emission_co2e || 0); });
+  // By project — normalized: kg CO₂e per tonne of material
+  const projMap: Record<string, {e: number; w: number}> = {};
+  data.forEach(r => { const p = r.project_name || '?'; projMap[p] = projMap[p] || {e:0,w:0}; projMap[p].e += r.emission_co2e||0; projMap[p].w += r.weight_kg||0; });
   const byProject = Object.entries(projMap)
-    .map(([name, v]) => ({ name, t: v / 1000 }))
+    .map(([name, {e, w}]) => ({ name, t: w > 0 ? e / (w / 1000) : 0 }))
     .sort((a, b) => b.t - a.t).slice(0, 7);
   const maxP = Math.max(...byProject.map(p => p.t), 1);
+  const topProjTotal = Object.entries(projMap).map(([n, {e}]) => ({ name: n, t: e / 1000 })).sort((a, b) => b.t - a.t)[0];
 
   // By category
   const catMap: Record<string, number> = {};
@@ -56,19 +57,16 @@ export function exportExecPdf(data: EmissionRow[], userName: string): void {
   });
   const donutGrad = `conic-gradient(${conicParts.join(', ')})`;
 
-  // Matched-by breakdown
-  const matchMap: Record<string, number> = {};
-  data.forEach(r => { const m = r.matched_by || 'unknown'; matchMap[m] = (matchMap[m] || 0) + 1; });
   const totalRows = data.length;
 
-  const barRows = (items: { name: string; t: number }[], max: number) =>
+  const barRows = (items: { name: string; t: number }[], max: number, unit = 't') =>
     items.map((p, i) => `
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:9px">
         <div style="font-size:10px;color:#475569;width:165px;flex-shrink:0;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(p.name)}">${esc(p.name)}</div>
         <div style="flex:1;height:22px;background:#f1f5f9;border-radius:5px;overflow:hidden;position:relative">
           <div style="position:absolute;right:0;top:0;height:100%;width:${Math.round(p.t / max * 100)}%;background:${PALETTE[i % PALETTE.length]};border-radius:5px"></div>
         </div>
-        <div style="font-size:10px;color:#64748b;font-weight:700;width:65px;flex-shrink:0;text-align:left">${fmt(p.t, 1)}t</div>
+        <div style="font-size:10px;color:#64748b;font-weight:700;width:65px;flex-shrink:0;text-align:left">${fmt(p.t, 1)} ${unit}</div>
       </div>`).join('');
 
   const html = `<!DOCTYPE html>
@@ -123,6 +121,7 @@ export function exportExecPdf(data: EmissionRow[], userName: string): void {
       <div style="color:#95d5b2;font-size:10px;font-weight:700;letter-spacing:1px;margin-bottom:8px">נתיבי ישראל — ניהול תשתיות בע"מ</div>
       <div style="color:#fff;font-size:24px;font-weight:900;margin-bottom:7px">דוח מנהלים – פליטות פחמן</div>
       <div style="color:rgba(255,255,255,0.65);font-size:11px">הוכן עבור: ${esc(userName)} &nbsp;·&nbsp; ${today}</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:10px;margin-top:4px">תקופה: ינואר 2025 – דצמבר 2025</div>
     </div>
     <div style="text-align:left;margin-top:4px">
       <div style="color:#95d5b2;font-size:17px;font-weight:900">🌿 CarbonTrack</div>
@@ -154,8 +153,8 @@ export function exportExecPdf(data: EmissionRow[], userName: string): void {
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
       <div style="background:#eef8f2;border-radius:10px;padding:12px 14px;border:1px solid #b7e4c7">
         <div style="font-size:9px;color:#40916c;font-weight:700;margin-bottom:5px">🏗️ הפרויקט המוביל</div>
-        <div style="font-size:12px;font-weight:800;color:#1b4332;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(byProject[0]?.name || '—')}</div>
-        <div style="font-size:10px;color:#40916c">${byProject[0] ? fmt(byProject[0].t, 1) + 't CO₂e' : ''}</div>
+        <div style="font-size:12px;font-weight:800;color:#1b4332;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(topProjTotal?.name || '—')}</div>
+        <div style="font-size:10px;color:#40916c">${topProjTotal ? fmt(topProjTotal.t, 1) + 't CO₂e' : ''}</div>
       </div>
       <div style="background:#fff8ee;border-radius:10px;padding:12px 14px;border:1px solid #fde68a">
         <div style="font-size:9px;color:#d97706;font-weight:700;margin-bottom:5px">🧱 חומר מזהם עיקרי</div>
@@ -170,22 +169,11 @@ export function exportExecPdf(data: EmissionRow[], userName: string): void {
     </div>
   </div>
 
-  <!-- Bar Chart: by Project -->
+  <!-- Bar Chart: by Project (normalized) -->
   <div style="padding:18px 36px 14px">
-    <div style="font-size:13px;font-weight:700;color:#1b4332;margin-bottom:3px">פליטות לפי פרויקט</div>
-    <div style="font-size:9px;color:#94a3b8;margin-bottom:14px">t CO₂e · ${byProject.length} פרויקטים מובילים</div>
-    ${barRows(byProject, maxP)}
-  </div>
-
-  <!-- Matched-by pills -->
-  <div style="padding:10px 36px 14px;border-top:1px solid #f1f5f9">
-    <div style="font-size:9px;color:#94a3b8;margin-bottom:8px;font-weight:600">שיטת התאמה לפקטור פליטה</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      ${Object.entries(matchMap).map(([method, count]) => `
-        <div style="background:#eef8f2;border:1px solid #b7e4c7;border-radius:20px;padding:4px 12px;font-size:9px;color:#2d6a4f;font-weight:600">
-          ${esc(method.replace(/_/g, ' '))} &nbsp;<span style="color:#52b788;font-weight:900">${Math.round(count / totalRows * 100)}%</span>
-        </div>`).join('')}
-    </div>
+    <div style="font-size:13px;font-weight:700;color:#1b4332;margin-bottom:3px">השוואת פרויקטים – פליטות מנורמלות</div>
+    <div style="font-size:9px;color:#94a3b8;margin-bottom:14px">ק"ג CO₂e לטון חומר (נורמלי לפי משקל) · ${byProject.length} פרויקטים מובילים</div>
+    ${barRows(byProject, maxP, 'kg/t')}
   </div>
 
   <div class="footer">

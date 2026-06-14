@@ -33,12 +33,12 @@ export function KpiCard({ title, value, subtitle, badge, badgeType, variant = 'd
         <div style={{ position: 'absolute', top: -16, left: -16, width: 64, height: 64, borderRadius: '50%', background: 'radial-gradient(circle, #eef8f2, transparent)', opacity: 0.8, pointerEvents: 'none' }} />
         <div style={{ position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#6b7c6b' }}>{title}</span>
+            <span style={{ fontSize: 12, fontWeight: 500, color: '#6b7c6b' }}>{title}</span>
             {badge && (
               <span style={{ ...badgeStyle, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>{badge}</span>
             )}
           </div>
-          <div style={{ fontSize: 38, fontWeight: 900, color: '#2c3e2d', lineHeight: 1, marginBottom: 6, direction: 'ltr', textAlign: 'right' }}>{value}</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: '#2c3e2d', lineHeight: 1, marginBottom: 6, direction: 'ltr', textAlign: 'right' }}>{value}</div>
           {subtitle && <div style={{ fontSize: 12, color: '#94a89a', fontWeight: 500 }}>{subtitle}</div>}
         </div>
       </div>
@@ -53,8 +53,8 @@ export function KpiCard({ title, value, subtitle, badge, badgeType, variant = 'd
       >
         <div style={{ position: 'absolute', top: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', pointerEvents: 'none' }} />
         <div style={{ position: 'relative' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.85)', marginBottom: 10 }}>{title}</div>
-          <div style={{ fontSize: 38, fontWeight: 900, color: '#fff', lineHeight: 1, marginBottom: 6, direction: 'ltr', textAlign: 'right' }}>{value}</div>
+          <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.85)', marginBottom: 10 }}>{title}</div>
+          <div style={{ fontSize: 30, fontWeight: 800, color: '#fff', lineHeight: 1, marginBottom: 6, direction: 'ltr', textAlign: 'right' }}>{value}</div>
           {subtitle && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{subtitle}</div>}
         </div>
       </div>
@@ -68,8 +68,8 @@ export function KpiCard({ title, value, subtitle, badge, badgeType, variant = 'd
     >
       <div style={{ position: 'absolute', top: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', pointerEvents: 'none' }} />
       <div style={{ position: 'relative' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.85)', marginBottom: 10 }}>{title}</div>
-        <div style={{ fontSize: 38, fontWeight: 900, color: '#fff', lineHeight: 1, marginBottom: 6, direction: 'ltr', textAlign: 'right' }}>{value}</div>
+        <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.85)', marginBottom: 10 }}>{title}</div>
+        <div style={{ fontSize: 30, fontWeight: 800, color: '#fff', lineHeight: 1, marginBottom: 6, direction: 'ltr', textAlign: 'right' }}>{value}</div>
         {subtitle && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{subtitle}</div>}
       </div>
     </div>
