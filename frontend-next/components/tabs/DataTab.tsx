@@ -6,9 +6,10 @@ import { fmt } from '../../lib/utils';
 interface Props { data: EmissionRow[]; }
 
 type SortDir = 'asc' | 'desc';
-interface SortState { key: keyof EmissionRow; dir: SortDir }
+type ColKey = keyof EmissionRow | '__factor';
+interface SortState { key: ColKey; dir: SortDir }
 
-const COLS: { key: keyof EmissionRow; label: string; numeric?: boolean }[] = [
+const COLS: { key: ColKey; label: string; numeric?: boolean }[] = [
   { key: 'project_name',      label: 'פרויקט' },
   { key: 'contractor',        label: 'קבלן' },
   { key: 'region',            label: 'אזור' },
@@ -18,14 +19,16 @@ const COLS: { key: keyof EmissionRow; label: string; numeric?: boolean }[] = [
   { key: 'short_text',        label: 'תיאור' },
   { key: 'weight_kg',         label: 'משקל (t)',          numeric: true },
   { key: 'emission_co2e',     label: 'פליטות (t CO₂e)',  numeric: true },
+  { key: '__factor',          label: 'פקטור המרה (kg/kg)', numeric: true },
   { key: 'reliability_score', label: 'אמינות',            numeric: true },
   { key: 'reliability_status',label: 'סטטוס' },
   { key: 'matched_by',        label: 'שיטת התאמה' },
 ];
 
-const EXPORT_EXTRA_COLS: { key: keyof EmissionRow; label: string }[] = [
-  { key: 'conversion_assumption', label: 'הנחת המרה' },
-  { key: 'measurement_year',      label: 'שנת מדידה' },
+const EXPORT_EXTRA_COLS: { key: ColKey; label: string }[] = [
+  { key: '__factor',               label: 'פקטור המרה (kg/kg)' },
+  { key: 'conversion_assumption',  label: 'הנחת המרה' },
+  { key: 'measurement_year',       label: 'שנת מדידה' },
 ];
 
 const ALL_EXPORT_COLS = [...COLS, ...EXPORT_EXTRA_COLS];
@@ -85,8 +88,16 @@ function reliabilityColor(score: number): string {
   return 'text-red-600 font-medium';
 }
 
-function formatCell(c: { key: keyof EmissionRow }, r: EmissionRow): string {
-  const v = r[c.key];
+function emissionFactor(r: EmissionRow): number | null {
+  return r.weight_kg && r.weight_kg > 0 ? r.emission_co2e / r.weight_kg : null;
+}
+
+function formatCell(c: { key: ColKey }, r: EmissionRow): string {
+  if (c.key === '__factor') {
+    const f = emissionFactor(r);
+    return f != null ? f.toFixed(4) : '—';
+  }
+  const v = r[c.key as keyof EmissionRow];
   if (v == null) return '';
   if (c.key === 'weight_kg' || c.key === 'emission_co2e') return ((v as number) / 1000).toFixed(3);
   if (c.key === 'reliability_score') return ((v as number) * 100).toFixed(1) + '%';
@@ -129,7 +140,7 @@ export function DataTab({ data }: Props) {
   const [yearFilter, setYearFilter]   = useState('');
   const [categoryFilter, setCategory] = useState('');
   const [statusFilter, setStatus]     = useState('');
-  const [sort, setSort]               = useState<SortState>({ key: 'emission_co2e', dir: 'desc' });
+  const [sort, setSort]               = useState<SortState>({ key: 'emission_co2e' as ColKey, dir: 'desc' });
   const [page, setPage]               = useState(0);
   const pageSize = 50;
 
@@ -142,7 +153,7 @@ export function DataTab({ data }: Props) {
     setYearFilter(''); setCategory(''); setStatus(''); setSearch(''); setPage(0);
   }
 
-  function toggleSort(key: keyof EmissionRow) {
+  function toggleSort(key: ColKey) {
     setSort(s => s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'desc' });
     setPage(0);
   }
@@ -165,8 +176,15 @@ export function DataTab({ data }: Props) {
   const sorted = useMemo(() => {
     const { key, dir } = sort;
     return [...filtered].sort((a, b) => {
-      const av = a[key] ?? '';
-      const bv = b[key] ?? '';
+      let av: number | string;
+      let bv: number | string;
+      if (key === '__factor') {
+        av = emissionFactor(a) ?? 0;
+        bv = emissionFactor(b) ?? 0;
+      } else {
+        av = (a[key as keyof EmissionRow] ?? '') as number | string;
+        bv = (b[key as keyof EmissionRow] ?? '') as number | string;
+      }
       const cmp = typeof av === 'number' && typeof bv === 'number'
         ? av - bv
         : String(av).localeCompare(String(bv), 'he');
@@ -282,27 +300,33 @@ export function DataTab({ data }: Props) {
             {pageData.map((row, i) => (
               <tr key={i} className="border-b border-border/60 hover:bg-muted/40 transition-colors">
                 {COLS.map(c => {
-                  const val = row[c.key];
                   let display: string;
                   let cls = '';
-                  if (val == null) {
-                    display = '—';
-                  } else if (c.key === 'weight_kg') {
-                    display = fmt((val as number) / 1000, 1) + 't';
-                  } else if (c.key === 'emission_co2e') {
-                    display = fmt((val as number) / 1000, 1) + 't';
-                  } else if (c.key === 'reliability_score') {
-                    const pct = (val as number) * 100;
-                    display = pct.toFixed(0) + '%';
-                    cls = reliabilityColor(val as number);
-                  } else if (c.key === 'reliability_status') {
-                    const s = String(val);
-                    display = STATUS_LABELS[s] ?? s;
-                    cls = STATUS_COLORS[s] ?? '';
-                  } else if (c.key === 'matched_by') {
-                    display = formatMatchedBy(val as string);
+                  if (c.key === '__factor') {
+                    const f = emissionFactor(row);
+                    display = f != null ? f.toFixed(4) : '—';
+                    cls = 'font-mono';
                   } else {
-                    display = String(val);
+                    const val = row[c.key as keyof EmissionRow];
+                    if (val == null) {
+                      display = '—';
+                    } else if (c.key === 'weight_kg') {
+                      display = fmt((val as number) / 1000, 1) + 't';
+                    } else if (c.key === 'emission_co2e') {
+                      display = fmt((val as number) / 1000, 1) + 't';
+                    } else if (c.key === 'reliability_score') {
+                      const pct = (val as number) * 100;
+                      display = pct.toFixed(0) + '%';
+                      cls = reliabilityColor(val as number);
+                    } else if (c.key === 'reliability_status') {
+                      const s = String(val);
+                      display = STATUS_LABELS[s] ?? s;
+                      cls = STATUS_COLORS[s] ?? '';
+                    } else if (c.key === 'matched_by') {
+                      display = formatMatchedBy(val as string);
+                    } else {
+                      display = String(val);
+                    }
                   }
                   return (
                     <td key={c.key} title={display}

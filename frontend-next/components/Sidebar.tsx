@@ -47,32 +47,24 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
   const { user, logout } = useAuth();
 
   return (
-    <aside className="flex-shrink-0 flex flex-col h-screen overflow-y-auto" style={{ width: 'var(--sidebar-width)', background: '#1b4332' }}>
+    <aside className="flex-shrink-0 flex flex-col h-screen overflow-y-auto" style={{ width: 'var(--sidebar-width)', background: '#f0faf5' }}>
 
       {/* Brand */}
-      <div className="px-5 pt-6 pb-5 border-b" style={{ borderColor: 'rgba(183,228,199,0.12)' }}>
-        <div className="flex items-center gap-2.5 mb-5">
-          <img
-            src="https://storage.googleapis.com/green_excal/carbontrack-logo.png"
-            className="w-9 h-9 object-contain flex-shrink-0"
-            alt="CarbonTrack"
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-          <div>
-            <div className="font-bold text-sm leading-tight" style={{ color: '#d8f3e3' }}><span style={{color:'#95d5b2'}}>C</span>arb<span style={{color:'#95d5b2'}}>O</span><span style={{color:'#95d5b2', fontSize:'0.75em', verticalAlign:'sub'}}>2</span>nTrack</div>
-            <div className="text-[10px]" style={{ color: 'rgba(183,228,199,0.5)' }}>נתיבי ישראל</div>
-          </div>
+      <div className="px-5 pt-6 pb-5 border-b" style={{ borderColor: 'rgba(74,124,89,0.15)' }}>
+        <div className="mb-5">
+          <div className="font-bold text-sm leading-tight" style={{ color: '#1b4332' }}><span style={{color:'#40916c'}}>C</span>arb<span style={{color:'#40916c'}}>O</span><span style={{color:'#40916c', fontSize:'0.75em', verticalAlign:'sub'}}>2</span>nTrack</div>
+          <div className="text-[10px] font-medium mt-0.5" style={{ color: 'rgba(74,124,89,0.55)' }}>נתיבי ישראל</div>
         </div>
 
         {user && (
-          <div className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5" style={{ background: 'rgba(183,228,199,0.09)' }}>
+          <div className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5" style={{ background: 'rgba(52,211,153,0.1)' }}>
             <div className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg,#52b788,#95d5b2)', color: '#1b4332' }}>
+              style={{ background: 'linear-gradient(135deg,#40916c,#74c69d)', color: '#fff' }}>
               {(user.name || user.email)[0]?.toUpperCase()}
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-medium truncate" style={{ color: '#d8f3e3' }}>{user.name || user.email}</div>
-              <div className="text-[10px] truncate" style={{ color: 'rgba(183,228,199,0.5)' }}>{ROLE_DISPLAY[user.role] || user.role}</div>
+              <div className="text-xs font-semibold truncate" style={{ color: '#1b4332' }}>{user.name || user.email}</div>
+              <div className="text-[10px] truncate" style={{ color: 'rgba(74,124,89,0.6)' }}>{ROLE_DISPLAY[user.role] || user.role}</div>
             </div>
           </div>
         )}
@@ -80,35 +72,35 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
-        <div className="text-[9px] font-semibold uppercase tracking-widest px-3 mb-2" style={{ color: 'rgba(183,228,199,0.35)' }}>תפריט ראשי</div>
+        <div className="text-[9px] font-semibold uppercase tracking-widest px-3 mb-2" style={{ color: 'rgba(74,124,89,0.4)' }}>תפריט ראשי</div>
         {NAV.map(({ id, label, icon }) => {
           const isActive = activeTab === id;
           return (
             <button key={id} onClick={() => onTabChange(id)}
               className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-medium transition-all text-right')}
               style={isActive
-                ? { background: 'rgba(149,213,178,0.18)', color: '#95d5b2' }
-                : { color: 'rgba(183,228,199,0.55)' }}
-              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.background = 'rgba(183,228,199,0.07)'; (e.currentTarget as HTMLElement).style.color = '#b7e4c7'; } }}
-              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'rgba(183,228,199,0.55)'; } }}
+                ? { background: 'rgba(52,211,153,0.18)', color: '#065f46' }
+                : { color: 'rgba(74,124,89,0.7)' }}
+              onMouseEnter={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.background = 'rgba(52,211,153,0.1)'; (e.currentTarget as HTMLElement).style.color = '#2d6a4f'; } }}
+              onMouseLeave={e => { if (!isActive) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'rgba(74,124,89,0.7)'; } }}
             >
               <span className="w-4 h-4 flex-shrink-0 flex items-center justify-center">{icon}</span>
               <span className="flex-1">{label}</span>
               {id === 'review' && reviewCount > 0 && (
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(149,213,178,0.22)', color: '#95d5b2' }}>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(52,211,153,0.2)', color: '#065f46' }}>
                   {reviewCount}
                 </span>
               )}
-              {isActive && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#95d5b2' }} />}
+              {isActive && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#40916c' }} />}
             </button>
           );
         })}
       </nav>
 
       {/* Filters */}
-      <div className="px-4 py-4 space-y-3 border-t" style={{ borderColor: 'rgba(183,228,199,0.12)' }}>
+      <div className="px-4 py-4 space-y-3 border-t" style={{ borderColor: 'rgba(74,124,89,0.15)' }}>
         <div className="flex items-center justify-between">
-          <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(183,228,199,0.35)' }}>סינון נתונים</span>
+          <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(74,124,89,0.4)' }}>סינון נתונים</span>
           {(filters.selectedProject || filters.selectedContractor || filters.selectedYear || filters.selectedRegions.length > 0) && (
             <button
               onClick={() => {
@@ -118,7 +110,7 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
                 filters.onRegionsChange([]);
               }}
               className="text-[9px] px-1.5 py-0.5 rounded"
-              style={{ color: 'rgba(252,165,165,0.8)', background: 'rgba(252,165,165,0.08)' }}>
+              style={{ color: 'rgba(220,38,38,0.7)', background: 'rgba(220,38,38,0.07)' }}>
               ✕ נקה
             </button>
           )}
@@ -127,10 +119,10 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
         {/* Project filter */}
         {filters.projects.length > 0 && (
           <div>
-            <label className="text-[10px] mb-1 block" style={{ color: 'rgba(183,228,199,0.5)' }}>פרויקט</label>
+            <label className="text-[10px] mb-1 block font-medium" style={{ color: 'rgba(74,124,89,0.65)' }}>פרויקט</label>
             <select
               className="w-full text-xs rounded-xl px-2 py-1.5 focus:outline-none"
-              style={{ background: 'rgba(183,228,199,0.07)', color: '#b7e4c7', border: '1px solid rgba(183,228,199,0.15)' }}
+              style={{ background: 'rgba(74,124,89,0.07)', color: '#2d6a4f', border: '1px solid rgba(74,124,89,0.2)' }}
               value={filters.selectedProject}
               onChange={e => filters.onProjectChange(e.target.value)}
             >
@@ -143,10 +135,10 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
         {/* Contractor filter */}
         {filters.contractors.length > 0 && (
           <div>
-            <label className="text-[10px] mb-1 block" style={{ color: 'rgba(183,228,199,0.5)' }}>קבלן</label>
+            <label className="text-[10px] mb-1 block font-medium" style={{ color: 'rgba(74,124,89,0.65)' }}>קבלן</label>
             <select
               className="w-full text-xs rounded-xl px-2 py-1.5 focus:outline-none"
-              style={{ background: 'rgba(183,228,199,0.07)', color: '#b7e4c7', border: '1px solid rgba(183,228,199,0.15)' }}
+              style={{ background: 'rgba(74,124,89,0.07)', color: '#2d6a4f', border: '1px solid rgba(74,124,89,0.2)' }}
               value={filters.selectedContractor}
               onChange={e => filters.onContractorChange(e.target.value)}
             >
@@ -158,10 +150,10 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
 
         {/* Year filter */}
         <div>
-          <label className="text-[10px] mb-1 block" style={{ color: 'rgba(183,228,199,0.5)' }}>שנה</label>
+          <label className="text-[10px] mb-1 block font-medium" style={{ color: 'rgba(74,124,89,0.65)' }}>שנה</label>
           <select
             className="w-full text-xs rounded-xl px-2 py-1.5 focus:outline-none"
-            style={{ background: 'rgba(183,228,199,0.07)', color: '#b7e4c7', border: '1px solid rgba(183,228,199,0.15)' }}
+            style={{ background: 'rgba(74,124,89,0.07)', color: '#2d6a4f', border: '1px solid rgba(74,124,89,0.2)' }}
             value={filters.selectedYear ?? ''}
             onChange={e => filters.onYearChange(e.target.value ? Number(e.target.value) : null)}
           >
@@ -173,11 +165,11 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
         {/* Region checkboxes */}
         {filters.regions.length > 0 && (
           <div>
-            <label className="text-[10px] mb-1 block" style={{ color: 'rgba(183,228,199,0.5)' }}>אזור</label>
+            <label className="text-[10px] mb-1 block font-medium" style={{ color: 'rgba(74,124,89,0.65)' }}>אזור</label>
             <div className="space-y-1">
               {filters.regions.map(r => (
-                <label key={r} className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'rgba(183,228,199,0.65)' }}>
-                  <input type="checkbox" className="w-3 h-3 accent-[#95d5b2]"
+                <label key={r} className="flex items-center gap-2 text-xs cursor-pointer font-medium" style={{ color: 'rgba(74,124,89,0.8)' }}>
+                  <input type="checkbox" className="w-3 h-3 accent-[#40916c]"
                     checked={filters.selectedRegions.includes(r)}
                     onChange={e => {
                       const next = e.target.checked ? [...filters.selectedRegions, r] : filters.selectedRegions.filter(x => x !== r);
@@ -192,9 +184,9 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
 
         <button onClick={logout}
           className="w-full flex items-center justify-center gap-2 text-xs rounded-2xl py-2 transition-all"
-          style={{ color: 'rgba(183,228,199,0.4)', border: '1px solid rgba(183,228,199,0.1)' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#fca5a5'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(252,165,165,0.2)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(183,228,199,0.4)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(183,228,199,0.1)'; }}
+          style={{ color: 'rgba(74,124,89,0.5)', border: '1px solid rgba(74,124,89,0.18)' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#dc2626'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(220,38,38,0.25)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(74,124,89,0.5)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(74,124,89,0.18)'; }}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
