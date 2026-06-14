@@ -1,5 +1,5 @@
 'use client';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { EmissionRow } from '../../lib/api';
 import { fmt } from '../../lib/utils';
 
@@ -28,6 +28,20 @@ function greeting(name: string) {
 
 export function HomeTab({ data, reviewCount, userName, onNavigate }: Props) {
   const curYear = new Date().getFullYear();
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  async function handleExportPdf() {
+    if (pdfLoading) return;
+    setPdfLoading(true);
+    try {
+      const { exportExecPdf } = await import('../../lib/pdfReport');
+      exportExecPdf(data, userName);
+    } catch {
+      alert('שגיאה בהכנת הדוח. אנא נסה שנית.');
+    } finally {
+      setPdfLoading(false);
+    }
+  }
 
   const stats = useMemo(() => {
     const totalE = data.reduce((s, r) => s + (r.emission_co2e || 0), 0);
@@ -78,6 +92,16 @@ export function HomeTab({ data, reviewCount, userName, onNavigate }: Props) {
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105"
               style={{ background: 'rgba(16,185,129,0.2)', border: '1px solid rgba(16,185,129,0.35)' }}>
               📤 העלאת קובץ חדש
+            </button>
+            <button
+              onClick={handleExportPdf}
+              disabled={pdfLoading || data.length === 0}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)' }}>
+              {pdfLoading
+                ? <><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> מכין דוח...</>
+                : <>📄 דוח מנהלים PDF</>
+              }
             </button>
           </div>
         </div>
