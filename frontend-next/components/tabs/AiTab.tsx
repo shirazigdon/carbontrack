@@ -73,12 +73,12 @@ export function AiTab({ data }: Props) {
             <h2 className="font-bold text-lg mb-1">עוזר AI של CarbonTrack</h2>
             <p className="text-sm text-muted-fg max-w-md">שאל אותי כל שאלה על נתוני הפחמן — אנתח, אשווה ואמליץ בזמן אמת</p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full max-w-xl">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-xl">
             {SUGGESTIONS.map(({ icon, q }) => (
               <button key={q} onClick={() => send(q)}
-                className="flex items-center gap-1.5 px-3 py-3 bg-card border border-border rounded-xl hover:border-primary/40 hover:bg-primary/5 transition-colors shadow-card overflow-hidden">
-                <span className="flex-shrink-0 text-sm">{icon}</span>
-                <span className="text-[10px] font-medium text-slate-700 truncate">{q}</span>
+                className="flex items-center gap-2 px-4 py-5 bg-card border border-border rounded-2xl hover:border-primary/40 hover:bg-primary/5 transition-colors shadow-card overflow-hidden min-h-[64px]">
+                <span className="flex-shrink-0 text-xl">{icon}</span>
+                <span className="text-[11px] font-semibold text-slate-700 truncate leading-snug">{q}</span>
               </button>
             ))}
           </div>

@@ -57,6 +57,16 @@ export function DashboardTab({ data, reviewCount }: Props) {
     return map;
   }, [data]);
 
+  const projectDots = useMemo(() => {
+    const map: Record<string,{emission:number;region:string}> = {};
+    data.forEach(r => {
+      const p = r.project_name||'Unknown';
+      if (!map[p]) map[p] = { emission: 0, region: r.region||'מרכז' };
+      map[p].emission += r.emission_co2e||0;
+    });
+    return Object.entries(map).map(([name,{emission,region}]) => ({name,emission,region}));
+  }, [data]);
+
   const byCategoryFactor = useMemo(() => {
     const map: Record<string,{e:number;w:number}> = {};
     data.forEach(r => {
@@ -106,7 +116,7 @@ export function DashboardTab({ data, reviewCount }: Props) {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={Math.max(360, byProject.length*46)}>
-            <BarChart data={byProject} layout="vertical" margin={{left:8,right:60,top:36,bottom:4}}>
+            <BarChart data={byProject} layout="vertical" margin={{left:8,right:100,top:36,bottom:4}}>
               <XAxis type="number" tick={{fontSize:10,fill:'#94a3b8'}} tickFormatter={v=>`${fmt(v)}`} axisLine={false} tickLine={false}/>
               <YAxis type="category" dataKey="name" width={130} tick={{fontSize:11,fill:'#475569',fontWeight:600}} axisLine={false} tickLine={false}/>
               <Tooltip
@@ -179,7 +189,7 @@ export function DashboardTab({ data, reviewCount }: Props) {
         <div className="font-bold text-sm text-slate-800 mb-0.5">פליטות לפי אזור גיאוגרפי</div>
         <div className="text-xs text-slate-400 font-medium mb-5">t CO₂e לפי אזור</div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          <IsraelMap north={byRegion['צפון']||0} center={byRegion['מרכז']||0} south={byRegion['דרום']||0}/>
+          <IsraelMap north={byRegion['צפון']||0} center={byRegion['מרכז']||0} south={byRegion['דרום']||0} projects={projectDots}/>
           <div className="space-y-5">
             {['צפון','מרכז','דרום'].map((r,i) => {
               const val = byRegion[r]||0;
