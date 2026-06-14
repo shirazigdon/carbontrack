@@ -136,11 +136,10 @@ export function exportExecPdf(data: EmissionRow[], userName: string): void {
   <!-- KPI Strip -->
   <div style="padding:16px 36px 14px;background:#f7fbf7;border-bottom:1.5px solid #d8f3dc">
     <div class="section-label">מדדי ביצוע עיקריים</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
       ${[
         { label: 'סה"כ פליטות', val: `${fmt(totalE / 1000, 1)}t`, sub: 'כלל הפרויקטים', color: '#2d6a4f' },
         { label: 'פרויקטים פעילים', val: `${projCount}`, sub: 'במאגר הנתונים', color: '#40916c' },
-        { label: 'אמינות ממוצעת', val: `${Math.round(avgRel * 100)}%`, sub: 'ציון אמינות נתונים', color: '#52b788' },
       ].map(({ label, val, sub, color }) => `
         <div style="background:#fff;border-radius:10px;padding:13px 14px;border:1px solid #d8f3dc;box-shadow:0 2px 8px rgba(27,67,50,0.05)">
           <div style="font-size:9px;color:#6b9e75;font-weight:600;margin-bottom:6px">${label}</div>
@@ -277,22 +276,6 @@ export function exportExecPdf(data: EmissionRow[], userName: string): void {
           </tr>`).join('')}
       </tbody>
     </table>
-  </div>
-
-  <!-- Reliability summary -->
-  <div style="padding:12px 36px 14px;border-top:1px solid #f1f5f9">
-    <div style="font-size:9px;color:#94a3b8;font-weight:600;margin-bottom:8px">פירוט אמינות נתונים</div>
-    <div style="display:flex;gap:14px;flex-wrap:wrap">
-      ${[
-        { label: 'גבוהה (≥0.9)', count: data.filter(r => r.reliability_score >= 0.9).length, color: '#40916c' },
-        { label: 'בינונית (0.7–0.9)', count: data.filter(r => r.reliability_score >= 0.7 && r.reliability_score < 0.9).length, color: '#d97706' },
-        { label: 'נמוכה (<0.7)', count: data.filter(r => r.reliability_score < 0.7).length, color: '#dc2626' },
-      ].map(({ label, count, color }) => `
-        <div style="display:flex;align-items:center;gap:6px;font-size:9px;color:#475569">
-          <div style="width:10px;height:10px;border-radius:50%;background:${color}"></div>
-          ${label}: <strong style="color:${color}">${count.toLocaleString('he-IL')} (${totalRows ? Math.round(count / totalRows * 100) : 0}%)</strong>
-        </div>`).join('')}
-    </div>
   </div>
 
   <div class="footer">
