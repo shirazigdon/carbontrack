@@ -131,8 +131,9 @@ export function DashboardTab({ data, reviewCount }: Props) {
 
         {/* Pie: by category — chart left, legend right */}
         <div className="rounded-3xl p-6 lg:p-8" style={cardStyle}>
-          <div className="font-bold text-base text-slate-800 mb-0.5">פילוח לפי חומר</div>
-          <div className="text-xs text-slate-400 font-medium mb-4">8 חומרים מובילים · % מסך הפליטות</div>
+          <div className="font-bold text-base text-slate-800 leading-tight">פילוח לפי חומרים</div>
+          <div className="font-semibold text-sm text-slate-600 mb-0.5">עיקריים</div>
+          <div className="text-xs text-slate-400 font-medium mb-4">8 החומרים המובילים · % מסך הפליטות</div>
           <div className="flex gap-4 items-center">
             {/* Pie */}
             <div className="flex-shrink-0" style={{width:200}}>

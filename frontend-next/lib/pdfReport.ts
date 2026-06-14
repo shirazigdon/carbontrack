@@ -31,7 +31,11 @@ export function exportExecPdf(data: EmissionRow[], userName: string): void {
     .map(([name, {e, w}]) => ({ name, t: w > 0 ? e / (w / 1000) : 0 }))
     .sort((a, b) => b.t - a.t).slice(0, 7);
   const maxP = Math.max(...byProject.map(p => p.t), 1);
-  const topProjTotal = Object.entries(projMap).map(([n, {e}]) => ({ name: n, t: e / 1000 })).sort((a, b) => b.t - a.t)[0];
+  const byProjectTotal = Object.entries(projMap)
+    .map(([name, {e}]) => ({ name, t: e / 1000 }))
+    .sort((a, b) => b.t - a.t).slice(0, 7);
+  const maxPTotal  = Math.max(...byProjectTotal.map(p => p.t), 1);
+  const topProjTotal = byProjectTotal[0];
 
   // By category
   const catMap: Record<string, number> = {};
@@ -125,16 +129,15 @@ export function exportExecPdf(data: EmissionRow[], userName: string): void {
     </div>
     <div style="text-align:left;margin-top:4px">
       <div style="color:#95d5b2;font-size:17px;font-weight:900">🌿 CarbonTrack</div>
-      <div style="color:rgba(255,255,255,0.4);font-size:9px;margin-top:8px;line-height:1.6">מערכת ניהול פליטות פחמן<br>סודי – לשימוש פנימי בלבד</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:9px;margin-top:8px;line-height:1.6">מערכת ניהול פליטות פחמן</div>
     </div>
   </div>
 
   <!-- KPI Strip -->
   <div style="padding:16px 36px 14px;background:#f7fbf7;border-bottom:1.5px solid #d8f3dc">
     <div class="section-label">מדדי ביצוע עיקריים</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
       ${[
-        { label: `פליטות ${curYear}`, val: `${fmt(yearE / 1000, 1)}t`, sub: 'CO₂e שנה נוכחית', color: '#1b4332' },
         { label: 'סה"כ פליטות', val: `${fmt(totalE / 1000, 1)}t`, sub: 'כלל הפרויקטים', color: '#2d6a4f' },
         { label: 'פרויקטים פעילים', val: `${projCount}`, sub: 'במאגר הנתונים', color: '#40916c' },
         { label: 'אמינות ממוצעת', val: `${Math.round(avgRel * 100)}%`, sub: 'ציון אמינות נתונים', color: '#52b788' },
@@ -152,7 +155,7 @@ export function exportExecPdf(data: EmissionRow[], userName: string): void {
     <div class="section-label">תובנות מפתח</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
       <div style="background:#eef8f2;border-radius:10px;padding:12px 14px;border:1px solid #b7e4c7">
-        <div style="font-size:9px;color:#40916c;font-weight:700;margin-bottom:5px">🏗️ הפרויקט המוביל</div>
+        <div style="font-size:9px;color:#40916c;font-weight:700;margin-bottom:5px">🏭 הפולט הגדול ביותר</div>
         <div style="font-size:12px;font-weight:800;color:#1b4332;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(topProjTotal?.name || '—')}</div>
         <div style="font-size:10px;color:#40916c">${topProjTotal ? fmt(topProjTotal.t, 1) + 't CO₂e' : ''}</div>
       </div>
@@ -169,15 +172,22 @@ export function exportExecPdf(data: EmissionRow[], userName: string): void {
     </div>
   </div>
 
-  <!-- Bar Chart: by Project (normalized) -->
-  <div style="padding:18px 36px 14px">
-    <div style="font-size:13px;font-weight:700;color:#1b4332;margin-bottom:3px">השוואת פרויקטים – פליטות מנורמלות</div>
-    <div style="font-size:9px;color:#94a3b8;margin-bottom:14px">ק"ג CO₂e לטון חומר (נורמלי לפי משקל) · ${byProject.length} פרויקטים מובילים</div>
+  <!-- Bar Chart 1: פליטות כוללות לפי פרויקט -->
+  <div style="padding:14px 36px 10px;border-bottom:1px solid #f1f5f9">
+    <div style="font-size:13px;font-weight:700;color:#1b4332;margin-bottom:2px">פליטות כוללות לפי פרויקט</div>
+    <div style="font-size:9px;color:#94a3b8;margin-bottom:12px">t CO₂e – סה"כ פליטות לכל פרויקט בתקופה · ${byProjectTotal.length} פרויקטים</div>
+    ${barRows(byProjectTotal, maxPTotal, 't')}
+  </div>
+
+  <!-- Bar Chart 2: השוואה מנורמלת (בסוף) -->
+  <div style="padding:14px 36px 12px">
+    <div style="font-size:13px;font-weight:700;color:#475569;margin-bottom:2px">השוואת אינטנסיביות פליטות בין פרויקטים</div>
+    <div style="font-size:9px;color:#94a3b8;margin-bottom:12px">ק"ג CO₂e לטון חומר (נורמלי לפי משקל) – מי מזהם יותר לטון?</div>
     ${barRows(byProject, maxP, 'kg/t')}
   </div>
 
   <div class="footer">
-    <span>סודי – לשימוש פנימי בלבד · נתיבי ישראל</span>
+    <span>נתיבי ישראל</span>
     <span>עמ' 1 מתוך 2 · הופק: ${today}</span>
   </div>
 </div>
@@ -203,6 +213,7 @@ export function exportExecPdf(data: EmissionRow[], userName: string): void {
           <div style="position:absolute;width:94px;height:94px;background:#fff;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center">
             <div style="font-size:18px;font-weight:900;color:#1b4332">${byCategory.length}</div>
             <div style="font-size:8px;color:#94a3b8">חומרים</div>
+            <div style="font-size:7px;color:#b0bec5;margin-top:1px">עיקריים</div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;margin-top:12px;width:100%">
@@ -285,7 +296,7 @@ export function exportExecPdf(data: EmissionRow[], userName: string): void {
   </div>
 
   <div class="footer">
-    <span>סודי – לשימוש פנימי בלבד · נתיבי ישראל</span>
+    <span>נתיבי ישראל</span>
     <span>עמ' 2 מתוך 2 · הופק: ${today}</span>
   </div>
 </div>
