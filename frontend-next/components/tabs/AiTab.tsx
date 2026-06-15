@@ -1,10 +1,10 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { aiChat } from '../../lib/api';
+import { aiChatStream } from '../../lib/api';
 import { EmissionRow } from '../../lib/api';
 import { fmt } from '../../lib/utils';
 
-interface Msg { role: 'user' | 'assistant'; content: string; }
+interface Msg { role: 'user' | 'assistant'; content: string; streaming?: boolean; }
 
 interface Props { data: EmissionRow[]; }
 
@@ -50,18 +50,47 @@ export function AiTab({ data }: Props) {
 
   const send = async (q: string) => {
     if (!q.trim() || loading) return;
-    const newMsgs: Msg[] = [...messages, { role: 'user', content: q }];
-    setMessages(newMsgs);
+    const history: Msg[] = [...messages, { role: 'user', content: q }];
+    setMessages(history);
     setInput('');
     setLoading(true);
-    try {
-      const ctx = buildContext(data);
-      const { reply } = await aiChat(newMsgs, ctx);
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
-    } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `שגיאה: ${e}` }]);
-    }
-    setLoading(false);
+
+    // Add empty streaming placeholder
+    setMessages(prev => [...prev, { role: 'assistant', content: '', streaming: true }]);
+
+    const ctx = buildContext(data);
+    const apiMsgs = history.map(m => ({ role: m.role, content: m.content }));
+
+    await aiChatStream(
+      apiMsgs,
+      ctx,
+      (chunk) => {
+        setMessages(prev => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.streaming) updated[updated.length - 1] = { ...last, content: last.content + chunk };
+          return updated;
+        });
+      },
+      () => {
+        setMessages(prev => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.streaming) updated[updated.length - 1] = { ...last, streaming: false };
+          return updated;
+        });
+        setLoading(false);
+      },
+      (err) => {
+        setMessages(prev => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.streaming) updated[updated.length - 1] = { role: 'assistant', content: `שגיאה: ${err}` };
+          return updated;
+        });
+        setLoading(false);
+      },
+    );
   };
 
   return (
@@ -75,7 +104,7 @@ export function AiTab({ data }: Props) {
               <div className="flex items-center gap-2.5">
                 <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-full text-white"
                   style={{background:'linear-gradient(135deg,#7b66b2,#a78bfa)'}}>⚡ ENTERPRISE</span>
-                <span className="text-xs text-purple-200/70">Gemini 2.5 Pro · ניתוח אוטומטי</span>
+                <span className="text-xs text-purple-200/70">Gemini 2.5 Pro · Streaming · ניתוח אוטומטי</span>
               </div>
               <button
                 onClick={() => send('נתח את נתוני הפליטות שלנו בצורה מקיפה: זהה את הפרויקט המוביל, החומרים הבעייתיים ביותר, תבניות חריגות, והצע 3 המלצות מעשיות לצמצום פליטות עם אומדן חיסכון.')}
@@ -112,14 +141,10 @@ export function AiTab({ data }: Props) {
                   : 'bg-muted text-gray-800 rounded-tl-sm'
               }`} style={m.role === 'user' ? { background: 'var(--grad-primary)' } : undefined}>
                 {m.content}
+                {m.streaming && <span className="inline-block w-2 h-4 bg-purple-400 animate-pulse ml-1 rounded-sm align-middle" />}
               </div>
             </div>
           ))}
-          {loading && (
-            <div className="flex justify-end">
-              <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-muted-fg animate-pulse">מנתח...</div>
-            </div>
-          )}
           <div ref={bottomRef} />
         </div>
       )}

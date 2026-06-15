@@ -6796,8 +6796,22 @@ def processing_status():
 
 
 # ====================================================================
-# AI CHAT ENDPOINT
+# AI CHAT ENDPOINTS
 # ====================================================================
+def _build_ai_contents(messages):
+    return [
+        {"role": ("user" if m["role"] == "user" else "model"), "parts": [{"text": m["content"]}]}
+        for m in messages
+    ]
+
+def _ai_system_cfg(context):
+    return types.GenerateContentConfig(
+        system_instruction=context or "אתה עוזר AI מומחה לניתוח פליטות פחמן. ענה בעברית.",
+    )
+
+VERTEX_LOCATIONS = ["global", "us-central1", "europe-west1"]
+
+
 @app.post("/ai/chat")
 def ai_chat():
     try:
@@ -6807,15 +6821,11 @@ def ai_chat():
         if not messages:
             return jsonify({"error": "חסרות הודעות"}), 400
 
-        contents = [
-            {"role": ("user" if m["role"] == "user" else "model"), "parts": [{"text": m["content"]}]}
-            for m in messages
-        ]
-        cfg = types.GenerateContentConfig(system_instruction=context or "אתה עוזר AI מומחה לניתוח פליטות פחמן. ענה בעברית.")
+        contents = _build_ai_contents(messages)
+        cfg = _ai_system_cfg(context)
 
-        locations = ["global", "us-central1", "europe-west1"]
         last_err = None
-        for loc in locations:
+        for loc in VERTEX_LOCATIONS:
             for attempt in range(3):
                 try:
                     client = genai.Client(vertexai=True, project=VERTEX_PROJECT, location=loc)
@@ -6826,13 +6836,54 @@ def ai_chat():
                 except Exception as e:
                     last_err = e
                     if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                        import time as _time
-                        _time.sleep(2 ** attempt)
+                        time.sleep(2 ** attempt)
                         continue
                     break
         return jsonify({"error": f"AI לא זמין: {last_err}"}), 503
     except Exception as exc:
         logger.exception("ai/chat failed")
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.post("/ai/chat/stream")
+def ai_chat_stream():
+    from flask import Response, stream_with_context
+    try:
+        body = request.get_json(force=True) or {}
+        messages = body.get("messages", [])
+        context = body.get("context", "")
+        if not messages:
+            return jsonify({"error": "חסרות הודעות"}), 400
+
+        contents = _build_ai_contents(messages)
+        cfg = _ai_system_cfg(context)
+
+        def generate():
+            for loc in VERTEX_LOCATIONS:
+                try:
+                    client = genai.Client(vertexai=True, project=VERTEX_PROJECT, location=loc)
+                    for chunk in client.models.generate_content_stream(
+                        model=VERTEX_MODEL, contents=contents, config=cfg
+                    ):
+                        if chunk.text:
+                            yield f"data: {json.dumps({'chunk': chunk.text})}\n\n"
+                    yield "data: [DONE]\n\n"
+                    return
+                except Exception as e:
+                    logger.warning("Stream failed at %s: %s", loc, e)
+                    if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                        time.sleep(1)
+                    continue
+            yield f"data: {json.dumps({'error': 'AI לא זמין'})}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return Response(
+            stream_with_context(generate()),
+            content_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+    except Exception as exc:
+        logger.exception("ai/chat/stream failed")
         return jsonify({"error": str(exc)}), 500
 
 

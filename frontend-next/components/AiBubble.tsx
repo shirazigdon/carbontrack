@@ -1,9 +1,9 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { aiChat, EmissionRow } from '../lib/api';
+import { aiChatStream, EmissionRow } from '../lib/api';
 import { fmt } from '../lib/utils';
 
-interface Msg { role: 'user' | 'assistant'; content: string; }
+interface Msg { role: 'user' | 'assistant'; content: string; streaming?: boolean; }
 
 function buildContext(data: EmissionRow[]): string {
   if (!data.length) return 'אתה עוזר AI מומחה לניתוח פליטות פחמן.';
@@ -29,18 +29,49 @@ export function AiBubble({ data }: { data: EmissionRow[] }) {
 
   const send = useCallback(async (q: string) => {
     if (!q.trim() || loading) return;
-    const newMsgs: Msg[] = [...messages, { role: 'user', content: q }];
-    setMessages(newMsgs);
+    const history: Msg[] = [...messages, { role: 'user', content: q }];
+    setMessages(history);
     setInput('');
     setLoading(true);
     setOpen(true);
-    try {
-      const { reply } = await aiChat(newMsgs.slice(-8), buildContext(data));
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
-    } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `שגיאה: ${e}` }]);
-    }
-    setLoading(false);
+
+    // Add empty streaming placeholder
+    setMessages(prev => [...prev, { role: 'assistant', content: '', streaming: true }]);
+
+    const ctx = buildContext(data);
+    const apiMsgs = history.slice(-8).map(m => ({ role: m.role, content: m.content }));
+
+    await aiChatStream(
+      apiMsgs,
+      ctx,
+      (chunk) => {
+        setMessages(prev => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.streaming) updated[updated.length - 1] = { ...last, content: last.content + chunk };
+          return updated;
+        });
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      },
+      () => {
+        setMessages(prev => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.streaming) updated[updated.length - 1] = { ...last, streaming: false };
+          return updated;
+        });
+        setLoading(false);
+      },
+      (err) => {
+        setMessages(prev => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.streaming) updated[updated.length - 1] = { role: 'assistant', content: `שגיאה: ${err}` };
+          return updated;
+        });
+        setLoading(false);
+      },
+    );
   }, [messages, loading, data]);
 
   // Enterprise auto-bot: trigger analysis on first open
@@ -81,7 +112,7 @@ export function AiBubble({ data }: { data: EmissionRow[] }) {
                 <span className="text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded-full text-white"
                   style={{background:'linear-gradient(135deg,#7b66b2,#a78bfa)'}}>⚡ PRO</span>
               </div>
-              <div className="text-purple-300/50 text-[10px]">Vertex AI · Gemini 2.5 Pro · Auto-Analysis</div>
+              <div className="text-purple-300/50 text-[10px]">Vertex AI · Gemini 2.5 Pro · Streaming</div>
             </div>
             <div className="flex gap-2">
               <button onClick={() => setMessages([])} className="text-white/40 hover:text-white text-xs transition-colors" title="נקה">🗑️</button>
@@ -100,10 +131,10 @@ export function AiBubble({ data }: { data: EmissionRow[] }) {
                   m.role === 'user' ? 'text-white rounded-tr-sm' : 'bg-muted text-gray-700 rounded-tl-sm'
                 }`} style={m.role === 'user' ? { background: 'hsl(142,55%,35%)' } : undefined}>
                   {m.content}
+                  {m.streaming && <span className="inline-block w-1.5 h-3 bg-purple-400 animate-pulse ml-0.5 rounded-sm" />}
                 </div>
               </div>
             ))}
-            {loading && <div className="flex justify-end"><div className="bg-muted rounded-xl rounded-tl-sm px-3 py-2 text-xs text-muted-fg animate-pulse">מנתח...</div></div>}
             <div ref={bottomRef} />
           </div>
 

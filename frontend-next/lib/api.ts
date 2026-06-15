@@ -95,6 +95,43 @@ export const rejectReview = (review_id: string, reviewed_by = 'dashboard') =>
 export const aiChat = (messages: { role: string; content: string }[], context: string) =>
   req<{ reply: string }>('/ai/chat', { method: 'POST', body: JSON.stringify({ messages, context }) });
 
+// Streaming AI chat — calls onChunk for each token, onDone when complete
+export async function aiChatStream(
+  messages: { role: string; content: string }[],
+  context: string,
+  onChunk: (chunk: string) => void,
+  onDone: () => void,
+  onError: (err: string) => void,
+): Promise<void> {
+  const res = await fetch(`${BACKEND}/ai/chat/stream`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages, context }),
+  });
+  if (!res.ok || !res.body) { onError(`HTTP ${res.status}`); return; }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop() ?? '';
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const raw = line.slice(6);
+      if (raw === '[DONE]') { onDone(); return; }
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed.chunk) onChunk(parsed.chunk);
+        else if (parsed.error) onError(parsed.error);
+      } catch { /* ignore malformed SSE */ }
+    }
+  }
+  onDone();
+}
+
 // Manage DB
 export const deleteProject = (project_name: string) =>
   req('/manage-db', { method: 'POST', body: JSON.stringify({ action: 'delete_project', project_name }) });
