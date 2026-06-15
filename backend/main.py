@@ -95,7 +95,7 @@ HTTP_TIMEOUT = int(os.environ.get("HTTP_TIMEOUT", "25"))
 
 VERTEX_PROJECT = os.environ.get("GOOGLE_CLOUD_PROJECT", PROJECT_ID)
 VERTEX_LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "global")
-VERTEX_MODEL = os.environ.get("VERTEX_MODEL", "gemini-2.5-flash")
+VERTEX_MODEL = os.environ.get("VERTEX_MODEL", "gemini-2.5-pro")
 USE_VERTEX_CLASSIFIER = os.environ.get("USE_VERTEX_CLASSIFIER", "true").lower() == "true"
 AUTO_APPROVE_CONFIDENCE = float(os.environ.get("AUTO_APPROVE_CONFIDENCE", "0.85"))
 DEFAULT_RELIABILITY_THRESHOLD = float(os.environ.get("DEFAULT_RELIABILITY_THRESHOLD", "0.85"))

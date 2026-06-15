@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { aiChat, EmissionRow } from '../lib/api';
 import { fmt } from '../lib/utils';
 
@@ -21,12 +21,13 @@ export function AiBubble({ data }: { data: EmissionRow[] }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const autoTriggered = useRef(false);
 
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, open]);
 
-  const send = async (q: string) => {
+  const send = useCallback(async (q: string) => {
     if (!q.trim() || loading) return;
     const newMsgs: Msg[] = [...messages, { role: 'user', content: q }];
     setMessages(newMsgs);
@@ -40,7 +41,15 @@ export function AiBubble({ data }: { data: EmissionRow[] }) {
       setMessages(prev => [...prev, { role: 'assistant', content: `שגיאה: ${e}` }]);
     }
     setLoading(false);
-  };
+  }, [messages, loading, data]);
+
+  // Enterprise auto-bot: trigger analysis on first open
+  useEffect(() => {
+    if (open && data.length > 0 && messages.length === 0 && !autoTriggered.current && !loading) {
+      autoTriggered.current = true;
+      send('זהה את הפרויקט הכי מזהם, החומר הכי בעייתי, והמלצה אחת לצמצום — בשלוש נקודות קצרות.');
+    }
+  }, [open, data.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
@@ -48,11 +57,13 @@ export function AiBubble({ data }: { data: EmissionRow[] }) {
       <button
         onClick={() => setOpen(o => !o)}
         className="fixed bottom-6 left-6 w-14 h-14 rounded-full text-white text-xl shadow-elevated z-50 flex items-center justify-center hover:scale-110 transition-transform"
-        style={{ background: 'var(--grad-primary)' }}
-        title="עוזר AI">
+        style={{ background: 'linear-gradient(135deg,#1e1040,#7b66b2)' }}
+        title="Enterprise AI">
         🤖
+        <span className="absolute -top-1.5 -right-1.5 text-[7px] font-black tracking-tight px-1 py-0.5 rounded-full text-white"
+          style={{background:'linear-gradient(135deg,#7b66b2,#a78bfa)'}}>PRO</span>
         {messages.length > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-white text-[9px] flex items-center justify-center font-bold">
+          <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-destructive text-white text-[9px] flex items-center justify-center font-bold">
             {messages.filter(m => m.role === 'assistant').length}
           </span>
         )}
@@ -62,10 +73,15 @@ export function AiBubble({ data }: { data: EmissionRow[] }) {
       {open && (
         <div className="fixed bottom-24 left-6 w-80 max-h-[480px] bg-white rounded-2xl shadow-elevated z-50 flex flex-col overflow-hidden border border-border">
           {/* Header */}
-          <div style={{ background: 'var(--grad-hero)' }} className="px-4 py-3 flex items-center justify-between flex-shrink-0">
+          <div className="px-4 py-3 flex items-center justify-between flex-shrink-0"
+            style={{background:'linear-gradient(135deg,#1e1040,#2d1b6e)'}}>
             <div>
-              <div className="text-white font-bold text-sm">🤖 עוזר נתונים AI</div>
-              <div className="text-white/40 text-[10px]">Vertex AI · Gemini 2.5 Flash</div>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-bold text-sm">🤖 Enterprise AI</span>
+                <span className="text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded-full text-white"
+                  style={{background:'linear-gradient(135deg,#7b66b2,#a78bfa)'}}>⚡ PRO</span>
+              </div>
+              <div className="text-purple-300/50 text-[10px]">Vertex AI · Gemini 2.5 Pro · Auto-Analysis</div>
             </div>
             <div className="flex gap-2">
               <button onClick={() => setMessages([])} className="text-white/40 hover:text-white text-xs transition-colors" title="נקה">🗑️</button>

@@ -68,6 +68,25 @@ export function AiTab({ data }: Props) {
     <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px]">
       {messages.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-6 pb-4">
+          {/* Enterprise banner */}
+          <div className="w-full max-w-xl">
+            <div className="flex items-center justify-between rounded-2xl px-4 py-3 border"
+              style={{background:'linear-gradient(135deg,#1e1040,#2d1b6e)', borderColor:'rgba(167,139,250,0.3)'}}>
+              <div className="flex items-center gap-2.5">
+                <span className="text-[10px] font-black tracking-widest uppercase px-2 py-1 rounded-full text-white"
+                  style={{background:'linear-gradient(135deg,#7b66b2,#a78bfa)'}}>⚡ ENTERPRISE</span>
+                <span className="text-xs text-purple-200/70">Gemini 2.5 Pro · ניתוח אוטומטי</span>
+              </div>
+              <button
+                onClick={() => send('נתח את נתוני הפליטות שלנו בצורה מקיפה: זהה את הפרויקט המוביל, החומרים הבעייתיים ביותר, תבניות חריגות, והצע 3 המלצות מעשיות לצמצום פליטות עם אומדן חיסכון.')}
+                disabled={loading || data.length === 0}
+                className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl text-white transition-all hover:opacity-90 disabled:opacity-40"
+                style={{background:'linear-gradient(135deg,#7b66b2,#a78bfa)'}}>
+                {loading ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"/>מנתח...</> : <>⚡ ניתוח אוטומטי</>}
+              </button>
+            </div>
+          </div>
+
           <div className="text-center">
             <div className="text-5xl mb-3">🤖</div>
             <h2 className="font-bold text-lg mb-1">עוזר AI של CarbonTrack</h2>
