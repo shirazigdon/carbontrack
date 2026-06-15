@@ -29,13 +29,23 @@ function greeting(name: string) {
 export function HomeTab({ data, reviewCount, userName, onNavigate }: Props) {
   const curYear = new Date().getFullYear();
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const [pdfSelectedProjects, setPdfSelectedProjects] = useState<string[]>([]);
+
+  const allPdfProjects = useMemo(() =>
+    Array.from(new Set(data.map(r => r.project_name).filter(Boolean))).sort() as string[],
+  [data]);
 
   async function handleExportPdf() {
     if (pdfLoading) return;
+    setPdfDialogOpen(false);
     setPdfLoading(true);
     try {
       const { exportExecPdf } = await import('../../lib/pdfReport');
-      exportExecPdf(data, userName);
+      const filteredData = pdfSelectedProjects.length > 0
+        ? data.filter(r => r.project_name && pdfSelectedProjects.includes(r.project_name))
+        : data;
+      exportExecPdf(filteredData, userName);
     } catch {
       alert('שגיאה בהכנת הדוח. אנא נסה שנית.');
     } finally {
@@ -94,7 +104,7 @@ export function HomeTab({ data, reviewCount, userName, onNavigate }: Props) {
               📤 העלאת קובץ חדש
             </button>
             <button
-              onClick={handleExportPdf}
+              onClick={() => { setPdfSelectedProjects([]); setPdfDialogOpen(true); }}
               disabled={pdfLoading || data.length === 0}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)' }}>
@@ -175,6 +185,81 @@ export function HomeTab({ data, reviewCount, userName, onNavigate }: Props) {
               sub="חומרים שנסרקו"
               onClick={() => onNavigate('data')}
             />
+          </div>
+        </div>
+      )}
+
+      {/* PDF Configuration Dialog */}
+      {pdfDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{background:'rgba(15,23,42,0.45)'}}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" dir="rtl">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between" style={{background:'linear-gradient(135deg,#f0faf5,#ffffff)'}}>
+              <div className="font-bold text-slate-800 text-base">📄 הגדרות דוח מנהלים</div>
+              <button onClick={() => setPdfDialogOpen(false)} className="w-7 h-7 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all text-xl leading-none">×</button>
+            </div>
+            <div className="px-6 py-5 space-y-5 max-h-[65vh] overflow-y-auto">
+              <div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">בחר פרויקטים לדוח</div>
+                <label className="flex items-center gap-3 mb-3 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 accent-[#40916c] flex-shrink-0"
+                    checked={pdfSelectedProjects.length === 0}
+                    onChange={() => setPdfSelectedProjects([])}
+                  />
+                  <span className="text-sm font-bold text-slate-700">כל הפרויקטים ({allPdfProjects.length})</span>
+                </label>
+                <div className="h-px bg-slate-100 mb-3"/>
+                <div className="space-y-2.5">
+                  {allPdfProjects.map(p => (
+                    <label key={p} className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" className="w-4 h-4 accent-[#40916c] flex-shrink-0"
+                        checked={pdfSelectedProjects.length === 0 || pdfSelectedProjects.includes(p)}
+                        onChange={e => {
+                          if (pdfSelectedProjects.length === 0) {
+                            setPdfSelectedProjects(allPdfProjects.filter(x => x !== p));
+                          } else {
+                            const next = e.target.checked
+                              ? [...pdfSelectedProjects, p]
+                              : pdfSelectedProjects.filter(x => x !== p);
+                            setPdfSelectedProjects(next.length === allPdfProjects.length ? [] : next);
+                          }
+                        }}
+                      />
+                      <span className="text-sm text-slate-600">{p}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">שדרוג הדוח</div>
+                <div className="space-y-3">
+                  {[
+                    { icon:'📋', label:'פירוט חומרים לכל פרויקט בנפרד' },
+                    { icon:'📈', label:'ניתוח טרנד שנתי' },
+                    { icon:'🤖', label:'המלצות AI לצמצום פליטות' },
+                  ].map(opt => (
+                    <div key={opt.label} className="flex items-center gap-3 opacity-50 cursor-not-allowed select-none">
+                      <div className="w-4 h-4 rounded border border-slate-200 flex-shrink-0"/>
+                      <span className="text-sm text-slate-500 flex-1">{opt.icon} {opt.label}</span>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{background:'rgba(52,211,153,0.12)',color:'#40916c'}}>בקרוב</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-slate-100 flex gap-3 justify-end">
+              <button onClick={() => setPdfDialogOpen(false)}
+                className="px-5 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-700 border border-slate-200 hover:bg-slate-50 transition-all">
+                ביטול
+              </button>
+              <button onClick={handleExportPdf} disabled={pdfLoading || data.length === 0}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
+                style={{background:'linear-gradient(135deg,#2d6a4f,#40916c)'}}>
+                {pdfLoading
+                  ? <><span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"/>מכין...</>
+                  : <>📄 צור דוח</>
+                }
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -27,7 +27,7 @@ interface SidebarProps {
   reviewCount?: number;
   filters: {
     projects: string[];
-    selectedProject: string;
+    selectedProjects: string[];
     contractors: string[];
     selectedContractor: string;
     regions: string[];
@@ -35,7 +35,7 @@ interface SidebarProps {
     years: number[];
     selectedYear: number | null;
     reliabilityThreshold: number;
-    onProjectChange: (v: string) => void;
+    onProjectChange: (v: string[]) => void;
     onContractorChange: (v: string) => void;
     onRegionsChange: (v: string[]) => void;
     onYearChange: (v: number | null) => void;
@@ -101,10 +101,10 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
       <div className="px-4 py-4 space-y-3 border-t" style={{ borderColor: 'rgba(74,124,89,0.15)' }}>
         <div className="flex items-center justify-between">
           <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(74,124,89,0.4)' }}>סינון נתונים</span>
-          {(filters.selectedProject || filters.selectedContractor || filters.selectedYear || filters.selectedRegions.length > 0) && (
+          {(filters.selectedProjects.length > 0 || filters.selectedContractor || filters.selectedYear || filters.selectedRegions.length > 0) && (
             <button
               onClick={() => {
-                filters.onProjectChange('');
+                filters.onProjectChange([]);
                 filters.onContractorChange('');
                 filters.onYearChange(null);
                 filters.onRegionsChange([]);
@@ -119,16 +119,29 @@ export function Sidebar({ activeTab, onTabChange, reviewCount = 0, filters }: Si
         {/* Project filter */}
         {filters.projects.length > 0 && (
           <div>
-            <label className="text-[10px] mb-1 block font-medium" style={{ color: 'rgba(74,124,89,0.65)' }}>פרויקט</label>
-            <select
-              className="w-full text-xs rounded-xl px-2 py-1.5 focus:outline-none"
-              style={{ background: 'rgba(74,124,89,0.07)', color: '#2d6a4f', border: '1px solid rgba(74,124,89,0.2)' }}
-              value={filters.selectedProject}
-              onChange={e => filters.onProjectChange(e.target.value)}
-            >
-              <option value="">כל הפרויקטים</option>
-              {filters.projects.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[10px] font-medium" style={{ color: 'rgba(74,124,89,0.65)' }}>פרויקטים</label>
+              {filters.selectedProjects.length > 0 && (
+                <button onClick={() => filters.onProjectChange([])} className="text-[9px]" style={{ color: 'rgba(74,124,89,0.5)' }}>
+                  כל {filters.projects.length}
+                </button>
+              )}
+            </div>
+            <div className="space-y-1 max-h-36 overflow-y-auto pr-0.5">
+              {filters.projects.map(p => (
+                <label key={p} className="flex items-center gap-2 text-[10px] cursor-pointer font-medium leading-snug" style={{ color: 'rgba(74,124,89,0.8)' }}>
+                  <input type="checkbox" className="w-3 h-3 flex-shrink-0 accent-[#40916c]"
+                    checked={filters.selectedProjects.includes(p)}
+                    onChange={e => {
+                      const next = e.target.checked
+                        ? [...filters.selectedProjects, p]
+                        : filters.selectedProjects.filter(x => x !== p);
+                      filters.onProjectChange(next);
+                    }} />
+                  <span className="leading-tight">{p}</span>
+                </label>
+              ))}
+            </div>
           </div>
         )}
 

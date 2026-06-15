@@ -49,7 +49,7 @@ export function Dashboard({ demoMode = false }: { demoMode?: boolean }) {
 
   const [selectedYear, setSelectedYear]           = useState<number | null>(null);
   const [selectedRegions, setSelectedRegions]     = useState<string[]>([]);
-  const [selectedProject, setSelectedProject]     = useState<string>('');
+  const [selectedProjects, setSelectedProjects]   = useState<string[]>([]);
   const [selectedContractor, setSelectedContractor] = useState<string>('');
   const [reliabilityThreshold, setReliabilityThreshold] = useState(0.85);
 
@@ -73,16 +73,15 @@ export function Dashboard({ demoMode = false }: { demoMode?: boolean }) {
     return emissions.filter(r => {
       if (selectedYear && r.year !== selectedYear) return false;
       if (selectedRegions.length && !selectedRegions.includes(r.region)) return false;
-      if (selectedProject && r.project_name !== selectedProject) return false;
+      if (selectedProjects.length && !selectedProjects.includes(r.project_name)) return false;
       if (selectedContractor && r.contractor !== selectedContractor) return false;
       return true;
     });
-  }, [emissions, selectedYear, selectedRegions, selectedProject, selectedContractor]);
+  }, [emissions, selectedYear, selectedRegions, selectedProjects, selectedContractor]);
 
-  const loadData = useCallback(async (project?: string) => {
+  const loadData = useCallback(async () => {
     if (demoMode) {
-      const rows = project ? DEMO_EMISSIONS.filter(r => r.project_name === project) : DEMO_EMISSIONS;
-      setEmissions(rows);
+      setEmissions(DEMO_EMISSIONS);
       setProjects(Array.from(new Set(DEMO_EMISSIONS.map(r => r.project_name))));
       setLoading(false);
       return;
@@ -90,7 +89,7 @@ export function Dashboard({ demoMode = false }: { demoMode?: boolean }) {
     setLoading(true);
     try {
       const [emRes, revRes, projRes] = await Promise.allSettled([
-        fetchEmissions(project),
+        fetchEmissions(),
         fetchReview(),
         fetchProjects(),
       ]);
@@ -147,7 +146,7 @@ export function Dashboard({ demoMode = false }: { demoMode?: boolean }) {
           reviewCount={review.length}
           filters={{
             projects: allProjects,
-            selectedProject,
+            selectedProjects,
             contractors: allContractors,
             selectedContractor,
             regions,
@@ -155,10 +154,7 @@ export function Dashboard({ demoMode = false }: { demoMode?: boolean }) {
             years,
             selectedYear,
             reliabilityThreshold,
-            onProjectChange: (p: string) => {
-              setSelectedProject(p);
-              loadData(p || undefined);
-            },
+            onProjectChange: setSelectedProjects,
             onContractorChange: setSelectedContractor,
             onRegionsChange: setSelectedRegions,
             onYearChange: setSelectedYear,
@@ -195,7 +191,7 @@ export function Dashboard({ demoMode = false }: { demoMode?: boolean }) {
                 <span className="hidden md:inline">{emissions.length.toLocaleString()} רשומות</span>
                 <span className="md:hidden">{emissions.length}</span>
               </div>
-              <button onClick={() => loadData(selectedProject || undefined)}
+              <button onClick={() => loadData()}
                 className="w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all text-sm">
                 ↻
               </button>

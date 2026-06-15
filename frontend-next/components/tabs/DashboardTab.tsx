@@ -116,15 +116,16 @@ export function DashboardTab({ data, reviewCount }: Props) {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={Math.max(360, byProject.length*46)}>
-            <BarChart data={byProject} layout="vertical" margin={{left:8,right:100,top:36,bottom:4}}>
+            <BarChart data={byProject} layout="vertical" margin={{left:8,right:8,top:8,bottom:4}}>
               <XAxis type="number" tick={{fontSize:10,fill:'#94a3b8'}} tickFormatter={v=>`${fmt(v)}`} axisLine={false} tickLine={false}/>
-              <YAxis type="category" dataKey="name" width={130} tick={{fontSize:11,fill:'#475569',fontWeight:600}} axisLine={false} tickLine={false}/>
+              <YAxis type="category" dataKey="name" orientation="right" width={175} tick={{fontSize:10,fill:'#475569',fontWeight:600}} axisLine={false} tickLine={false}/>
               <Tooltip
                 formatter={(v)=>[`${fmt(Number(v),1)} ${barMode==='total'?'t CO₂e':'kg/t'}`,'']}
                 contentStyle={{fontFamily:'Heebo',fontSize:12,borderRadius:'12px',border:'1px solid #e2e8f0',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}
               />
-              <Bar dataKey={barMode==='total'?'total':'normalized'} fill="#5b9bd5" radius={[0,6,6,0]}
-                label={{position:'right',fontSize:11,fill:'#64748b',fontWeight:700,formatter:(v: unknown)=>fmt(Number(v),1)}}/>
+              <Bar dataKey={barMode==='total'?'total':'normalized'} radius={[0,6,6,0]}>
+                {byProject.map((_,i) => <Cell key={i} fill={COLORS[i%COLORS.length]}/>)}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
