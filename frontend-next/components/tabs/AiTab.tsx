@@ -9,12 +9,12 @@ interface Msg { role: 'user' | 'assistant'; content: string; streaming?: boolean
 interface Props { data: EmissionRow[]; }
 
 const SUGGESTIONS = [
-  { icon: '🏆', q: 'מה הפרויקט עם הכי הרבה פליטות?' },
-  { icon: '📊', q: 'פרט את הפליטות לפי קטגוריית חומר' },
-  { icon: '💡', q: 'הצע 3 דרכים מעשיות לצמצום פליטות' },
-  { icon: '⚖️', q: 'השווה בין הפרויקטים לפי פחמן לטון חומר' },
-  { icon: '🔥', q: 'אילו חומרים הם הפולטים הגדולים ביותר?' },
-  { icon: '📈', q: 'מה המגמה של הפליטות לאורך השנים?' },
+  { icon: '🏆', label: 'פרויקט מוביל',         q: 'מה הפרויקט עם הכי הרבה פליטות?' },
+  { icon: '📊', label: 'פליטות לפי חומר',       q: 'פרט את הפליטות לפי קטגוריית חומר' },
+  { icon: '💡', label: '3 דרכים לצמצום',        q: 'הצע 3 דרכים מעשיות לצמצום פליטות' },
+  { icon: '⚖️', label: 'השוואת פרויקטים',      q: 'השווה בין הפרויקטים לפי פחמן לטון חומר' },
+  { icon: '🔥', label: 'החומרים הפולטים',       q: 'אילו חומרים הם הפולטים הגדולים ביותר?' },
+  { icon: '📈', label: 'מגמת הפליטות',          q: 'מה המגמה של הפליטות לאורך השנים?' },
 ];
 
 function buildContext(data: EmissionRow[]): string {
@@ -122,11 +122,11 @@ export function AiTab({ data }: Props) {
             <p className="text-sm text-muted-fg max-w-md">שאל אותי כל שאלה על נתוני הפחמן — אנתח, אשווה ואמליץ בזמן אמת</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-xl">
-            {SUGGESTIONS.map(({ icon, q }) => (
+            {SUGGESTIONS.map(({ icon, label, q }) => (
               <button key={q} onClick={() => send(q)}
-                className="flex items-center gap-2 px-4 py-5 bg-card border border-border rounded-2xl hover:border-primary/40 hover:bg-primary/5 transition-colors shadow-card overflow-hidden min-h-[64px]">
-                <span className="flex-shrink-0 text-xl">{icon}</span>
-                <span className="text-[11px] font-semibold text-slate-700 truncate leading-snug">{q}</span>
+                className="flex items-center gap-2 px-4 py-5 bg-card border border-border rounded-2xl hover:border-primary/40 hover:bg-primary/5 transition-colors shadow-card min-h-[80px]">
+                <span className="flex-shrink-0 text-2xl">{icon}</span>
+                <span className="text-[12px] font-semibold text-slate-700 leading-snug text-right">{label}</span>
               </button>
             ))}
           </div>
