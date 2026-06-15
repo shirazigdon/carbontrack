@@ -124,9 +124,9 @@ export function AiTab({ data }: Props) {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-xl">
             {SUGGESTIONS.map(({ icon, label, q }) => (
               <button key={q} onClick={() => send(q)}
-                className="flex items-center gap-2 px-4 py-5 bg-card border border-border rounded-2xl hover:border-primary/40 hover:bg-primary/5 transition-colors shadow-card min-h-[80px]">
-                <span className="flex-shrink-0 text-2xl">{icon}</span>
-                <span className="text-[12px] font-semibold text-slate-700 leading-snug text-right">{label}</span>
+                className="flex flex-col items-center justify-center gap-2 px-3 py-5 bg-card border border-border rounded-2xl hover:border-primary/40 hover:bg-primary/5 transition-colors shadow-card min-h-[90px] text-center">
+                <span className="text-2xl">{icon}</span>
+                <span className="text-[12px] font-semibold text-slate-700 leading-snug whitespace-normal">{label}</span>
               </button>
             ))}
           </div>
