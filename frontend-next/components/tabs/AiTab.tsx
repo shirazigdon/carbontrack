@@ -9,12 +9,12 @@ interface Msg { role: 'user' | 'assistant'; content: string; streaming?: boolean
 interface Props { data: EmissionRow[]; }
 
 const SUGGESTIONS = [
-  { icon: '🏆', label: 'פרויקט מוביל',         q: 'מה הפרויקט עם הכי הרבה פליטות?' },
-  { icon: '📊', label: 'פליטות לפי חומר',       q: 'פרט את הפליטות לפי קטגוריית חומר' },
-  { icon: '💡', label: '3 דרכים לצמצום',        q: 'הצע 3 דרכים מעשיות לצמצום פליטות' },
-  { icon: '⚖️', label: 'השוואת פרויקטים',      q: 'השווה בין הפרויקטים לפי פחמן לטון חומר' },
-  { icon: '🔥', label: 'החומרים הפולטים',       q: 'אילו חומרים הם הפולטים הגדולים ביותר?' },
-  { icon: '📈', label: 'מגמת הפליטות',          q: 'מה המגמה של הפליטות לאורך השנים?' },
+  { icon: '🏆', label: 'פרויקט\nמוביל',      q: 'מה הפרויקט עם הכי הרבה פליטות?' },
+  { icon: '📊', label: 'פליטות\nלפי חומר',   q: 'פרט את הפליטות לפי קטגוריית חומר' },
+  { icon: '💡', label: 'דרכים\nלצמצם',       q: 'הצע 3 דרכים מעשיות לצמצום פליטות' },
+  { icon: '⚖️', label: 'השוואת\nפרויקטים', q: 'השווה בין הפרויקטים לפי פחמן לטון חומר' },
+  { icon: '🔥', label: 'חומרים\nפולטים',    q: 'אילו חומרים הם הפולטים הגדולים ביותר?' },
+  { icon: '📈', label: 'מגמת\nפליטות',      q: 'מה המגמה של הפליטות לאורך השנים?' },
 ];
 
 function buildContext(data: EmissionRow[]): string {
@@ -121,12 +121,12 @@ export function AiTab({ data }: Props) {
             <h2 className="font-bold text-lg mb-1">עוזר AI של CarbonTrack</h2>
             <p className="text-sm text-muted-fg max-w-md">שאל אותי כל שאלה על נתוני הפחמן — אנתח, אשווה ואמליץ בזמן אמת</p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-xl">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full max-w-xl">
             {SUGGESTIONS.map(({ icon, label, q }) => (
               <button key={q} onClick={() => send(q)}
-                className="flex flex-col items-center justify-center gap-2 px-3 py-5 bg-card border border-border rounded-2xl hover:border-primary/40 hover:bg-primary/5 transition-colors shadow-card min-h-[90px] text-center">
-                <span className="text-2xl">{icon}</span>
-                <span className="text-[12px] font-semibold text-slate-700 leading-snug whitespace-normal">{label}</span>
+                className="flex flex-col items-center justify-center gap-2 px-3 py-6 bg-card border border-border rounded-2xl hover:border-primary/40 hover:bg-primary/5 transition-colors shadow-card min-h-[110px] text-center">
+                <span className="text-3xl">{icon}</span>
+                <span className="text-sm font-semibold text-slate-700 leading-snug whitespace-pre-line">{label}</span>
               </button>
             ))}
           </div>
