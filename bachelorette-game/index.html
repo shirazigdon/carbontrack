@@ -207,6 +207,9 @@
   }
   .toast.show{opacity:1;bottom:36px;}
   .warn{color:var(--gold);font-size:.85rem;margin-top:10px;}
+  .server-status{color:var(--muted-onink);font-size:.85rem;margin-top:10px;min-height:1.2em;}
+  .server-status.ok{color:var(--teal);}
+  .server-status.err{color:var(--coral);}
 
   footer.mode-switch{
     margin-top:60px;text-align:center;
@@ -365,6 +368,7 @@
         <button class="btn btn-outline" id="btn-copy">📋 העתקה ללוח</button>
       </div>
       <p class="warn" id="mail-warn" style="display:none;">יש פה המון טקסט 🙌 - למייל יש הגבלת אורך, אז אם הכפתור לא פותח הכל, הכי בטוח להשתמש ב״העתקה״ ולהדביק ידנית.</p>
+      <p class="server-status" id="server-status"></p>
     </section>
 
     <footer class="mode-switch no-print">
@@ -402,6 +406,21 @@
           <input type="number" id="s-perword" value="1" min="1" max="5" step="1">
         </div>
       </div>
+    </div>
+
+    <div class="panel no-print">
+      <h3>תשובות מהשרת</h3>
+      <p class="preview-meta" style="margin-top:-6px;">כל חברה ששולחת את הטופס נשמרת אוטומטית בשרת. לחיצה אחת פה מביאה את כל מה שנאסף עד עכשיו ומוסיפה למאגר למטה (בלי לשכפל מילים שכבר יש).</p>
+      <div class="setup-grid" style="grid-template-columns:2fr 1fr;">
+        <div>
+          <label for="server-code">קוד גישה לשרת</label>
+          <input type="text" id="server-code" value="nogah2026">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn btn-secondary" id="btn-load-server" type="button" style="width:100%;">🔄 טעינת תשובות מהשרת</button>
+        </div>
+      </div>
+      <p class="server-status" id="server-status-creator"></p>
     </div>
 
     <div class="panel no-print">
@@ -449,12 +468,13 @@
   ];
 
   var STORAGE_KEY = 'nogah_bachelorette_game_v1';
+  var API_BASE = ''; // filled in once the collection server is deployed, e.g. 'https://nogah-bachelorette-api-xxxxx.a.run.app'
 
   var state = {
     v:1,
     view:'friend',
     contribution:{ name:'', words:{} },
-    setup:{ bride:'נגה (פרי)', timer:60, points:30, perWord:1 },
+    setup:{ bride:'נגה (פרי)', timer:60, points:30, perWord:1, serverCode:'nogah2026' },
     bank:{ words:{} }
   };
   CATEGORIES.forEach(function(c){ state.contribution.words[c.key]=''; state.bank.words[c.key]=''; });
@@ -537,6 +557,47 @@
     return out.join('\n').trim();
   }
 
+  function collectContributionWords(){
+    var words = {}, any = false;
+    CATEGORIES.forEach(function(c){
+      var arr = lines(state.contribution.words[c.key]);
+      if(arr.length){ words[c.key] = arr; any = true; }
+    });
+    return any ? words : null;
+  }
+
+  var lastPostedSignature = null;
+  function maybePostToServer(){
+    var statusEl = document.getElementById('server-status');
+    if(!API_BASE){ return; }
+    var words = collectContributionWords();
+    if(!words) return;
+    var name = (document.getElementById('f-name').value || '').trim();
+    var signature = JSON.stringify({name:name, words:words});
+    if(signature === lastPostedSignature) return;
+    statusEl.textContent = 'שולחת גם עותק לשרת...';
+    statusEl.className = 'server-status';
+    fetch(API_BASE + '/submit', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name:name, words:words})
+    }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, body:j}; }); })
+      .then(function(res){
+        if(res.ok && res.body && res.body.ok){
+          lastPostedSignature = signature;
+          statusEl.textContent = '✅ נשמר גם בשרת אוטומטית - אין צורך לעשות כלום נוסף.';
+          statusEl.className = 'server-status ok';
+        } else {
+          statusEl.textContent = 'לא הצלחתי לשמור בשרת, אבל השליחה הרגילה עדיין עובדת.';
+          statusEl.className = 'server-status err';
+        }
+      })
+      .catch(function(){
+        statusEl.textContent = 'לא הצלחתי להתחבר לשרת, אבל השליחה הרגילה עדיין עובדת.';
+        statusEl.className = 'server-status err';
+      });
+  }
+
   function wireSend(){
     document.getElementById('f-name').addEventListener('input', function(e){
       state.contribution.name = e.target.value; save();
@@ -547,16 +608,19 @@
       if(msg.length > 1500) document.getElementById('mail-warn').style.display='block';
       var subject = encodeURIComponent('מילים למשחק של נגה (פרי) 🎉');
       window.location.href = 'mailto:shira.zigdon2001@gmail.com?subject='+subject+'&body='+encodeURIComponent(msg);
+      maybePostToServer();
     });
     document.getElementById('btn-whatsapp').addEventListener('click', function(){
       var msg = composeMessage();
       if(!msg){ showToast('לא הזנת עדיין אף מילה 🙂'); return; }
       window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank');
+      maybePostToServer();
     });
     document.getElementById('btn-copy').addEventListener('click', function(){
       var msg = composeMessage();
       if(!msg){ showToast('לא הזנת עדיין אף מילה 🙂'); return; }
       copyText(msg);
+      maybePostToServer();
     });
   }
   function copyText(text){
@@ -716,6 +780,56 @@
     });
   }
 
+  function wireServerLoad(){
+    var btn = document.getElementById('btn-load-server');
+    var statusEl = document.getElementById('server-status-creator');
+    var codeInput = document.getElementById('server-code');
+    codeInput.value = state.setup.serverCode || 'nogah2026';
+    codeInput.addEventListener('input', function(){ state.setup.serverCode = codeInput.value; save(); });
+
+    if(!API_BASE){
+      statusEl.textContent = 'השרת עדיין לא חובר לאתר הזה.';
+      btn.disabled = true;
+      return;
+    }
+
+    btn.addEventListener('click', function(){
+      statusEl.className = 'server-status';
+      statusEl.textContent = 'טוענת...';
+      btn.disabled = true;
+      fetch(API_BASE + '/submissions?code=' + encodeURIComponent(codeInput.value))
+        .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, body:j}; }); })
+        .then(function(res){
+          btn.disabled = false;
+          if(!res.ok || !res.body || !res.body.ok){
+            statusEl.className = 'server-status err';
+            statusEl.textContent = res.body && res.body.error === 'invalid code' ? 'קוד גישה שגוי.' : 'הטעינה נכשלה, נסי שוב.';
+            return;
+          }
+          var added = 0;
+          CATEGORIES.forEach(function(c){
+            var existing = lines(state.bank.words[c.key]);
+            var existingSet = {};
+            existing.forEach(function(w){ existingSet[w]=true; });
+            var incoming = (res.body.words[c.key]||[]).map(function(item){ return item.word; });
+            incoming.forEach(function(w){
+              if(w && !existingSet[w]){ existing.push(w); existingSet[w]=true; added++; }
+            });
+            state.bank.words[c.key] = existing.join('\n');
+            document.getElementById('bank-'+c.key).value = state.bank.words[c.key];
+          });
+          save(); renderPreview();
+          statusEl.className = 'server-status ok';
+          statusEl.textContent = '✅ נטענו '+res.body.submission_count+' תשובות מ־'+res.body.contributor_count+' חברות (נוספו '+added+' מילים חדשות למאגר).';
+        })
+        .catch(function(){
+          btn.disabled = false;
+          statusEl.className = 'server-status err';
+          statusEl.textContent = 'לא הצלחתי להתחבר לשרת. בדקי חיבור לאינטרנט ונסי שוב.';
+        });
+    });
+  }
+
   /* ---------------- init ---------------- */
   function init(){
     load();
@@ -735,6 +849,7 @@
 
     wireSend();
     wireBackup();
+    wireServerLoad();
 
     document.getElementById('to-creator').addEventListener('click', function(){ setView('creator'); });
     document.getElementById('to-friend').addEventListener('click', function(){ setView('friend'); });

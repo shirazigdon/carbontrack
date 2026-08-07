@@ -1,0 +1,28 @@
+steps:
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - nogah-bachelorette-api
+      - --source
+      - ./bachelorette-backend
+      - --region
+      - me-west1
+      - --project
+      - argon-ace-483810-n9
+      - --platform
+      - managed
+      - --allow-unauthenticated
+      - --memory
+      - '512Mi'
+      - --cpu
+      - '1'
+      - --concurrency
+      - '20'
+      - --quiet
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 600s
