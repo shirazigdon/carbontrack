@@ -264,39 +264,41 @@
     display:grid;grid-template-columns:repeat(3,1fr);gap:6mm;
   }
   .card{
-    height:82mm;border-radius:8mm;border:6mm solid var(--cat-color,#f0555f);
-    padding:6mm 5mm;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:4mm;text-align:center;
-    background:#fdf1e2;color:#2a1a2e;position:relative;overflow:hidden;
-    box-shadow:inset 0 0 0 1px rgba(42,26,46,.06);
+    height:82mm;border-radius:4mm;border:.5mm solid #e4dccf;
+    padding:5mm;display:flex;flex-direction:column;justify-content:space-between;
+    background:#fffdf9;color:#201a1c;position:relative;
+    box-shadow:0 1px 0 rgba(32,26,28,.05);
   }
-  .card .card-cat{
-    display:flex;align-items:center;gap:1.6mm;font-size:.74rem;font-weight:800;
-    color:var(--cat-color,#f0555f);letter-spacing:.01em;
+  .card .card-dot{
+    display:inline-flex;align-items:center;justify-content:center;gap:1.4mm;
+    background:var(--cat-color,#f0555f);color:#fff;
+    border-radius:999px;padding:1.4mm 3mm 1.4mm 2.2mm;
+    font-size:.68rem;font-weight:800;align-self:flex-start;
   }
+  .card .card-dot .dot-icon{font-size:.85em;}
   .card .card-word{
     font-family:'Rubik','Heebo',system-ui,sans-serif;
-    font-size:1.42rem;font-weight:900;line-height:1.25;text-wrap:balance;
+    font-size:1.5rem;font-weight:900;line-height:1.22;text-wrap:balance;
+    color:#201a1c;flex:1;display:flex;align-items:center;justify-content:center;text-align:center;
   }
-  .card .card-sparkle{
-    position:absolute;font-size:1rem;color:var(--cat-color,#f0555f);opacity:.75;
-    inset-inline-start:5mm;bottom:4mm;
+  .card .card-dot.mini{
+    align-self:flex-end;background:none;color:var(--cat-color,#f0555f);padding:0;
+    font-size:.9rem;
   }
-  .card .card-sparkle.two{inset-inline-start:auto;inset-inline-end:5mm;top:4mm;bottom:auto;font-size:.7rem;}
+  .card .card-dot.mini .dot-icon{font-size:1em;}
+  .card .card-dot.mini .dot-label{display:none;}
 
   .card-back{
-    height:82mm;border-radius:8mm;border:6mm solid #fdf1e2;
+    height:82mm;border-radius:4mm;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2mm;
-    background:var(--back-color,#d5678c);color:#fdf1e2;text-align:center;position:relative;
+    background:var(--back-color,#8a2a45);color:#fff;text-align:center;position:relative;
   }
   .card-back .back-title{
     font-family:'Rubik','Heebo',system-ui,sans-serif;
-    font-size:1.15rem;font-weight:900;
+    font-size:1.3rem;font-weight:900;letter-spacing:.01em;
   }
-  .card-back .back-sub{font-size:.68rem;letter-spacing:.08em;opacity:.85;}
-  .card-back .back-sparkle{position:absolute;font-size:.85rem;opacity:.8;}
-  .card-back .back-sparkle.a{inset-inline-start:5mm;top:5mm;}
-  .card-back .back-sparkle.b{inset-inline-end:5mm;bottom:5mm;}
+  .card-back .back-sub{font-size:.66rem;letter-spacing:.1em;opacity:.8;}
+  .card-back .back-rule{width:14mm;height:.6mm;background:rgba(255,255,255,.55);border-radius:2mm;margin:.5mm 0;}
 
   .rules-page .rblock{margin-bottom:6mm;}
   .rules-page h5{font-size:.95rem;font-weight:800;margin:0 0 2mm;color:#8a2a45;}
@@ -689,11 +691,11 @@
         '<div class="page-sub">עמוד '+(pi+1)+' מתוך '+pages.length+' · '+cards.length+' קלפים בסך הכול · לגזור לאורך הקצה החיצוני של כל קלף</div>'+
         '<div class="card-grid">'+
           pageCards.map(function(item){
+            var dotLabel = '<span class="dot-icon">'+item.c.icon+'</span><span class="dot-label">'+esc(item.c.name)+'</span>';
             return '<div class="card" style="--cat-color:'+item.c.hex+'">'+
-              '<span class="card-sparkle">✦</span>'+
-              '<span class="card-sparkle two">✦</span>'+
-              '<span class="card-cat">'+item.c.icon+' '+esc(item.c.name)+'</span>'+
+              '<span class="card-dot">'+dotLabel+'</span>'+
               '<span class="card-word">'+esc(item.w)+'</span>'+
+              '<span class="card-dot mini">'+dotLabel+'</span>'+
             '</div>';
           }).join('')+
         '</div>'+
@@ -709,9 +711,8 @@
     if(!cards.length) return '';
     var backColor = '#a13d63';
     var cell = '<div class="card-back" style="--back-color:'+backColor+'">'+
-        '<span class="back-sparkle a">✦</span>'+
-        '<span class="back-sparkle b">✦</span>'+
         '<span class="back-title">'+esc(state.setup.bride)+'</span>'+
+        '<span class="back-rule"></span>'+
         '<span class="back-sub">מסיבת רווקות · משחק מילים</span>'+
       '</div>';
     return '<div class="page">'+
