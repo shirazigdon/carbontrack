@@ -233,26 +233,6 @@
   @media (max-width:640px){.setup-grid{grid-template-columns:1fr 1fr;}}
   .setup-grid label{display:block;font-size:.82rem;color:var(--muted-onink);margin-bottom:6px;}
 
-  .team-row{
-    display:flex;align-items:center;gap:12px;
-    background:var(--ink);border:1px solid var(--line);border-radius:14px;
-    padding:10px 12px;margin-bottom:10px;
-  }
-  .team-photo{
-    width:48px;height:48px;border-radius:50%;flex:none;
-    background:var(--ink-3);display:flex;align-items:center;justify-content:center;
-    background-size:cover;background-position:center;
-    font-weight:800;color:var(--muted-onink);overflow:hidden;
-  }
-  .team-row input[type=text]{
-    flex:1;background:var(--ink-2);border:1px solid var(--line);border-radius:10px;
-    color:var(--text-onink);padding:9px 11px;font:inherit;
-  }
-  .team-row .file-btn{font-size:.82rem;}
-  .team-row .remove-btn{
-    background:none;border:none;color:var(--coral);cursor:pointer;font-size:1.1rem;padding:4px 8px;
-  }
-
   .backup-row{display:flex;gap:10px;flex-wrap:wrap;}
 
   .sticky-print{
@@ -298,28 +278,6 @@
     font-size:1.35rem;font-weight:900;line-height:1.2;text-wrap:balance;z-index:1;
   }
 
-  .board-page .board-title{text-align:center;margin-bottom:6mm;}
-  .board-page .board-title .crown{font-size:1.6rem;}
-  .lanes{display:flex;flex-direction:column;gap:6mm;}
-  .lane{display:flex;align-items:center;gap:4mm;}
-  .lane-label{
-    width:34mm;flex:none;display:flex;align-items:center;gap:2.5mm;
-    font-weight:800;font-size:.82rem;
-  }
-  .lane-avatar{
-    width:11mm;height:11mm;border-radius:50%;background:#ece0e6;flex:none;
-    background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;
-    font-size:.7rem;font-weight:800;color:#7a6072;overflow:hidden;
-  }
-  .lane-track{flex:1;display:flex;border:.6mm solid #241623;border-radius:3mm;overflow:hidden;}
-  .lane-cell{
-    flex:1;min-width:0;height:11mm;display:flex;align-items:center;justify-content:center;
-    font-size:.6rem;font-weight:700;border-inline-end:.3mm solid rgba(36,22,35,.25);
-    color:#fff;
-  }
-  .lane-cell:last-child{border-inline-end:none;}
-  .lane-cell.finish{font-size:.85rem;}
-
   .rules-page .rblock{margin-bottom:6mm;}
   .rules-page h5{font-size:.95rem;font-weight:800;margin:0 0 2mm;color:#8a2a45;}
   .rules-page ol,.rules-page ul{margin:0;padding-inline-start:5mm;}
@@ -327,23 +285,6 @@
   .rules-cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm 6mm;margin-top:2mm;}
   .rules-cat-grid div{font-size:.8rem;display:flex;gap:2mm;align-items:baseline;}
   .rules-cat-grid b{color:#241623;}
-
-  .token-grid{display:grid;grid-template-columns:1fr 1fr;gap:10mm;justify-items:center;}
-  .token{display:flex;flex-direction:column;align-items:center;}
-  .token-circle{
-    width:62mm;height:62mm;border-radius:50%;border:1.4mm dashed #d8c6cf;
-    display:flex;align-items:center;justify-content:center;overflow:hidden;
-    background-size:cover;background-position:center;position:relative;
-  }
-  .token-circle .init{font-family:'Rubik';font-size:2.4rem;font-weight:900;color:#fff;}
-  .token-name{
-    margin-top:-2mm;background:#241623;color:#fff;font-weight:800;font-size:.85rem;
-    padding:2mm 6mm;border-radius:999px;z-index:1;
-  }
-  .token-tab{
-    width:26mm;height:12mm;border:1.4mm dashed #d8c6cf;border-top:none;
-    border-radius:0 0 3mm 3mm;margin-top:-1.4mm;
-  }
 
   .empty-note{
     color:#7a6072;font-size:.9rem;background:#f3e3ea;border-radius:10px;padding:14px 16px;
@@ -379,9 +320,7 @@
 
       <div class="feature-row">
         <span class="feature-chip"><b>✓</b> חפיסת קלפים מותאמת אישית</span>
-        <span class="feature-chip"><b>✓</b> לוח משחק</span>
         <span class="feature-chip"><b>✓</b> דף חוקים</span>
-        <span class="feature-chip"><b>✓</b> חיילי משחק עם הפרצופים שלכן</span>
       </div>
     </div>
 
@@ -394,7 +333,7 @@
         <ol>
           <li><strong>ממלאות למטה</strong> — פדיחות, סיפורים, אקסים, כינויים... כל מה שאתן זוכרות על נגה, קטגוריה קטגוריה. אין מינימום ואין מקסימום, אבל כמה שיותר — יותר כיף.</li>
           <li><strong>שולחות בלחיצה אחת</strong> — במייל או בוואטסאפ, ישר אליי. אני אוספת מכל החברות ובונה מזה את המשחק בפועל.</li>
-          <li><strong>מגיעות למסיבה ומשחקות</strong> — מתחלקים לקבוצות, שולפים קלף, מתארים בלי להגיד את המילה, והקבוצה מנחשת עד שהטיימר נגמר. כל מילה נכונה = נקודה, וכל הקבוצה מתקדמת על הלוח. מי שמגיעה ראשונה לסוף — מנצחת!</li>
+          <li><strong>מגיעות למסיבה ומשחקות</strong> — בדיוק כמו אליאס: מתחלקים לקבוצות, שולפים קלף, מתארים בלי להגיד את המילה, והקבוצה מנחשת כמה שיותר עד שהטיימר נגמר. כל מילה נכונה = נקודה, והקבוצה עם הכי הרבה נקודות בסוף מנצחת!</li>
         </ol>
       </div>
     </section>
@@ -447,7 +386,7 @@
       <h3>הגדרות המשחק</h3>
       <div class="setup-grid">
         <div>
-          <label for="s-bride">שם שיופיע על הכרטיסים והלוח</label>
+          <label for="s-bride">שם שיופיע על הכרטיסים ודף החוקים</label>
           <input type="text" id="s-bride" value="נגה (פרי)">
         </div>
         <div>
@@ -469,13 +408,6 @@
       <h3>מאגר המילים המרכזי</h3>
       <p class="preview-meta" style="margin-top:-6px;">שורה אחת = מילה אחת = קלף אחד. אפשר להדביק כמה שורות בבת אחת מכל חברה.</p>
       <div class="cat-grid" id="bank-cats"></div>
-    </div>
-
-    <div class="panel no-print">
-      <h3>קבוצות / חיילי משחק</h3>
-      <p class="preview-meta" style="margin-top:-6px;">כל קבוצה = חייל אחד על הלוח. אפשר להוסיף תמונה (היא תיחתך לעיגול).</p>
-      <div id="team-list"></div>
-      <button class="btn btn-ghost" id="add-team" type="button">+ הוספת קבוצה</button>
     </div>
 
     <div class="panel no-print">
@@ -523,8 +455,7 @@
     view:'friend',
     contribution:{ name:'', words:{} },
     setup:{ bride:'נגה (פרי)', timer:60, points:30, perWord:1 },
-    bank:{ words:{} },
-    teams:[]
+    bank:{ words:{} }
   };
   CATEGORIES.forEach(function(c){ state.contribution.words[c.key]=''; state.bank.words[c.key]=''; });
 
@@ -655,71 +586,6 @@
     window.scrollTo({top:0, behavior:'instant' in window ? 'instant' : 'auto'});
   }
 
-  /* ---------------- teams / tokens ---------------- */
-  function uid(){ return 't'+Math.random().toString(36).slice(2,9); }
-
-  function resizePhoto(file, cb){
-    var reader = new FileReader();
-    reader.onload = function(){
-      var img = new Image();
-      img.onload = function(){
-        var size = 320;
-        var canvas = document.createElement('canvas');
-        canvas.width = size; canvas.height = size;
-        var ctx = canvas.getContext('2d');
-        var side = Math.min(img.width, img.height);
-        var sx = (img.width-side)/2, sy = (img.height-side)/2;
-        ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
-        cb(canvas.toDataURL('image/jpeg', 0.85));
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function renderTeams(){
-    var list = document.getElementById('team-list');
-    if(!state.teams.length){
-      list.innerHTML = '<p class="preview-meta">עוד אין קבוצות — הוסיפי אחת כדי להתחיל.</p>';
-    } else {
-      list.innerHTML = state.teams.map(function(t){
-        var bg = t.photo ? 'background-image:url('+t.photo+')' : '';
-        var initial = t.photo ? '' : esc((t.name||'?').trim().charAt(0));
-        return '<div class="team-row" data-id="'+t.id+'">'+
-          '<div class="team-photo" style="'+bg+'">'+initial+'</div>'+
-          '<input type="text" data-role="name" placeholder="שם הקבוצה / החיילת" value="'+esc(t.name)+'">'+
-          '<label class="btn btn-ghost file-btn" style="cursor:pointer;">📷 תמונה<input type="file" accept="image/*" data-role="photo" style="display:none;"></label>'+
-          '<button class="remove-btn" data-role="remove" title="הסרה" type="button">✕</button>'+
-        '</div>';
-      }).join('');
-    }
-    list.querySelectorAll('.team-row').forEach(function(row){
-      var id = row.getAttribute('data-id');
-      var team = state.teams.find(function(t){return t.id===id;});
-      row.querySelector('[data-role=name]').addEventListener('input', function(e){
-        team.name = e.target.value; save(); renderPreview();
-        var ph = row.querySelector('.team-photo');
-        if(!team.photo) ph.textContent = (team.name||'?').trim().charAt(0);
-      });
-      row.querySelector('[data-role=photo]').addEventListener('change', function(e){
-        var file = e.target.files[0];
-        if(!file) return;
-        resizePhoto(file, function(dataUrl){
-          team.photo = dataUrl; save(); renderTeams(); renderPreview();
-        });
-      });
-      row.querySelector('[data-role=remove]').addEventListener('click', function(){
-        state.teams = state.teams.filter(function(t){return t.id!==id;});
-        save(); renderTeams(); renderPreview();
-      });
-    });
-  }
-
-  document.getElementById('add-team').addEventListener('click', function(){
-    state.teams.push({id:uid(), name:'קבוצה '+(state.teams.length+1), photo:null});
-    save(); renderTeams(); renderPreview();
-  });
-
   /* ---------------- preview / print pages ---------------- */
   function readSetup(){
     state.setup.bride   = document.getElementById('s-bride').value.trim() || 'נגה (פרי)';
@@ -753,33 +619,6 @@
     }).join('');
   }
 
-  function buildBoardPage(){
-    var teams = state.teams.filter(function(t){return t.name && t.name.trim();});
-    if(!teams.length) teams = [{id:'a',name:'קבוצה 1',photo:null},{id:'b',name:'קבוצה 2',photo:null}];
-    var n = Math.max(5, Math.min(60, state.setup.points));
-    var lanesHtml = teams.map(function(t){
-      var avatarBg = t.photo ? 'background-image:url('+t.photo+')' : '';
-      var initial = t.photo ? '' : esc((t.name||'?').trim().charAt(0));
-      var cells = '';
-      for(var i=0;i<=n;i++){
-        var hue = CATEGORIES[i % CATEGORIES.length].hex;
-        var isFinish = i===n;
-        cells += '<div class="lane-cell'+(isFinish?' finish':'')+'" style="background:'+hue+'">'+(isFinish?'🏁':i)+'</div>';
-      }
-      return '<div class="lane">'+
-        '<div class="lane-label"><span class="lane-avatar" style="'+avatarBg+'">'+initial+'</span>'+esc(t.name)+'</div>'+
-        '<div class="lane-track">'+cells+'</div>'+
-      '</div>';
-    }).join('');
-    return '<div class="page board-page">'+
-      '<div class="board-title">'+
-        '<h4 class="page-title" style="text-align:center;">המירוץ לניצחון — מסיבת הרווקות של '+esc(state.setup.bride)+' <span class="crown">👑</span></h4>'+
-        '<div class="page-sub" style="text-align:center;">כל קבוצה זזה קדימה לפי מספר הנקודות שצברה. הראשונה שמגיעה ל־'+n+' — מנצחת!</div>'+
-      '</div>'+
-      '<div class="lanes">'+lanesHtml+'</div>'+
-    '</div>';
-  }
-
   function buildRulesPage(){
     var s = state.setup;
     var catList = CATEGORIES.map(function(c){
@@ -790,20 +629,19 @@
       '<div class="page-sub">משחק המילים שכולו עליה</div>'+
       '<div class="rblock">'+
         '<h5>מטרת המשחק</h5>'+
-        '<div>לצבור הכי הרבה נקודות ולהגיע ראשונות ל־'+s.points+' נקודות על מסלול הניצחון שבלוח.</div>'+
+        '<div>לצבור הכי הרבה נקודות עד שהחפיסה נגמרת (או ראשונות ל־'+s.points+' נקודות, אם בוחרים לשחק עד יעד).</div>'+
       '</div>'+
       '<div class="rblock">'+
         '<h5>הכנה</h5>'+
-        '<ol><li>מתחלקים לקבוצות (2 ומעלה).</li><li>כל קבוצה בוחרת חייל (הפיון עם התמונה שלכן) ומניחה אותו על משבצת ה־0.</li><li>מערבבים את חפיסת הקלפים ומניחים אותה במרכז השולחן.</li></ol>'+
+        '<ol><li>מתחלקים לקבוצות (2 ומעלה).</li><li>מכינים דף ועט לרישום ניקוד לכל קבוצה.</li><li>מערבבים את חפיסת הקלפים ומניחים אותה במרכז השולחן.</li></ol>'+
       '</div>'+
       '<div class="rblock">'+
-        '<h5>איך משחקים</h5>'+
+        '<h5>איך משחקים (בדיוק כמו אליאס)</h5>'+
         '<ol>'+
           '<li>בכל תור, קבוצה שולפת קלף בלי להראות לקבוצות האחרות.</li>'+
           '<li>שחקנית אחת מתארת לקבוצה שלה את המילה שעל הקלף — בלי להגיד את המילה עצמה, נגזרת שלה, או לתרגם אותה משפה אחרת.</li>'+
-          '<li>מפעילים טיימר של '+s.timer+' שניות. הקבוצה מנסה לנחש כמה שיותר מילים ברצף.</li>'+
-          '<li>קלף שנוחש נכון = '+s.perWord+' נקודה/ות. קלף שלא נוחש עד תום הזמן חוזר לתחתית הערימה.</li>'+
-          '<li>מזיזים את החייל של הקבוצה קדימה על הלוח לפי מספר הנקודות שנצברו בתור.</li>'+
+          '<li>מפעילים טיימר של '+s.timer+' שניות. הקבוצה מנסה לנחש כמה שיותר מילים ברצף מתוך הקלפים שנשלפים בזה אחר זה.</li>'+
+          '<li>כל קלף שנוחש נכון = '+s.perWord+' נקודה/ות, ורושמים אותן על דף הניקוד. קלף שלא נוחש עד תום הזמן חוזר לתחתית הערימה.</li>'+
           '<li>מעבירים תור לקבוצה הבאה.</li>'+
         '</ol>'+
       '</div>'+
@@ -817,34 +655,9 @@
       '</div>'+
       '<div class="rblock">'+
         '<h5>ניצחון</h5>'+
-        '<div>הקבוצה הראשונה שמגיעה ל־'+s.points+' נקודות מכריזה "'+esc(s.bride)+'!" בקול רם — ומנצחת 🏆</div>'+
+        '<div>כשהחפיסה נגמרת (או כשקבוצה מגיעה ראשונה ל־'+s.points+' נקודות), סופרים ניקוד — הקבוצה המובילה מכריזה "'+esc(s.bride)+'!" בקול רם ומנצחת 🏆</div>'+
       '</div>'+
     '</div>';
-  }
-
-  function buildTokensPage(){
-    var teams = state.teams.filter(function(t){return t.name && t.name.trim();});
-    if(!teams.length) return '';
-    var perPage = 4, pages = [];
-    for(var i=0;i<teams.length;i+=perPage) pages.push(teams.slice(i,i+perPage));
-    return pages.map(function(pageTeams,pi){
-      return '<div class="page">'+
-        '<h4 class="page-title">חיילי משחק — '+esc(state.setup.bride)+'</h4>'+
-        '<div class="page-sub">עמוד '+(pi+1)+' מתוך '+pages.length+' · לגזור, לקפל בקו המקווקו התחתון ולהעמיד</div>'+
-        '<div class="token-grid">'+
-          pageTeams.map(function(t, idx){
-            var color = CATEGORIES[idx % CATEGORIES.length].hex;
-            var bg = t.photo ? 'background-image:url('+t.photo+')' : 'background:'+color;
-            var initial = t.photo ? '' : '<span class="init">'+esc((t.name||'?').trim().charAt(0))+'</span>';
-            return '<div class="token">'+
-              '<div class="token-circle" style="'+bg+'">'+initial+'</div>'+
-              '<div class="token-name">'+esc(t.name)+'</div>'+
-              '<div class="token-tab"></div>'+
-            '</div>';
-          }).join('')+
-        '</div>'+
-      '</div>';
-    }).join('');
   }
 
   function renderPreview(){
@@ -853,9 +666,7 @@
     root.innerHTML =
       '<div class="section-head no-print"><span class="kicker">תצוגה מקדימה</span><h2>המשחק להדפסה</h2><p>כל עמוד למטה הוא בגודל A4 אמיתי — בדיוק כמו שיודפס.</p></div>'+
       buildCardsPages() +
-      buildBoardPage() +
-      buildRulesPage() +
-      buildTokensPage();
+      buildRulesPage();
   }
 
   /* ---------------- backup export / import ---------------- */
@@ -894,7 +705,6 @@
             CATEGORIES.forEach(function(c){
               document.getElementById('bank-'+c.key).value = state.bank.words[c.key] || '';
             });
-            renderTeams();
             save(); renderPreview();
             showToast('הגיבוי נטען בהצלחה ✅');
           } else {
@@ -923,7 +733,6 @@
       document.getElementById(id).addEventListener('input', function(){ save(); renderPreview(); });
     });
 
-    renderTeams();
     wireSend();
     wireBackup();
 
