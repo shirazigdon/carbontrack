@@ -261,44 +261,37 @@
   .page .page-sub{color:#7a6072;font-size:.85rem;margin-bottom:8mm;}
 
   .card-grid{
-    display:grid;grid-template-columns:repeat(3,1fr);gap:6mm;
+    display:grid;grid-template-columns:repeat(3,52mm);gap:5mm;justify-content:center;
   }
   .card{
-    height:82mm;border-radius:4mm;border:.5mm solid #e4dccf;
-    padding:5mm;display:flex;flex-direction:column;justify-content:space-between;
-    background:#fffdf9;color:#201a1c;position:relative;
-    box-shadow:0 1px 0 rgba(32,26,28,.05);
+    width:52mm;aspect-ratio:2/3;border-radius:4.2mm;box-shadow:0 1.5mm 0 rgba(32,26,28,.08);
+    padding:4.5mm 4mm;display:flex;flex-direction:column;
+    background:#fffefb;color:#17131a;position:relative;
   }
-  .card .card-dot{
-    display:inline-flex;align-items:center;justify-content:center;gap:1.4mm;
-    background:var(--cat-color,#f0555f);color:#fff;
-    border-radius:999px;padding:1.4mm 3mm 1.4mm 2.2mm;
-    font-size:.68rem;font-weight:800;align-self:flex-start;
-  }
-  .card .card-dot .dot-icon{font-size:.85em;}
-  .card .card-word{
+  .card .card-header{
     font-family:'Rubik','Heebo',system-ui,sans-serif;
-    font-size:1.5rem;font-weight:900;line-height:1.22;text-wrap:balance;
-    color:#201a1c;flex:1;display:flex;align-items:center;justify-content:center;text-align:center;
+    font-size:.86rem;font-weight:700;text-align:center;
+    color:var(--cat-color,#4c4a9e);margin-bottom:3mm;
   }
-  .card .card-dot.mini{
-    align-self:flex-end;background:none;color:var(--cat-color,#f0555f);padding:0;
-    font-size:.9rem;
+  .card .card-words{
+    flex:1;display:flex;flex-direction:column;justify-content:space-evenly;
+    border-top:.35mm solid #ece5d8;padding-top:3mm;
   }
-  .card .card-dot.mini .dot-icon{font-size:1em;}
-  .card .card-dot.mini .dot-label{display:none;}
+  .card .card-words div{
+    font-family:'Rubik','Heebo',system-ui,sans-serif;
+    font-size:1.08rem;font-weight:800;line-height:1.28;
+    color:#17131a;text-align:end;text-wrap:balance;
+  }
 
   .card-back{
-    height:82mm;border-radius:4mm;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2mm;
-    background:var(--back-color,#8a2a45);color:#fff;text-align:center;position:relative;
+    width:52mm;aspect-ratio:2/3;border-radius:4.2mm;box-shadow:0 1.5mm 0 rgba(0,0,0,.15);
+    display:flex;align-items:center;justify-content:center;padding:5mm;
+    background:#001f3f;text-align:center;
   }
   .card-back .back-title{
     font-family:'Rubik','Heebo',system-ui,sans-serif;
-    font-size:1.3rem;font-weight:900;letter-spacing:.01em;
+    font-size:1.28rem;font-weight:900;line-height:1.28;color:#e8a62e;text-wrap:balance;
   }
-  .card-back .back-sub{font-size:.66rem;letter-spacing:.1em;opacity:.8;}
-  .card-back .back-rule{width:14mm;height:.6mm;background:rgba(255,255,255,.55);border-radius:2mm;margin:.5mm 0;}
 
   .rules-page .rblock{margin-bottom:6mm;}
   .rules-page h5{font-size:.95rem;font-weight:800;margin:0 0 2mm;color:#8a2a45;}
@@ -677,10 +670,15 @@
     state.setup.perWord = parseInt(document.getElementById('s-perword').value,10) || 1;
   }
 
+  var WORDS_PER_CARD = 4;
+
   function buildCardsPages(){
     var cards = [];
     CATEGORIES.forEach(function(c){
-      lines(state.bank.words[c.key]).forEach(function(w){ cards.push({c:c, w:w}); });
+      var words = lines(state.bank.words[c.key]);
+      for(var i=0;i<words.length;i+=WORDS_PER_CARD){
+        cards.push({c:c, words:words.slice(i,i+WORDS_PER_CARD)});
+      }
     });
     if(!cards.length) return '<div class="empty-note">עדיין אין מילים במאגר — ברגע שתדביקי מילים למעלה, חפיסת הקלפים תופיע כאן, מוכנה להדפסה.</div>';
     var perPage = 9, pages = [];
@@ -688,14 +686,14 @@
     return pages.map(function(pageCards, pi){
       return '<div class="page">'+
         '<h4 class="page-title">חפיסת קלפים — '+esc(state.setup.bride)+'</h4>'+
-        '<div class="page-sub">עמוד '+(pi+1)+' מתוך '+pages.length+' · '+cards.length+' קלפים בסך הכול · לגזור לאורך הקצה החיצוני של כל קלף</div>'+
+        '<div class="page-sub">עמוד '+(pi+1)+' מתוך '+pages.length+' · '+cards.length+' קלפים בסך הכול, עד '+WORDS_PER_CARD+' מילים לניחוש בכל קלף · לגזור לאורך הקצה החיצוני של כל קלף</div>'+
         '<div class="card-grid">'+
           pageCards.map(function(item){
-            var dotLabel = '<span class="dot-icon">'+item.c.icon+'</span><span class="dot-label">'+esc(item.c.name)+'</span>';
             return '<div class="card" style="--cat-color:'+item.c.hex+'">'+
-              '<span class="card-dot">'+dotLabel+'</span>'+
-              '<span class="card-word">'+esc(item.w)+'</span>'+
-              '<span class="card-dot mini">'+dotLabel+'</span>'+
+              '<div class="card-header">'+item.c.icon+' '+esc(item.c.name)+'</div>'+
+              '<div class="card-words">'+
+                item.words.map(function(w){ return '<div>'+esc(w)+'</div>'; }).join('')+
+              '</div>'+
             '</div>';
           }).join('')+
         '</div>'+
@@ -709,11 +707,8 @@
       lines(state.bank.words[c.key]).forEach(function(){ cards.push(1); });
     });
     if(!cards.length) return '';
-    var backColor = '#a13d63';
-    var cell = '<div class="card-back" style="--back-color:'+backColor+'">'+
-        '<span class="back-title">'+esc(state.setup.bride)+'</span>'+
-        '<span class="back-rule"></span>'+
-        '<span class="back-sub">מסיבת רווקות · משחק מילים</span>'+
+    var cell = '<div class="card-back">'+
+        '<span class="back-title">מסיבת רווקות ל'+esc(state.setup.bride)+'</span>'+
       '</div>';
     return '<div class="page">'+
       '<h4 class="page-title">גב הקלפים — לגיליון אחיד</h4>'+
@@ -741,10 +736,10 @@
       '<div class="rblock">'+
         '<h5>איך משחקים (בדיוק כמו אליאס)</h5>'+
         '<ol>'+
-          '<li>בכל תור, קבוצה שולפת קלף בלי להראות לקבוצות האחרות.</li>'+
-          '<li>שחקנית אחת מתארת לקבוצה שלה את המילה שעל הקלף — בלי להגיד את המילה עצמה, נגזרת שלה, או לתרגם אותה משפה אחרת.</li>'+
-          '<li>מפעילים טיימר של '+s.timer+' שניות. הקבוצה מנסה לנחש כמה שיותר מילים ברצף מתוך הקלפים שנשלפים בזה אחר זה.</li>'+
-          '<li>כל קלף שנוחש נכון = '+s.perWord+' נקודה/ות, ורושמים אותן על דף הניקוד. קלף שלא נוחש עד תום הזמן חוזר לתחתית הערימה.</li>'+
+          '<li>בכל תור, קבוצה שולפת קלף בלי להראות לקבוצות האחרות. על כל קלף עד '+WORDS_PER_CARD+' מילים מאותה קטגוריה.</li>'+
+          '<li>שחקנית אחת מתארת לקבוצה שלה את המילים שעל הקלף, אחת אחרי השנייה — בלי להגיד את המילה עצמה, נגזרת שלה, או לתרגם אותה משפה אחרת. אפשר לדלג הלאה למילה הבאה בקלף ולחזור אליה בסוף.</li>'+
+          '<li>מפעילים טיימר של '+s.timer+' שניות. הקבוצה מנסה לנחש כמה שיותר מילים מהקלף (ואם הספיקו את כולן — שולפים קלף נוסף וממשיכים).</li>'+
+          '<li>כל מילה שנוחשה נכון = '+s.perWord+' נקודה/ות, ורושמים אותן על דף הניקוד. מילים שלא נוחשו עד תום הזמן פשוט נשארות על הקלף לתור הבא של אותה קבוצה.</li>'+
           '<li>מעבירים תור לקבוצה הבאה.</li>'+
         '</ol>'+
       '</div>'+
