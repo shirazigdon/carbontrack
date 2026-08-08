@@ -268,19 +268,19 @@
     padding:4.5mm 4mm;display:flex;flex-direction:column;
     background:#fffefb;color:#17131a;position:relative;
   }
-  .card .card-header{
-    font-family:'Rubik','Heebo',system-ui,sans-serif;
-    font-size:.86rem;font-weight:700;text-align:center;
-    color:var(--cat-color,#4c4a9e);margin-bottom:3mm;
-  }
   .card .card-words{
     flex:1;display:flex;flex-direction:column;justify-content:space-evenly;
-    border-top:.35mm solid #ece5d8;padding-top:3mm;
   }
-  .card .card-words div{
+  .card .word-row{display:flex;align-items:baseline;gap:2.5mm;}
+  .card .word-num{
+    flex:none;width:5.5mm;height:5.5mm;border-radius:50%;background:#eee7da;color:#8a7e63;
+    font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center;
     font-family:'Rubik','Heebo',system-ui,sans-serif;
-    font-size:1.08rem;font-weight:800;line-height:1.28;
-    color:#17131a;text-align:end;text-wrap:balance;
+  }
+  .card .word-text{
+    flex:1;font-family:'Rubik','Heebo',system-ui,sans-serif;
+    font-size:1.05rem;font-weight:800;line-height:1.28;
+    color:#17131a;text-align:start;text-wrap:balance;
   }
 
   .card-back{
@@ -486,7 +486,7 @@
     v:1,
     view:'friend',
     contribution:{ name:'', words:{} },
-    setup:{ bride:'נגה (פרי)', timer:60, points:30, perWord:1, serverCode:'nogah2026' },
+    setup:{ bride:'נגה (פרי)', timer:60, points:30, perWord:1, serverCode:'nogah2026', shuffleSeed:Math.floor(Math.random()*2147483647) },
     bank:{ words:{} }
   };
   CATEGORIES.forEach(function(c){ state.contribution.words[c.key]=''; state.bank.words[c.key]=''; });
@@ -520,6 +520,25 @@
   }
   function lines(str){
     return String(str||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  }
+
+  function seededHash(str, seed){
+    var h = (seed ^ 0x9e3779b9) >>> 0;
+    for(var i=0;i<str.length;i++){
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h;
+  }
+  function stableShuffleByKey(items, seed){
+    // items: [{value, keySeed}]. Sorting by a hash of each item's own stable
+    // identity (category + local index + word), instead of Fisher-Yates over
+    // array positions, means editing one category doesn't reshuffle words that
+    // came from other categories - the deck stays put while she's typing.
+    return items
+      .map(function(it){ return {value:it.value, key:seededHash(it.keySeed, seed)}; })
+      .sort(function(a,b){ return a.key - b.key; })
+      .map(function(x){ return x.value; });
   }
 
   function showToast(msg){
@@ -672,27 +691,36 @@
 
   var WORDS_PER_CARD = 4;
 
-  function buildCardsPages(){
-    var cards = [];
+  function pooledShuffledWords(){
+    var items = [];
     CATEGORIES.forEach(function(c){
-      var words = lines(state.bank.words[c.key]);
-      for(var i=0;i<words.length;i+=WORDS_PER_CARD){
-        cards.push({c:c, words:words.slice(i,i+WORDS_PER_CARD)});
-      }
+      lines(state.bank.words[c.key]).forEach(function(w, i){
+        items.push({value:w, keySeed:c.key+'#'+i+'#'+w});
+      });
     });
-    if(!cards.length) return '<div class="empty-note">עדיין אין מילים במאגר — ברגע שתדביקי מילים למעלה, חפיסת הקלפים תופיע כאן, מוכנה להדפסה.</div>';
+    return stableShuffleByKey(items, state.setup.shuffleSeed || 1);
+  }
+
+  function buildCardsPages(){
+    var words = pooledShuffledWords();
+    if(!words.length) return '<div class="empty-note">עדיין אין מילים במאגר — ברגע שתדביקי מילים למעלה, חפיסת הקלפים תופיע כאן, מוכנה להדפסה.</div>';
+    var cards = [];
+    for(var i=0;i<words.length;i+=WORDS_PER_CARD){
+      cards.push(words.slice(i,i+WORDS_PER_CARD));
+    }
     var perPage = 9, pages = [];
     for(var i=0;i<cards.length;i+=perPage) pages.push(cards.slice(i,i+perPage));
     return pages.map(function(pageCards, pi){
       return '<div class="page">'+
         '<h4 class="page-title">חפיסת קלפים — '+esc(state.setup.bride)+'</h4>'+
-        '<div class="page-sub">עמוד '+(pi+1)+' מתוך '+pages.length+' · '+cards.length+' קלפים בסך הכול, עד '+WORDS_PER_CARD+' מילים לניחוש בכל קלף · לגזור לאורך הקצה החיצוני של כל קלף</div>'+
+        '<div class="page-sub">עמוד '+(pi+1)+' מתוך '+pages.length+' · '+cards.length+' קלפים בסך הכול · כל קלף מערבב עד '+WORDS_PER_CARD+' מילים אקראיות מכל הקטגוריות, בדיוק כמו באליאס האמיתי · לגזור לאורך הקצה החיצוני של כל קלף</div>'+
         '<div class="card-grid">'+
-          pageCards.map(function(item){
-            return '<div class="card" style="--cat-color:'+item.c.hex+'">'+
-              '<div class="card-header">'+item.c.icon+' '+esc(item.c.name)+'</div>'+
+          pageCards.map(function(cardWords){
+            return '<div class="card">'+
               '<div class="card-words">'+
-                item.words.map(function(w){ return '<div>'+esc(w)+'</div>'; }).join('')+
+                cardWords.map(function(w, wi){
+                  return '<div class="word-row"><span class="word-num">'+(wi+1)+'</span><span class="word-text">'+esc(w)+'</span></div>';
+                }).join('')+
               '</div>'+
             '</div>';
           }).join('')+
@@ -736,7 +764,7 @@
       '<div class="rblock">'+
         '<h5>איך משחקים (בדיוק כמו אליאס)</h5>'+
         '<ol>'+
-          '<li>בכל תור, קבוצה שולפת קלף בלי להראות לקבוצות האחרות. על כל קלף עד '+WORDS_PER_CARD+' מילים מאותה קטגוריה.</li>'+
+          '<li>בכל תור, קבוצה שולפת קלף בלי להראות לקבוצות האחרות. על כל קלף עד '+WORDS_PER_CARD+' מילים ממוספרות, מעורבבות מכל הקטגוריות (בדיוק כמו באליאס - בלי סדר או קשר בין המילים על אותו קלף).</li>'+
           '<li>שחקנית אחת מתארת לקבוצה שלה את המילים שעל הקלף, אחת אחרי השנייה — בלי להגיד את המילה עצמה, נגזרת שלה, או לתרגם אותה משפה אחרת. אפשר לדלג הלאה למילה הבאה בקלף ולחזור אליה בסוף.</li>'+
           '<li>מפעילים טיימר של '+s.timer+' שניות. הקבוצה מנסה לנחש כמה שיותר מילים מהקלף (ואם הספיקו את כולן — שולפים קלף נוסף וממשיכים).</li>'+
           '<li>כל מילה שנוחשה נכון = '+s.perWord+' נקודה/ות, ורושמים אותן על דף הניקוד. מילים שלא נוחשו עד תום הזמן פשוט נשארות על הקלף לתור הבא של אותה קבוצה.</li>'+
@@ -748,7 +776,7 @@
         '<div>אסור להגיד מילה מהמילה עצמה, אסור "מתחרז עם...", אסור לאיית אותיות, ואסור לדבר בשפה אחרת 😉</div>'+
       '</div>'+
       '<div class="rblock">'+
-        '<h5>הקטגוריות שבחפיסה</h5>'+
+        '<h5>מאיפה המילים הגיעו (מעורבבות בין כל הקלפים)</h5>'+
         '<div class="rules-cat-grid">'+catList+'</div>'+
       '</div>'+
       '<div class="rblock">'+
@@ -762,10 +790,18 @@
     readSetup();
     var root = document.getElementById('preview-root');
     root.innerHTML =
-      '<div class="section-head no-print"><span class="kicker">תצוגה מקדימה</span><h2>המשחק להדפסה</h2><p>כל עמוד למטה הוא בגודל A4 אמיתי — בדיוק כמו שיודפס.</p></div>'+
+      '<div class="section-head no-print">'+
+        '<span class="kicker">תצוגה מקדימה</span><h2>המשחק להדפסה</h2>'+
+        '<p>כל עמוד למטה הוא בגודל A4 אמיתי — בדיוק כמו שיודפס. הערבוב בין הקלפים נשמר יציב תוך כדי עריכה, ומשתנה רק כשלוחצים על הכפתור.</p>'+
+        '<button class="btn btn-ghost" id="btn-reshuffle" type="button">🔀 ערבוב מחדש</button>'+
+      '</div>'+
       buildCardsPages() +
       buildCardBackPage() +
       buildRulesPage();
+    document.getElementById('btn-reshuffle').addEventListener('click', function(){
+      state.setup.shuffleSeed = Math.floor(Math.random()*2147483647);
+      save(); renderPreview();
+    });
   }
 
   /* ---------------- backup export / import ---------------- */
