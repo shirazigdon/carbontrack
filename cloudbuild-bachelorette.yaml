@@ -10,7 +10,7 @@ steps:
       - --region
       - me-west1
       - --project
-      - argon-ace-483810-n9
+      - sadot-500108
       - --platform
       - managed
       - --allow-unauthenticated

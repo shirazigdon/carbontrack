@@ -12,8 +12,8 @@ from google.cloud import storage
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-PROJECT_ID = os.environ.get("GCP_PROJECT", "argon-ace-483810-n9")
-BUCKET_NAME = os.environ.get("BUCKET_NAME", "green_excal")
+PROJECT_ID = os.environ.get("GCP_PROJECT", "sadot-500108")
+BUCKET_NAME = os.environ.get("BUCKET_NAME", "sadot-500108-bachelorette-data")
 PREFIX = os.environ.get("STORAGE_PREFIX", "bachelorette-nogah/submissions")
 ACCESS_CODE = os.environ.get("ACCESS_CODE", "nogah2026")
 
