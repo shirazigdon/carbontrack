@@ -264,33 +264,53 @@
     display:grid;grid-template-columns:repeat(3,52mm);gap:5mm;justify-content:center;
   }
   .card{
-    width:52mm;aspect-ratio:2/3;border-radius:4.2mm;box-shadow:0 1.5mm 0 rgba(32,26,28,.08);
-    padding:4.5mm 4mm;display:flex;flex-direction:column;
-    background:#fffefb;color:#17131a;position:relative;
+    width:52mm;aspect-ratio:2/3;border-radius:4.2mm;box-shadow:0 1.5mm 0 rgba(58,21,48,.1);
+    border:.45mm solid #f2c9db;
+    padding:5mm 4mm 4mm;display:flex;flex-direction:column;
+    background:linear-gradient(165deg,#fdeef4,#fdf5f1);
+    color:#3a1530;position:relative;overflow:hidden;
   }
+  .card .card-bloom{position:absolute;font-size:3.6mm;opacity:.55;line-height:1;}
+  .card .card-bloom.a{inset-inline-start:2.2mm;top:2mm;}
+  .card .card-bloom.b{inset-inline-end:2.2mm;top:2mm;transform:scaleX(-1);}
   .card .card-words{
     flex:1;display:flex;flex-direction:column;justify-content:space-evenly;
+    margin-top:1mm;
   }
-  .card .word-row{display:flex;align-items:baseline;gap:2.5mm;}
+  .card .word-row{display:flex;align-items:baseline;gap:2.2mm;}
   .card .word-num{
-    flex:none;width:5.5mm;height:5.5mm;border-radius:50%;background:#eee7da;color:#8a7e63;
-    font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center;
+    flex:none;width:5mm;height:5mm;border-radius:50%;background:#fff;
+    border:.4mm solid #d5678c;color:#c23b6b;
+    font-size:.58rem;font-weight:800;display:flex;align-items:center;justify-content:center;
     font-family:'Rubik','Heebo',system-ui,sans-serif;
   }
   .card .word-text{
     flex:1;font-family:'Rubik','Heebo',system-ui,sans-serif;
-    font-size:1.05rem;font-weight:800;line-height:1.28;
-    color:#17131a;text-align:start;text-wrap:balance;
+    font-size:.92rem;font-weight:800;line-height:1.22;
+    color:#3a1530;text-align:start;text-wrap:balance;
   }
 
   .card-back{
-    width:52mm;aspect-ratio:2/3;border-radius:4.2mm;box-shadow:0 1.5mm 0 rgba(0,0,0,.15);
-    display:flex;align-items:center;justify-content:center;padding:5mm;
-    background:#001f3f;text-align:center;
+    width:52mm;aspect-ratio:2/3;border-radius:4.2mm;box-shadow:0 1.5mm 0 rgba(58,21,48,.2);
+    display:flex;align-items:center;justify-content:center;padding:6mm 5mm;
+    background:linear-gradient(165deg,#d5678c,#c23b6b);text-align:center;position:relative;overflow:hidden;
+  }
+  .card-back .back-confetti{position:absolute;border-radius:50%;background:#fff;opacity:.5;}
+  .card-back .back-bubble{
+    background:#fffdfb;border-radius:5mm;padding:4mm 3mm 5mm;position:relative;
+    box-shadow:0 1mm 0 rgba(58,21,48,.12);
+  }
+  .card-back .back-bubble::after{
+    content:'';position:absolute;bottom:-3mm;inset-inline-start:9mm;
+    width:0;height:0;border-inline-start:3mm solid transparent;border-inline-end:3mm solid transparent;
+    border-top:3.4mm solid #fffdfb;
   }
   .card-back .back-title{
     font-family:'Rubik','Heebo',system-ui,sans-serif;
-    font-size:1.28rem;font-weight:900;line-height:1.28;color:#e8a62e;text-wrap:balance;
+    font-size:1.18rem;font-weight:900;line-height:1.28;color:#c23b6b;text-wrap:balance;
+  }
+  .card-back .back-sub{
+    display:block;margin-top:1mm;font-size:.6rem;font-weight:700;letter-spacing:.04em;color:#c79cae;
   }
 
   .rules-page .rblock{margin-bottom:6mm;}
@@ -689,7 +709,7 @@
     state.setup.perWord = parseInt(document.getElementById('s-perword').value,10) || 1;
   }
 
-  var WORDS_PER_CARD = 4;
+  var WORDS_PER_CARD = 6;
 
   function pooledShuffledWords(){
     var items = [];
@@ -713,10 +733,11 @@
     return pages.map(function(pageCards, pi){
       return '<div class="page">'+
         '<h4 class="page-title">חפיסת קלפים — '+esc(state.setup.bride)+'</h4>'+
-        '<div class="page-sub">עמוד '+(pi+1)+' מתוך '+pages.length+' · '+cards.length+' קלפים בסך הכול · כל קלף מערבב עד '+WORDS_PER_CARD+' מילים אקראיות מכל הקטגוריות, בדיוק כמו באליאס האמיתי · לגזור לאורך הקצה החיצוני של כל קלף</div>'+
+        '<div class="page-sub">עמוד '+(pi+1)+' מתוך '+pages.length+' · '+cards.length+' קלפים בסך הכול · כל קלף מערבב '+WORDS_PER_CARD+' מילים אקראיות מכל הקטגוריות, ממוספרות 1-'+WORDS_PER_CARD+' לגלגול קוביה · לגזור לאורך הקצה החיצוני של כל קלף</div>'+
         '<div class="card-grid">'+
           pageCards.map(function(cardWords){
             return '<div class="card">'+
+              '<span class="card-bloom a">🌸</span><span class="card-bloom b">🌸</span>'+
               '<div class="card-words">'+
                 cardWords.map(function(w, wi){
                   return '<div class="word-row"><span class="word-num">'+(wi+1)+'</span><span class="word-text">'+esc(w)+'</span></div>';
@@ -735,8 +756,18 @@
       lines(state.bank.words[c.key]).forEach(function(){ cards.push(1); });
     });
     if(!cards.length) return '';
+    var confettiSpots = [
+      'width:2mm;height:2mm;inset-inline-start:6mm;top:8mm;',
+      'width:1.4mm;height:1.4mm;inset-inline-end:7mm;top:12mm;',
+      'width:1.6mm;height:1.6mm;inset-inline-start:8mm;bottom:9mm;',
+      'width:2.2mm;height:2.2mm;inset-inline-end:6mm;bottom:7mm;'
+    ];
     var cell = '<div class="card-back">'+
-        '<span class="back-title">מסיבת רווקות ל'+esc(state.setup.bride)+'</span>'+
+        confettiSpots.map(function(s){ return '<span class="back-confetti" style="'+s+'"></span>'; }).join('')+
+        '<div class="back-bubble">'+
+          '<span class="back-title">מסיבת רווקות</span>'+
+          '<span class="back-sub">'+esc(state.setup.bride)+'</span>'+
+        '</div>'+
       '</div>';
     return '<div class="page">'+
       '<h4 class="page-title">גב הקלפים — לגיליון אחיד</h4>'+
@@ -758,16 +789,21 @@
         '<div>לצבור הכי הרבה נקודות עד שהחפיסה נגמרת (או ראשונות ל־'+s.points+' נקודות, אם בוחרים לשחק עד יעד).</div>'+
       '</div>'+
       '<div class="rblock">'+
-        '<h5>הכנה</h5>'+
-        '<ol><li>מתחלקים לקבוצות (2 ומעלה).</li><li>מכינים דף ועט לרישום ניקוד לכל קבוצה.</li><li>מערבבים את חפיסת הקלפים ומניחים אותה במרכז השולחן.</li></ol>'+
+        '<h5>מה צריך</h5>'+
+        '<div>חפיסת הקלפים (בהמשך), דף ועט לניקוד, טיימר, ו<b>קוביה רגילה אחת (6 צדדים)</b> — אפשר גם אפליקציית קוביה בטלפון.</div>'+
       '</div>'+
       '<div class="rblock">'+
-        '<h5>איך משחקים (בדיוק כמו אליאס)</h5>'+
+        '<h5>הכנה</h5>'+
+        '<ol><li>מתחלקים לקבוצות (2 ומעלה).</li><li>מכינים דף ועט לרישום ניקוד לכל קבוצה.</li><li>מערבבים את חפיסת הקלפים ומניחים אותה במרכז השולחן, עם הקוביה לידה.</li></ol>'+
+      '</div>'+
+      '<div class="rblock">'+
+        '<h5>איך משחקים</h5>'+
         '<ol>'+
-          '<li>בכל תור, קבוצה שולפת קלף בלי להראות לקבוצות האחרות. על כל קלף עד '+WORDS_PER_CARD+' מילים ממוספרות, מעורבבות מכל הקטגוריות (בדיוק כמו באליאס - בלי סדר או קשר בין המילים על אותו קלף).</li>'+
-          '<li>שחקנית אחת מתארת לקבוצה שלה את המילים שעל הקלף, אחת אחרי השנייה — בלי להגיד את המילה עצמה, נגזרת שלה, או לתרגם אותה משפה אחרת. אפשר לדלג הלאה למילה הבאה בקלף ולחזור אליה בסוף.</li>'+
-          '<li>מפעילים טיימר של '+s.timer+' שניות. הקבוצה מנסה לנחש כמה שיותר מילים מהקלף (ואם הספיקו את כולן — שולפים קלף נוסף וממשיכים).</li>'+
-          '<li>כל מילה שנוחשה נכון = '+s.perWord+' נקודה/ות, ורושמים אותן על דף הניקוד. מילים שלא נוחשו עד תום הזמן פשוט נשארות על הקלף לתור הבא של אותה קבוצה.</li>'+
+          '<li>בכל תור, קבוצה שולפת קלף מהחפיסה בלי להראות לקבוצות האחרות. על כל קלף '+WORDS_PER_CARD+' מילים ממוספרות 1-'+WORDS_PER_CARD+', מעורבבות מכל הקטגוריות ובלי שום קשר ביניהן.</li>'+
+          '<li>מגלגלים את הקוביה — המספר שיצא קובע איזו מילה מתוך ה-'+WORDS_PER_CARD+' שעל הקלף צריך להסביר.</li>'+
+          '<li>שחקנית אחת מתארת את המילה שיצאה בגלגול — בלי להגיד את המילה עצמה, נגזרת שלה, או לתרגם אותה משפה אחרת.</li>'+
+          '<li>מפעילים טיימר של '+s.timer+' שניות. ברגע שניחשו נכון (או שהחליטו לדלג), מחזירים את הקלף לתחתית הערימה, שולפים קלף חדש ומגלגלים שוב — וממשיכים ככה עד שהזמן נגמר.</li>'+
+          '<li>כל מילה שנוחשה נכון = '+s.perWord+' נקודה/ות, ורושמים אותן על דף הניקוד.</li>'+
           '<li>מעבירים תור לקבוצה הבאה.</li>'+
         '</ol>'+
       '</div>'+
